@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ProjectPilot } from './components/ProjectPilot';
@@ -8,10 +7,18 @@ import { Partners } from './components/Partners';
 import { MessagesTab } from './components/MessagesTab';
 import { EquityClub } from './components/EquityClub';
 import { BottomNav } from './components/BottomNav';
+import { Settings } from './components/Settings';
+import { LoginScreen } from './components/LoginScreen';
 import { AppTab } from './types';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<AppTab>(AppTab.ProjectPilot);
+
+  if (!isAuthenticated) {
+    return <LoginScreen />;
+  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -27,6 +34,8 @@ const App: React.FC = () => {
         return <MessagesTab />;
       case AppTab.EquityClub:
         return <EquityClub />;
+      case AppTab.Settings:
+        return <Settings />;
       default:
         return <ProjectPilot />;
     }
@@ -38,7 +47,7 @@ const App: React.FC = () => {
       <div className="hidden md:flex">
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
-      
+
       <main className="flex-1 flex flex-col relative overflow-y-auto bg-black pb-24 md:pb-0">
         {/* Progress Navigation - Hidden on Mobile to save space, or very compact */}
         <div className="sticky top-0 z-20 bg-black/80 backdrop-blur-md px-6 md:px-10 py-3 border-b border-white/5 flex items-center justify-between pt-safe">
@@ -64,6 +73,14 @@ const App: React.FC = () => {
         </div>
       </main>
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 

@@ -6,6 +6,14 @@ export enum AppTab {
   Partners = 'The Team',
   Messages = 'Chatting',
   EquityClub = 'The Treasure Chest',
+  Settings = 'Profile',
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string; // Optional URL for profile picture
 }
 
 export interface Message {

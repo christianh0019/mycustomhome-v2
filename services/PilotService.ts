@@ -2,10 +2,8 @@
 import OpenAI from 'openai';
 import { Message } from '../types';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-    dangerouslyAllowBrowser: true // Required for client-side usage in Vite
-});
+// Initialize lazily to avoid crash if env var is missing
+let openai: OpenAI | null = null;
 
 const SYSTEM_PROMPT = `
 You are the "Project Pilot" for MyCustomHome, an elite, fiduciary Custom Home Agency.
@@ -41,6 +39,20 @@ Output format: Just the text response. No markdown.
 export const PilotService = {
     async sendMessage(history: Message[], userMessage: string): Promise<string> {
         try {
+            const apiKey = process.env.OPENAI_API_KEY;
+
+            if (!apiKey) {
+                console.warn('OPENAI_API_KEY is missing');
+                return "I'm currently offline (API Key Missing). Please check your configuration.";
+            }
+
+            if (!openai) {
+                openai = new OpenAI({
+                    apiKey: apiKey,
+                    dangerouslyAllowBrowser: true
+                });
+            }
+
             // Format history for OpenAI
             const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
                 { role: 'system', content: SYSTEM_PROMPT },

@@ -1,0 +1,8 @@
+{
+  "name": "MyCustomHome V2",
+  "description": "A high-end, minimalist luxury project management tool for custom home building, featuring AI-driven roadmaps, equity tracking, and risk auditing.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

@@ -100,7 +100,7 @@ export const LoginScreen: React.FC = () => {
                             )}
                         </button>
 
-                        <div className="text-center">
+                        <div className="text-center pt-2">
                             <button
                                 type="button"
                                 onClick={() => { setIsLogin(!isLogin); setError(null); }}

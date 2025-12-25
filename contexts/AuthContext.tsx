@@ -6,7 +6,8 @@ import { supabase } from '../services/supabase';
 interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
-    login: (email: string) => Promise<void>;
+    login: (email: string, password?: string) => Promise<void>;
+    signup: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
 }
 
@@ -45,15 +46,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return () => subscription.unsubscribe();
     }, []);
 
-    const login = async (email: string) => {
-        try {
+    const login = async (email: string, password?: string) => {
+        // If password is provided, use Email/Password Sign In
+        if (password) {
+            const { error } = await supabase.auth.signInWithPassword({
+                email,
+                password
+            });
+            if (error) throw error;
+        } else {
+            // Fallback to OTP if no password (legacy support or alternative)
             const { error } = await supabase.auth.signInWithOtp({ email });
             if (error) throw error;
             alert('Check your email for the login link!');
-        } catch (error) {
-            console.error('Login error:', error);
-            alert('Error logging in. Check your console/network.');
         }
+    };
+
+    const signup = async (email: string, password: string) => {
+        const { error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    full_name: email.split('@')[0],
+                    avatar_url: `https://ui-avatars.com/api/?name=${email}&background=random`
+                }
+            }
+        });
+        if (error) throw error;
+        alert('Account created! Please check your email to verify your account.');
     };
 
     const logout = async () => {
@@ -62,7 +83,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout }}>
             {children}
         </AuthContext.Provider>
     );

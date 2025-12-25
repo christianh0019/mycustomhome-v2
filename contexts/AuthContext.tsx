@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             options: {
                 data: {
                     full_name: email.split('@')[0],
-                    avatar_url: `https://ui-avatars.com/api/?name=${email}&background=random`
+                    avatar_url: 'https://ui-avatars.com/api/?name=' + email + '&background=random'
                 }
             }
         });

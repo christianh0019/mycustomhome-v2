@@ -3,27 +3,40 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Message } from '../types';
 import { PilotService } from '../services/PilotService';
 
+import { useAuth } from '../contexts/AuthContext';
+
 export const ProjectPilot: React.FC = () => {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Initial greeting
+  // Load history or initial greeting
   useEffect(() => {
-    if (messages.length === 0) {
-      setIsTyping(true);
-      PilotService.sendMessage([], "Start conversation").then(response => {
-        setMessages([{
-          id: 'init',
-          role: 'pilot',
-          text: response,
-          timestamp: 'Just now'
-        }]);
-        setIsTyping(false);
-      });
-    }
-  }, []);
+    const initChat = async () => {
+      if (user) {
+        setIsTyping(true);
+        const history = await PilotService.loadHistory(user.id);
+        if (history.length > 0) {
+          setMessages(history);
+          setIsTyping(false);
+        } else {
+          // If no history, trigger welcome
+          PilotService.sendMessage([], "Start conversation").then(response => {
+            setMessages([{
+              id: 'init',
+              role: 'pilot',
+              text: response,
+              timestamp: 'Just now'
+            }]);
+            setIsTyping(false);
+          });
+        }
+      }
+    };
+    initChat();
+  }, [user]);
 
   // Autoscroll effect
   useEffect(() => {
@@ -49,8 +62,8 @@ export const ProjectPilot: React.FC = () => {
     setInput('');
     setIsTyping(true);
 
-    // Get AI Response
-    const response = await PilotService.sendMessage(messages, input);
+    // Get AI Response with History
+    const response = await PilotService.sendMessage(messages, input, user?.id);
 
     const pilotMsg: Message = {
       id: (Date.now() + 1).toString(),

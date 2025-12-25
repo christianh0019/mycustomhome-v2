@@ -1,6 +1,6 @@
-
 import OpenAI from 'openai';
 import { Message } from '../types';
+import { supabase } from './supabase';
 
 // Initialize lazily to avoid crash if env var is missing
 let openai: OpenAI | null = null;
@@ -27,7 +27,7 @@ Interaction Style:
 - Ask one question at a time to determine their stage.
 
 Logic:
-1. If this is the first message, Welcome them and ask: "To best serve you, tell me: Do you already have land, or are we just starting to dream?"
+1. If this is the first message (or history is empty), Welcome them and ask: "To best serve you, tell me: Do you already have land, or are we just starting to dream?"
 2. If they have land -> Ask for the location to "run a preliminary audit". (This implies Stage 4 readiness).
 3. If they have a loan -> Ask who the lender is to "verify their terms". (This implies Stage 3 readiness).
 4. If they are dreaming -> Encourage them to start the "Vision Board" (Stage 1).
@@ -37,7 +37,28 @@ Output format: Just the text response. No markdown.
 `;
 
 export const PilotService = {
-    async sendMessage(history: Message[], userMessage: string): Promise<string> {
+    async loadHistory(userId: string): Promise<Message[]> {
+        const { data, error } = await supabase
+            .from('chat_messages')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: true })
+            .limit(50);
+
+        if (error) {
+            console.error('Error loading history:', error);
+            return [];
+        }
+
+        return (data || []).map(row => ({
+            id: row.id,
+            role: row.role as 'pilot' | 'user',
+            text: row.content,
+            timestamp: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }));
+    },
+
+    async sendMessage(history: Message[], userMessage: string, userId?: string): Promise<string> {
         try {
             const apiKey = process.env.OPENAI_API_KEY;
 
@@ -50,6 +71,15 @@ export const PilotService = {
                 openai = new OpenAI({
                     apiKey: apiKey,
                     dangerouslyAllowBrowser: true
+                });
+            }
+
+            // Save User Message to DB
+            if (userId) {
+                await supabase.from('chat_messages').insert({
+                    user_id: userId,
+                    role: 'user',
+                    content: userMessage
                 });
             }
 
@@ -68,7 +98,18 @@ export const PilotService = {
                 model: 'gpt-4o',
             });
 
-            return completion.choices[0]?.message?.content || "I apologize, I'm having trouble connecting to the network. Please try again.";
+            const responseText = completion.choices[0]?.message?.content || "I apologize, I'm having trouble connecting to the network. Please try again.";
+
+            // Save Pilot Response to DB
+            if (userId) {
+                await supabase.from('chat_messages').insert({
+                    user_id: userId,
+                    role: 'pilot',
+                    content: responseText
+                });
+            }
+
+            return responseText;
         } catch (error) {
             console.error('Pilot Error:', error);
             return "I'm having trouble reaching the main server. Please ensure your connection is stable.";

@@ -1,4 +1,3 @@
-```
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
 import { supabase } from '../services/supabase';
@@ -73,20 +72,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 }
             }
         });
-if (error) throw error;
-alert('Account created! Please check your email to verify your account.');
+        if (error) throw error;
+        alert('Account created! Please check your email to verify your account.');
     };
 
-const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-};
+    const logout = async () => {
+        await supabase.auth.signOut();
+        setUser(null);
+    };
 
-return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout }}>
-        {children}
-    </AuthContext.Provider>
-);
+    return (
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout }}>
+            {children}
+        </AuthContext.Provider>
+    );
 };
 
 export const useAuth = () => {

@@ -12,6 +12,9 @@ export const Partners: React.FC = () => {
   const [loadingCategory, setLoadingCategory] = useState<string | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<Recommendation | null>(null);
 
+  const [initialFetchDone, setInitialFetchDone] = useState(false);
+  const autoScoutAttempted = React.useRef(false);
+
   // Fetch Recs
   const fetchRecommendations = async () => {
     if (!user) return;
@@ -21,26 +24,32 @@ export const Partners: React.FC = () => {
       .eq('user_id', user.id);
 
     if (data) setRecommendations(data as Recommendation[]);
+    setInitialFetchDone(true);
   };
 
   useEffect(() => {
     fetchRecommendations();
   }, [user]);
 
-  // Auto-trigger Lender research if missing and we have scope
+  // Auto-trigger Lender research ONLY ONCE if missing and we have scope
   useEffect(() => {
     const checkAndResearch = async () => {
+      if (!initialFetchDone || !user || autoScoutAttempted.current) return;
+
       // If user has city/budget but no Lenders, trigger it automatically for them
-      if (user && user.city && user.budgetRange && !loadingCategory) {
+      if (user.city && user.budgetRange && !loadingCategory) {
         const hasLenders = recommendations.some(r => r.category === 'Lender');
-        if (!hasLenders && recommendations.length === 0) { // Only auto-trigger on fresh account
+
+        // Strict Logic: Only auto-scout if we have ZERO recommendations total (New User Experience)
+        // If they deleted lenders but have builders, do NOT auto-scout again.
+        if (!hasLenders && recommendations.length === 0) {
+          autoScoutAttempted.current = true; // Mark as done immediately to prevent double firing
           await handleResearch('Lender');
         }
       }
     };
-    // Debounce slightly or just run
     checkAndResearch();
-  }, [user, recommendations.length]); // Depend on length to avoid loops
+  }, [user, recommendations, initialFetchDone]);
 
   const handleResearch = async (category: string) => {
     if (!user || !user.city || !user.budgetRange) {

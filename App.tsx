@@ -9,7 +9,6 @@ import { EquityClub } from './components/EquityClub';
 import { BottomNav } from './components/BottomNav';
 import { Settings } from './components/Settings';
 import { LoginScreen } from './components/LoginScreen';
-import { LoginScreen } from './components/LoginScreen';
 import { OnboardingTour } from './components/OnboardingTour';
 import { KnowledgeBase } from './components/KnowledgeBase';
 import { AppTab } from './types';

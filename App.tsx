@@ -6,7 +6,6 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 // Marketing Pages
 import { PublicLayout } from './components/marketing/PublicLayout';
 import { HomePage } from './components/marketing/HomePage';
-import { HomeownerPage } from './components/marketing/HomeownerPage';
 import { VendorPage } from './components/marketing/VendorPage';
 
 // App Components
@@ -28,7 +27,6 @@ const AppRoutes = () => {
       {/* PUBLIC MARKETING SITE */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomePage />} />
-        <Route path="/homeowners" element={<HomeownerPage />} />
         <Route path="/vendors" element={<VendorPage />} />
       </Route>
 

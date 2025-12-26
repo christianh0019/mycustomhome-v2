@@ -51,7 +51,7 @@ export const PublicLayout: React.FC = () => {
             </main>
 
             {/* Footer */}
-            <footer className="bg-[#050505] border-t border-white/10 py-24">
+            <footer className="bg-[#050505] border-t border-white/10 py-24 relative z-10">
                 <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12">
                     <div className="col-span-1 md:col-span-2">
                         <img src="/logo.png" alt="My Custom Home Consultant" className="h-12 w-auto mb-8 opacity-50 grayscale" />

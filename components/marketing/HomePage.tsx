@@ -80,11 +80,11 @@ export const HomePage: React.FC = () => {
     ];
 
     return (
-        <div className="bg-[#030303] text-zinc-100 font-sans selection:bg-white/20 selection:text-white overflow-x-hidden relative">
+        <div className="text-zinc-100 font-sans selection:bg-white/20 selection:text-white overflow-x-hidden relative">
 
-            {/* UNIFIED GLOBAL BACKGROUND - Fixed simple spotlight */}
+            {/* UNIFIED GLOBAL BACKGROUND - Fixed simple spotlight (Full Width Parallax) */}
             <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1400px] h-[800px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-800/20 via-[#030303] to-[#030303]"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-zinc-800/15 via-[#030303] to-[#030303]"></div>
             </div>
 
             {/* HER0 - Elegant, Centered, Spotlight */}

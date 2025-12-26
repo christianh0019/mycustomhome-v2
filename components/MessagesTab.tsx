@@ -1,89 +1,217 @@
 
 import React, { useState } from 'react';
-import { Message } from '../types';
 
-const THREADS = [
-  { id: '1', partner: 'Precision Builders', lastMsg: 'More things added to the bill...', date: '2h ago', risk: true },
-  { id: '2', partner: 'Design Team', lastMsg: 'Windows look great!', date: '5h ago', risk: false },
-  { id: '3', partner: 'Land Agent', lastMsg: 'The land is ready.', date: '1d ago', risk: false },
+// --- Types ---
+interface ChatUser {
+   id: string;
+   name: string;
+   avatar: string;
+   status: 'online' | 'offline' | 'typing';
+}
+
+interface ChatMessage {
+   id: string;
+   senderId: string;
+   text: string;
+   timestamp: string;
+   isRead: boolean;
+}
+
+interface Thread {
+   id: string;
+   partner: ChatUser;
+   messages: ChatMessage[];
+   unreadCount: number;
+}
+
+// --- Mock Data ---
+const ME_ID = 'me';
+
+const THREADS: Thread[] = [
+   {
+      id: '1',
+      partner: { id: 'p1', name: 'Precision Builders', avatar: 'https://ui-avatars.com/api/?name=Precision+Builders&background=0D8ABC&color=fff', status: 'online' },
+      unreadCount: 2,
+      messages: [
+         { id: '1', senderId: 'me', text: 'When can we expect the updated bid?', timestamp: '10:00 AM', isRead: true },
+         { id: '2', senderId: 'p1', text: 'Just finalizing the lumber package costs.', timestamp: '10:15 AM', isRead: true },
+         { id: '3', senderId: 'p1', text: 'I should have it to you by EOD.', timestamp: '10:16 AM', isRead: true },
+      ]
+   },
+   {
+      id: '2',
+      partner: { id: 'p2', name: 'Studio Arch', avatar: 'https://ui-avatars.com/api/?name=Studio+Arch&background=2E3A59&color=fff', status: 'offline' },
+      unreadCount: 0,
+      messages: [
+         { id: '1', senderId: 'p2', text: 'Here are the revised elevations.', timestamp: 'Yesterday', isRead: true },
+         { id: '2', senderId: 'me', text: 'Love the new roofline! Approved.', timestamp: 'Yesterday', isRead: true },
+      ]
+   },
+   {
+      id: '3',
+      partner: { id: 'p3', name: 'Private Capital', avatar: 'https://ui-avatars.com/api/?name=Private+Capital&background=10B981&color=fff', status: 'typing' },
+      unreadCount: 5,
+      messages: [
+         { id: '1', senderId: 'p3', text: 'Pre-approval letter attached.', timestamp: '2 days ago', isRead: true },
+         { id: '2', senderId: 'p3', text: 'We need your updated tax returns.', timestamp: '2 days ago', isRead: true },
+      ]
+   }
 ];
 
 export const MessagesTab: React.FC = () => {
-  const [selectedThread, setSelectedThread] = useState(THREADS[0]);
-  const [showList, setShowList] = useState(true);
+   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+   const [input, setInput] = useState('');
 
-  return (
-    <div className="p-4 md:p-12 lg:p-24 max-w-6xl mx-auto w-full breathing-fade pb-32">
-      <div className="mb-8 md:mb-16">
-        <h2 className="text-4xl md:text-6xl font-serif tracking-tighter">Chatting</h2>
-        <p className="text-[10px] uppercase tracking-[0.4em] text-white/30 mt-2 md:mt-4">I'm watching your talks</p>
+   // Mobile: If activeThreadId is null, show list. If set, show chat.
+   // Desktop: Always show both.
+
+   const activeThread = THREADS.find(t => t.id === activeThreadId) || null;
+
+   const handleSend = () => {
+      if (!input.trim() || !activeThread) return;
+      // In a real app, this would update state/DB
+      console.log('Sending:', input);
+      setInput('');
+   };
+
+   return (
+      <div className="flex h-full bg-[#0a0a0a] text-white overflow-hidden">
+
+         {/* --- Sidebar (Thread List) --- */}
+         <div className={`w-full md:w-[320px] lg:w-[380px] border-r border-white/5 flex flex-col bg-black/50 ${activeThreadId ? 'hidden md:flex' : 'flex'}`}>
+
+            {/* Header */}
+            <div className="h-16 px-6 border-b border-white/5 flex items-center justify-between shrink-0">
+               <h2 className="text-sm font-semibold tracking-widest uppercase">Messages</h2>
+               <button className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+                  <span className="text-lg mb-1">+</span>
+               </button>
+            </div>
+
+            {/* List */}
+            <div className="flex-1 overflow-y-auto">
+               {THREADS.map(thread => {
+                  const lastMsg = thread.messages[thread.messages.length - 1];
+                  const isActive = activeThreadId === thread.id;
+
+                  return (
+                     <div
+                        key={thread.id}
+                        onClick={() => setActiveThreadId(thread.id)}
+                        className={`px-5 py-4 flex items-center gap-4 cursor-pointer transition-all border-b border-white/[0.02] hover:bg-white/[0.02] ${isActive ? 'bg-white/[0.05]' : ''}`}
+                     >
+                        <div className="relative">
+                           <img src={thread.partner.avatar} className="w-12 h-12 rounded-full object-cover opacity-90" alt="avatar" />
+                           {thread.partner.status === 'online' && (
+                              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-black"></div>
+                           )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                           <div className="flex justify-between items-baseline mb-1">
+                              <h3 className="text-sm font-medium truncate pr-2">{thread.partner.name}</h3>
+                              <span className="text-[10px] text-white/30 whitespace-nowrap">{lastMsg?.timestamp}</span>
+                           </div>
+                           <div className="flex justify-between items-center">
+                              <p className="text-xs text-white/50 truncate max-w-[180px]">{lastMsg?.text}</p>
+                              {thread.unreadCount > 0 && (
+                                 <div className="w-5 h-5 bg-white text-black text-[10px] font-bold rounded-full flex items-center justify-center">
+                                    {thread.unreadCount}
+                                 </div>
+                              )}
+                           </div>
+                        </div>
+                     </div>
+                  );
+               })}
+            </div>
+         </div>
+
+         {/* --- Main Chat Area --- */}
+         <div className={`flex-1 flex flex-col bg-[#050505] relative ${!activeThreadId ? 'hidden md:flex' : 'flex'}`}>
+
+            {activeThread ? (
+               <>
+                  {/* Chat Header */}
+                  <div className="h-16 px-6 border-b border-white/5 flex items-center justify-between shrink-0 bg-black/40 backdrop-blur-md z-1">
+                     <div className="flex items-center gap-4">
+                        <button
+                           onClick={() => setActiveThreadId(null)}
+                           className="md:hidden text-white/60 hover:text-white mr-2"
+                        >
+                           ←
+                        </button>
+                        <img src={activeThread.partner.avatar} className="w-10 h-10 rounded-full" />
+                        <div>
+                           <h3 className="text-sm font-semibold tracking-wide">{activeThread.partner.name}</h3>
+                           <p className="text-[10px] text-green-500 uppercase tracking-wider font-medium">
+                              {activeThread.partner.status === 'typing' ? 'Typing...' : activeThread.partner.status}
+                           </p>
+                        </div>
+                     </div>
+                     <div className="flex gap-4 text-white/40">
+                        <button className="hover:text-white transition-colors">📞</button>
+                        <button className="hover:text-white transition-colors">ℹ️</button>
+                     </div>
+                  </div>
+
+                  {/* Messages */}
+                  <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-6">
+                     {activeThread.messages.map((msg, idx) => {
+                        const isMe = msg.senderId === ME_ID;
+                        return (
+                           <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
+                              <div className={`max-w-[85%] md:max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
+                                 <div
+                                    className={`px-5 py-3 text-[13px] leading-relaxed shadow-lg backdrop-blur-sm ${isMe
+                                          ? 'bg-white text-black rounded-l-2xl rounded-tr-2xl'
+                                          : 'bg-white/10 text-white border border-white/5 rounded-r-2xl rounded-tl-2xl'
+                                       }`}
+                                 >
+                                    {msg.text}
+                                 </div>
+                                 <div className="flex items-center gap-1 mt-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <span className="text-[10px] text-white/30">{msg.timestamp}</span>
+                                    {isMe && msg.isRead && <span className="text-[10px] text-blue-400">✓✓</span>}
+                                 </div>
+                              </div>
+                           </div>
+                        );
+                     })}
+                  </div>
+
+                  {/* Input Area */}
+                  <div className="p-4 md:p-6 bg-black/40 border-t border-white/5 backdrop-blur-md">
+                     <div className="flex items-center gap-3 max-w-4xl mx-auto">
+                        <button className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors flex items-center justify-center">
+                           📎
+                        </button>
+                        <input
+                           value={input}
+                           onChange={(e) => setInput(e.target.value)}
+                           onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                           className="flex-1 bg-white/[0.03] border border-white/10 text-white rounded-full px-6 py-3 text-sm focus:border-white/20 focus:bg-white/[0.05] outline-none transition-all placeholder:text-white/20"
+                           placeholder="Type a message..."
+                        />
+                        <button
+                           onClick={handleSend}
+                           className="w-10 h-10 rounded-full bg-white text-black hover:scale-105 active:scale-95 transition-all flex items-center justify-center font-bold"
+                        >
+                           ↑
+                        </button>
+                     </div>
+                  </div>
+               </>
+            ) : (
+               /* Empty State */
+               <div className="flex-1 flex flex-col items-center justify-center text-white/30 select-none">
+                  <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center text-4xl mb-6">
+                     💬
+                  </div>
+                  <p className="uppercase tracking-widest text-xs">Select a conversation</p>
+               </div>
+            )}
+         </div>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-12">
-        {/* Thread List - Hidden on mobile when chat is open */}
-        <div className={`lg:col-span-1 space-y-3 ${!showList ? 'hidden lg:block' : 'block'}`}>
-           {THREADS.map(t => (
-             <div 
-               key={t.id} 
-               onClick={() => { setSelectedThread(t); setShowList(false); }}
-               className={`p-5 md:p-6 border modern-transition cursor-pointer ${selectedThread.id === t.id ? 'bg-white text-black border-white' : 'bg-[#050505] border-white/5 hover:border-white/20'}`}
-             >
-                <div className="flex justify-between items-start mb-1">
-                   <span className="text-[9px] uppercase tracking-[0.2em] font-bold">{t.partner}</span>
-                   <span className="text-[7px] opacity-40 uppercase">{t.date}</span>
-                </div>
-                <p className="text-[10px] truncate opacity-80 uppercase tracking-widest">{t.lastMsg}</p>
-                {t.risk && <div className="mt-3 h-[2px] w-full bg-red-500/50"></div>}
-             </div>
-           ))}
-        </div>
-
-        {/* Conversation View */}
-        <div className={`lg:col-span-3 border border-white/10 bg-[#050505] flex flex-col h-[600px] ${showList ? 'hidden lg:flex' : 'flex'}`}>
-           <div className="p-5 md:p-8 border-b border-white/5 flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                <button onClick={() => setShowList(true)} className="lg:hidden text-xl">←</button>
-                <h4 className="text-xl md:text-2xl font-serif italic truncate">{selectedThread.partner}</h4>
-              </div>
-              {selectedThread.risk && <span className="text-[8px] uppercase tracking-[0.2em] text-red-500 font-bold hidden md:block">Watch out!</span>}
-           </div>
-
-           <div className="flex-1 overflow-y-auto p-6 md:p-12 space-y-8 md:space-y-12">
-              <div className="flex justify-start">
-                 <div className="max-w-[90%] md:max-w-[80%] space-y-2">
-                    <span className="text-[8px] uppercase tracking-[0.3em] opacity-30 font-bold">{selectedThread.partner}</span>
-                    <div className="p-5 md:p-8 bg-black border border-white/10 text-[11px] md:text-[12px] uppercase tracking-[0.1em] leading-relaxed">
-                       "I need more money because the ground has rocks in it."
-                    </div>
-                 </div>
-              </div>
-
-              {/* AI INTERVENTION */}
-              <div className="border border-red-500/30 bg-red-500/5 p-6 md:p-8 flex flex-col items-center text-center space-y-4 breathing-fade">
-                 <span className="text-[10px] uppercase tracking-[0.4em] text-red-500 font-bold">Your Guide Says:</span>
-                 <p className="text-[11px] md:text-[12px] uppercase tracking-[0.1em] leading-relaxed max-w-sm">
-                    "Builders need to show proof first. I wrote a note asking them to prove it so your money stays safe."
-                 </p>
-                 <button className="w-full md:w-auto px-8 py-3 bg-red-500 text-white text-[9px] uppercase tracking-[0.2em] font-bold hover:bg-red-600 transition-all">
-                    Send My Note
-                 </button>
-              </div>
-
-              <div className="flex justify-end">
-                 <div className="max-w-[90%] md:max-w-[80%] space-y-2">
-                    <span className="text-[8px] uppercase tracking-[0.3em] opacity-30 font-bold text-right block">You</span>
-                    <div className="p-5 md:p-8 bg-white text-black text-[11px] md:text-[12px] uppercase tracking-[0.1em] leading-relaxed font-bold">
-                       "Thanks! Let's wait for proof."
-                    </div>
-                 </div>
-              </div>
-           </div>
-
-           <div className="p-6 md:p-8 border-t border-white/5">
-              <input className="w-full bg-transparent border-b border-white/10 py-3 text-[11px] tracking-[0.1em] outline-none focus:border-white uppercase placeholder:text-white/10" placeholder="TYPE MESSAGE..." />
-           </div>
-        </div>
-      </div>
-    </div>
-  );
+   );
 };

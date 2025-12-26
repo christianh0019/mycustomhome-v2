@@ -21,54 +21,57 @@ export const ProjectPilot: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
 
   // State to track if we've done the initial load scroll
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initial Load
   useEffect(() => {
     const initChat = async () => {
-      if (user) {
-        // Don't show typing indicator immediately, just load history
+      if (user && !hasInitialized) {
         const history = await PilotService.loadHistory(user.id);
         if (history.length > 0) {
           setMessages(history);
-          setInitialLoadComplete(true);
+          setHasInitialized(true);
         } else {
           setIsTyping(true);
           PilotService.sendMessage([], "Start conversation").then(response => {
             setMessages([{
               id: 'init', role: 'pilot', text: response, timestamp: 'Now'
             }]);
-            setInitialLoadComplete(true);
+            setHasInitialized(true);
             setIsTyping(false);
           });
         }
       }
     };
     initChat();
-  }, [user]);
+  }, [user, hasInitialized]);
 
-  // Scroll Logic
+  // SCROLL LOGIC
+  // 1. On init (history load), snap instantly to bottom
   useLayoutEffect(() => {
-    if (scrollRef.current) {
-      // If it's the very first load or a massive update, snap to bottom instantly
-      // Otherwise, smooth scroll for new messages
-      const behavior = initialLoadComplete ? 'smooth' : 'auto';
-
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: behavior
-      });
+    if (hasInitialized) {
+      scrollToBottom('auto');
     }
-  }, [messages, initialLoadComplete]);
+  }, [hasInitialized]);
+
+  // 2. On new messages, scroll smoothly
+  useEffect(() => {
+    if (hasInitialized) {
+      scrollToBottom('smooth');
+    }
+  }, [messages, isTyping]);
+
+  const scrollToBottom = (behavior: 'auto' | 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  };
 
   const handleSend = async () => {
     if ((!input.trim() && !currentAttachment) || isTyping || isUploading) return;
 
     let finalInput = input;
-
     if (currentAttachment) {
       const attachmentMsg = `[Attachment: ${currentAttachment.name}](${currentAttachment.url})`;
       finalInput = finalInput ? `${finalInput}\n\n${attachmentMsg}` : attachmentMsg;
@@ -126,7 +129,7 @@ export const ProjectPilot: React.FC = () => {
           {isImage ? (
             <div onClick={() => setLightboxUrl(url)} className="group relative cursor-zoom-in w-full max-w-sm rounded-lg overflow-hidden border border-white/10 bg-black/50 hover:border-white/30 modern-transition shadow-2xl">
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-50"></div>
-              <img src={url} alt="attachment" className="w-full h-auto object-cover max-h-64" />
+              <img src={url} alt="attachment" className="w-full h-auto object-cover max-h-64" onLoad={() => scrollToBottom('smooth')} />
               <div className="absolute bottom-0 left-0 right-0 p-3 bg-black/60 backdrop-blur-md text-[10px] text-white/90 truncate opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
                 {name}
               </div>
@@ -155,7 +158,7 @@ export const ProjectPilot: React.FC = () => {
         </div>
       )}
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto py-10 md:py-20 space-y-8 pr-1 no-scrollbar">
+      <div className="flex-1 overflow-y-auto py-10 md:py-20 space-y-8 pr-1 no-scrollbar scroll-smooth">
         {messages.map((m, idx) => (
           <div key={m.id} className={`flex ${m.role === 'pilot' ? 'justify-start' : 'justify-end'} group`}>
             <div className={`max-w-[90%] md:max-w-[85%] space-y-2 animate-in slide-in-from-bottom-2 duration-500 fade-in fill-mode-backwards`} style={{ animationDelay: `${idx * 50}ms` }}>
@@ -184,6 +187,8 @@ export const ProjectPilot: React.FC = () => {
             </div>
           </div>
         )}
+        {/* INVISIBLE ANCHOR FOR SCROLLING */}
+        <div ref={messagesEndRef} className="h-4" />
       </div>
 
       <div className="pb-8 pt-6 sticky bottom-0 bg-gradient-to-t from-black via-black/95 to-transparent backdrop-blur-sm -mx-4 px-4 md:mx-0 md:px-0 z-10 transition-all overflow-hidden">

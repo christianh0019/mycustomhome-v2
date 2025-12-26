@@ -1,89 +1,235 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import {
+  MapPin, CheckCircle, Clock, Construction, FileText,
+  Landmark, Ruler, Key, ArrowRight
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const STAGES = [
-  { id: 0, name: "Hello!", desc: "Getting started", icon: "☺" },
-  { id: 1, name: "Our Dream", desc: "Thinking of the house", icon: "◬" },
-  { id: 2, name: "The Bank", desc: "Checking the piggy bank", icon: "◇" },
-  { id: 3, name: "The Helpers", desc: "Finding friendly lenders", icon: "◈" },
-  { id: 4, name: "The Land", desc: "Finding the perfect spot", icon: "▧" },
-  { id: 5, name: "The Plan", desc: "Drawing the house", icon: "▤" },
-  { id: 6, name: "Building!", desc: "Making it real", icon: "▣" },
-  { id: 7, name: "Welcome Home", desc: "Moving in!", icon: "■" },
+  {
+    id: 0,
+    name: "Orientation",
+    desc: "Setting the coordinates",
+    icon: MapPin,
+    subtasks: ["Initial Consultation", "Budget Framework", "Feasibility Study"]
+  },
+  {
+    id: 1,
+    name: "Financial Foundation",
+    desc: "Securing the capital",
+    icon: Landmark,
+    subtasks: ["Prequalification", "Construction Loan Intro", "Proof of Funds"]
+  },
+  {
+    id: 2,
+    name: "Land Acquisition",
+    desc: "Finding the ground",
+    icon: CompassIcon, // Custom or fallback
+    subtasks: ["Site Selection", "Soil Testing", "Survey & Topo", "Closing"]
+  },
+  {
+    id: 3,
+    name: "Design & Engineering",
+    desc: "Blueprints to reality",
+    icon: Ruler,
+    subtasks: ["Conceptual Design", "Architectural Plans", "Structural Engineering", "Final Bids"]
+  },
+  {
+    id: 4,
+    name: "Permitting",
+    desc: "The red tape",
+    icon: FileText,
+    subtasks: ["HOA Approval", "City Submission", "Permit Issuance"]
+  },
+  {
+    id: 5,
+    name: "Construction",
+    desc: "Breaking ground",
+    icon: Construction,
+    subtasks: ["Foundation", "Framing", "Systems", "Finishes"]
+  },
+  {
+    id: 6,
+    name: "The Summit",
+    desc: "Welcome home",
+    icon: Key,
+    subtasks: ["Final Walkthrough", "Occupancy Permit", "Move-In Day"]
+  },
 ];
+
+function CompassIcon(props: any) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+    </svg>
+  );
+}
 
 export const Roadmap: React.FC = () => {
   const { user } = useAuth();
   const currentStageIndex = user?.currentStage || 0;
 
-  return (
-    <div className="p-6 md:p-12 lg:p-24 max-w-7xl mx-auto w-full breathing-fade pb-32">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-20">
-        {/* Left: The Visual House Build */}
-        <div className="lg:col-span-1 border border-white/10 p-8 md:p-12 flex flex-col items-center justify-center space-y-6 md:space-y-10 bg-[#080808] modern-transition hover:border-white/20">
-          <span className="text-[9px] uppercase tracking-[0.4em] text-white/50 text-center">Development Sketch</span>
-          <div className="w-full aspect-[4/5] border border-white/10 relative flex items-center justify-center p-6 md:p-8 overflow-hidden bg-black shadow-inner">
-            <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
+  // State for expanded detail view
+  const [expandedStage, setExpandedStage] = useState<number | null>(currentStageIndex);
 
-            <div className="relative w-full h-full flex items-center justify-center">
-              <div className="w-3/4 h-1/2 border-2 border-white/30 relative modern-transition">
-                <div className="absolute -top-10 left-0 w-full h-10 border-t-2 border-l-2 border-r-2 border-white/10 -skew-x-12"></div>
-                <div className="absolute inset-4 border border-dashed border-white/5"></div>
-                <div className="absolute bottom-2 left-2 text-[8px] uppercase tracking-[0.2em] text-white/30">STEP {currentStageIndex}</div>
-              </div>
-              <div className="absolute inset-0 bg-emerald-500/[0.08] blur-[80px] rounded-full animate-pulse"></div>
-            </div>
-          </div>
-          <div className="text-center space-y-2">
-            <h4 className="text-2xl font-serif italic text-white/90">The Skeleton</h4>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-white/60 leading-relaxed max-w-[200px] mx-auto">
-              {STAGES[currentStageIndex]?.name || 'Unknown Stage'}
-            </p>
-          </div>
+  return (
+    <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-32">
+
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-24 gap-6">
+        <div className="space-y-3">
+          <h2 className="text-4xl md:text-5xl font-serif tracking-tighter">The Map</h2>
+          <div className="h-[1px] w-12 bg-white/30"></div>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">Your Journey from Dirt to Door-Keys</p>
         </div>
 
-        {/* Right: The List Path */}
-        <div className="lg:col-span-2 space-y-12">
-          <div className="space-y-3">
-            <h2 className="text-4xl md:text-6xl font-serif tracking-tighter">The Map</h2>
-            <div className="h-[1px] w-12 bg-white/30"></div>
-          </div>
-
-          <div className="space-y-12 relative pl-2">
-            <div className="absolute left-[13px] top-0 bottom-0 w-[1px] bg-white/10"></div>
-            {STAGES.map((s, i) => {
-              const active = s.id === currentStageIndex;
-              const past = s.id < currentStageIndex;
-              return (
-                <div key={s.id} className={`relative pl-12 modern-transition ${active ? 'opacity-100 scale-100' : (past ? 'opacity-50' : 'opacity-30 hover:opacity-70')}`}>
-                  <div className={`absolute left-0 top-1 w-7 h-7 border modern-transition flex items-center justify-center ${active ? 'bg-white border-white scale-110 shadow-[0_0_20px_rgba(255,255,255,0.2)]' : (past ? 'bg-white/20 border-transparent' : 'bg-black border-white/20')
-                    }`}>
-                    <span className={`text-[10px] font-bold ${active ? 'text-black' : 'text-white/60'}`}>{past ? '✓' : s.icon}</span>
-                  </div>
-                  <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
-                    <div>
-                      <h3 className={`text-2xl md:text-3xl font-serif tracking-tight modern-transition ${active ? 'text-white' : 'text-white/80'}`}>{s.name}</h3>
-                      <p className="text-[9px] uppercase tracking-[0.3em] mt-1 text-white/40">{s.desc}</p>
-                    </div>
-                    {active && <span className="text-[8px] uppercase tracking-[0.4em] font-bold border border-white/40 px-4 py-1.5 w-max backdrop-blur-sm">Active Guide</span>}
-                  </div>
-                  {active && (
-                    <div className="mt-8 p-8 bg-white text-black shadow-2xl relative overflow-hidden">
-                      <p className="text-[12px] leading-relaxed italic mb-6 font-medium">
-                        "Your Guide: We're almost done with the dream part. I'm checking the budget to keep your 'Treasure Chest' full!"
-                      </p>
-                      <button className="text-[10px] font-bold uppercase tracking-[0.3em] border-b-2 border-black/20 pb-1 hover:border-black modern-transition">
-                        Continue Dreaming
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+        <div className="bg-[#0A0A0A] border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-4">
+          <div className="flex flex-col text-right">
+            <span className="text-[9px] uppercase tracking-widest text-zinc-500">Current Phase</span>
+            <span className="text-xs uppercase tracking-widest text-white font-bold flex items-center gap-2 justify-end">
+              {STAGES[currentStageIndex]?.name || 'Unknown'}
+            </span>
           </div>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24">
+
+        {/* Timeline Column */}
+        <div className="lg:col-span-4 relative pl-8 border-l border-white/5 space-y-24">
+
+          {STAGES.map((stage, index) => {
+            const isActive = index === currentStageIndex;
+            const isPast = index < currentStageIndex;
+            const isFuture = index > currentStageIndex;
+
+            return (
+              <div
+                key={stage.id}
+                onClick={() => setExpandedStage(stage.id)}
+                className={`relative group cursor-pointer transition-all duration-500 ${isActive ? 'scale-105' : 'opacity-50 hover:opacity-80'}`}
+              >
+                {/* The Node on the Line */}
+                <div className={`absolute -left-[41px] top-1 w-5 h-5 rounded-full border-2 transition-all duration-500 flex items-center justify-center z-10
+                                ${isActive ? 'bg-black border-white shadow-[0_0_15px_rgba(255,255,255,0.5)] scale-125' :
+                    isPast ? 'bg-white border-white' : 'bg-[#0A0A0A] border-zinc-800'
+                  }`}
+                >
+                  {isPast && <CheckCircle size={10} className="text-black" />}
+                  {isActive && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
+                </div>
+
+                {/* Connecting Line (drawn via CSS on parent, but active segment highlighted) */}
+                {isActive && (
+                  <div className="absolute -left-[33px] top-6 w-[2px] h-24 bg-gradient-to-b from-white to-transparent" />
+                )}
+
+                <div className="flex items-center gap-4">
+                  <h3 className={`text-2xl font-serif transition-colors ${isActive ? 'text-white' : 'text-zinc-500'}`}>
+                    {stage.name}
+                  </h3>
+                  {isActive && (
+                    <span className="px-2 py-1 rounded-full bg-white/10 border border-white/10 text-[8px] uppercase tracking-widest text-white">
+                      Active
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] uppercase tracking-widest text-zinc-600 mt-1">
+                  {stage.desc}
+                </p>
+              </div>
+            );
+          })}
+
+        </div>
+
+        {/* Detail Column (Sticky) */}
+        <div className="lg:col-span-8">
+          <div className="sticky top-32">
+            <AnimatePresence mode="wait">
+              {expandedStage !== null && (
+                <motion.div
+                  key={expandedStage}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="bg-[#0A0A0A] border border-white/10 rounded-3xl p-8 md:p-12 relative overflow-hidden"
+                >
+                  {/* Background Glow */}
+                  <div className="absolute top-0 right-0 p-20 opacity-[0.03] bg-gradient-to-br from-white to-transparent blur-3xl rounded-full translate-x-10 -translate-y-10" />
+
+                  <div className="relative z-10">
+                    <div className="flex items-start justify-between mb-8">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 mb-2">Phase 0{expandedStage + 1}</div>
+                        <h2 className="text-4xl md:text-5xl font-serif text-white">{STAGES[expandedStage].name}</h2>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5">
+                        {React.createElement(STAGES[expandedStage].icon, { size: 32, className: "text-white/80" })}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+
+                      {/* Subtasks */}
+                      <div className="space-y-6">
+                        <h4 className="text-xs uppercase tracking-widest text-zinc-400 border-b border-white/10 pb-4">Checklist</h4>
+                        <ul className="space-y-4">
+                          {STAGES[expandedStage].subtasks.map((task, i) => (
+                            <li key={i} className="flex items-center gap-3 group cursor-pointer">
+                              <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors
+                                                            ${expandedStage < currentStageIndex
+                                  ? 'bg-white border-white'
+                                  : 'border-zinc-700 group-hover:border-white/50'
+                                }`}
+                              >
+                                {expandedStage < currentStageIndex && <CheckCircle size={12} className="text-black" />}
+                              </div>
+                              <span className={`text-sm transition-colors ${expandedStage < currentStageIndex ? 'text-zinc-500 line-through decoration-zinc-800' : 'text-zinc-300'}`}>
+                                {task}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Dynamic Content */}
+                      <div className="space-y-6">
+                        <h4 className="text-xs uppercase tracking-widest text-zinc-400 border-b border-white/10 pb-4">Resources</h4>
+
+                        <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors cursor-pointer group">
+                          <div className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Guide</div>
+                          <h5 className="text-lg font-serif text-zinc-200 group-hover:text-white transition-colors mb-4">
+                            Mastering the {STAGES[expandedStage].name} Phase
+                          </h5>
+                          <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-zinc-500 group-hover:text-white transition-colors">
+                            Read Now <ArrowRight size={12} />
+                          </div>
+                        </div>
+
+                        {expandedStage === currentStageIndex && (
+                          <div className="p-6 rounded-2xl bg-white text-black text-center space-y-4">
+                            <p className="text-xs font-medium uppercase tracking-widest">Action Required</p>
+                            <button className="w-full py-3 bg-black text-white text-[10px] uppercase tracking-widest font-bold rounded-xl hover:bg-zinc-800 transition-colors">
+                              Start Phase
+                            </button>
+                          </div>
+                        )}
+
+                      </div>
+
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   );
 };

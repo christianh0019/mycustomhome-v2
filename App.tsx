@@ -11,6 +11,7 @@ import { Settings } from './components/Settings';
 import { LoginScreen } from './components/LoginScreen';
 import { OnboardingTour } from './components/OnboardingTour';
 import { KnowledgeBase } from './components/KnowledgeBase';
+import { VendorDashboard } from './components/VendorDashboard';
 import { AppTab } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -45,6 +46,12 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // RENDER: Vendor App
+  if (user && user.role === 'vendor') {
+    return <VendorDashboard />;
+  }
+
+  // RENDER: Homeowner App
   return (
     <div className="flex h-screen bg-black text-white font-sans overflow-hidden">
       {user && !user.hasOnboarded && <OnboardingTour />}

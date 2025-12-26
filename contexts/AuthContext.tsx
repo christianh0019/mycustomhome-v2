@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '../types';
+import { User, UserRole } from '../types';
 import { supabase } from '../services/supabase';
 
 interface AuthContextType {
@@ -34,8 +34,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 name: sessionUser.user_metadata.full_name || sessionUser.email?.split('@')[0] || 'Member',
                 email: sessionUser.email || '',
                 avatarUrl: sessionUser.user_metadata.avatar_url,
-                hasOnboarded: profile?.has_onboarded || false,
-                currentStage: profile?.current_stage || 0
+                hasOnboarded: profile?.has_onboarded ?? false,
+                currentStage: profile?.current_stage ?? 0,
+                role: (profile?.role as UserRole) || 'homeowner',
+                // companyName: profile?.company_name // Would need to add this column
             });
         } catch (err) {
             console.error('Profile fetch failed', err);

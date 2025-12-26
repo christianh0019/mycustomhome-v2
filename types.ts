@@ -10,6 +10,8 @@ export enum AppTab {
   Settings = 'Profile',
 }
 
+export type UserRole = 'homeowner' | 'vendor' | 'admin';
+
 export interface User {
   id: string;
   name: string;
@@ -17,6 +19,8 @@ export interface User {
   avatarUrl?: string; // Optional URL for profile picture
   hasOnboarded?: boolean;
   currentStage?: number;
+  role?: UserRole;
+  companyName?: string;
 }
 
 export interface Message {

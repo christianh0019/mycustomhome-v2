@@ -60,7 +60,7 @@ export const PilotService = {
 
     async sendMessage(history: Message[], userMessage: string, userId?: string): Promise<string> {
         try {
-            const apiKey = process.env.OPENAI_API_KEY;
+            const apiKey = process.env.OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY;
 
             if (!apiKey) {
                 console.warn('OPENAI_API_KEY is missing');

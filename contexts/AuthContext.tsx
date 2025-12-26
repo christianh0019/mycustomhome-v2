@@ -34,7 +34,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 name: sessionUser.user_metadata.full_name || sessionUser.email?.split('@')[0] || 'Member',
                 email: sessionUser.email || '',
                 avatarUrl: sessionUser.user_metadata.avatar_url,
-                hasOnboarded: profile?.has_onboarded || false
+                hasOnboarded: profile?.has_onboarded || false,
+                currentStage: profile?.current_stage || 0
             });
         } catch (err) {
             console.error('Profile fetch failed', err);

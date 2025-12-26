@@ -15,6 +15,7 @@ export interface User {
   email: string;
   avatarUrl?: string; // Optional URL for profile picture
   hasOnboarded?: boolean;
+  currentStage?: number;
 }
 
 export interface Message {

@@ -3,7 +3,8 @@ import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
     ArrowRight, Check, Shield, Zap, TrendingUp, Cpu, Coins, Lock,
-    Search, Heart, Map, Home, FileText, Users, ChevronDown, DollarSign
+    Search, Heart, Map, Home, FileText, Users, ChevronDown, DollarSign,
+    AlertTriangle, EyeOff, Gavel
 } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
@@ -96,76 +97,60 @@ export const HomePage: React.FC = () => {
                 </div>
             </section>
 
-            {/* THE PROBLEM - High Contrast */}
-            <section className="py-32 bg-black relative">
-                <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-24 items-center">
+            {/* THE UNFAIR TRUTH (NEW SECTION) */}
+            <section className="py-32 bg-black relative border-b border-white/5">
+                <div className="max-w-4xl mx-auto px-6 text-center mb-20">
                     <motion.div
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true }}
                         variants={fadeInUp}
                     >
-                        <h2 className="text-4xl md:text-6xl font-serif leading-none mb-8">
-                            STOP BUILDING <br />
-                            <span className="text-red-500">BLIND.</span>
+                        <span className="text-red-500 font-bold uppercase tracking-[0.2em] text-xs mb-6 block">The Reality</span>
+                        <h2 className="text-4xl md:text-6xl font-serif mb-8 leading-tight">
+                            The System is Designed to <br /><span className="italic text-white/50">Confuse You.</span>
                         </h2>
-                        <p className="text-white/50 text-lg mb-8 leading-relaxed">
-                            The "Old Way" of building is broken. You guess at costs, beg for loans, and get hit with hidden markups.
-                            <br /><br />
-                            It's a system designed to extract maximum profit from your lack of knowledge.
+                        <p className="text-white/60 text-xl leading-relaxed">
+                            You are building your first custom home. Your builder has built 50.
+                            <br />
+                            You are playing a game where everyone else knows the cards.
                         </p>
-
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-4 text-white/70">
-                                <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center text-red-500"><Lock size={14} /></div>
-                                <span>Builders hide their true margins.</span>
-                            </div>
-                            <div className="flex items-center gap-4 text-white/70">
-                                <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center text-red-500"><TrendingUp size={14} /></div>
-                                <span>Change orders destroy your budget.</span>
-                            </div>
-                            <div className="flex items-center gap-4 text-white/70">
-                                <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center text-red-500"><Search size={14} /></div>
-                                <span>You have zero leverage.</span>
-                            </div>
-                        </div>
                     </motion.div>
+                </div>
 
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.8 }}
-                        className="relative"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-tr from-red-900/20 to-transparent rounded-2xl blur-3xl"></div>
-                        <div className="relative bg-[#0A0A0A] border border-white/10 p-10 rounded-2xl">
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div className="bg-red-500/5 border border-red-500/20 p-4 rounded-lg">
-                                    <span className="text-xs text-red-400 uppercase tracking-wider block mb-2">The Old Way</span>
-                                    <div className="text-xl font-serif text-white">Chaos</div>
-                                </div>
-                                <div className="bg-blue-500/5 border border-blue-500/20 p-4 rounded-lg">
-                                    <span className="text-xs text-blue-400 uppercase tracking-wider block mb-2">Our Platform</span>
-                                    <div className="text-xl font-serif text-white">Control</div>
-                                </div>
+                <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {[
+                        {
+                            icon: <EyeOff size={32} className="text-white" />,
+                            title: "You Don't Know Costs",
+                            desc: "They know exactly what materials and labor cost. You only know what they tell you. This gap is where their profit hides."
+                        },
+                        {
+                            icon: <AlertTriangle size={32} className="text-white" />,
+                            title: "Conflict of Interest",
+                            desc: "You rely on them for advice, but every question you ask is answered by someone who makes money from the answer."
+                        },
+                        {
+                            icon: <Gavel size={32} className="text-white" />,
+                            title: "The Change Order Trap",
+                            desc: "They bid low to win the job, then use 'unforeseen' issues to hit you with massive bills once you're trapped in the contract."
+                        }
+                    ].map((item, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: i * 0.2 }}
+                            className="bg-[#080808] p-10 rounded-2xl border border-white/5 hover:border-white/20 transition-colors"
+                        >
+                            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-8">
+                                {item.icon}
                             </div>
-                            <div className="space-y-2">
-                                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        whileInView={{ width: "80%" }}
-                                        transition={{ duration: 1.5, delay: 0.5 }}
-                                        className="h-full bg-blue-500"
-                                    ></motion.div>
-                                </div>
-                                <div className="flex justify-between text-xs text-white/30 uppercase tracking-wider">
-                                    <span>Efficiency</span>
-                                    <span>80% Higher</span>
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
+                            <h3 className="text-xl font-serif mb-4">{item.title}</h3>
+                            <p className="text-white/50 leading-relaxed">{item.desc}</p>
+                        </motion.div>
+                    ))}
                 </div>
             </section>
 
@@ -179,12 +164,12 @@ export const HomePage: React.FC = () => {
                         variants={staggerContainer}
                         className="text-center mb-24"
                     >
-                        <motion.span variants={fadeInUp} className="text-green-500 font-bold uppercase tracking-[0.2em] text-xs mb-4 block">The Economics</motion.span>
+                        <motion.span variants={fadeInUp} className="text-green-500 font-bold uppercase tracking-[0.2em] text-xs mb-4 block">The Solution</motion.span>
                         <motion.h2 variants={fadeInUp} className="text-5xl md:text-8xl font-serif mb-8">
                             GET PAID TO BUILD.
                         </motion.h2>
                         <motion.p variants={fadeInUp} className="text-white/60 text-xl max-w-2xl mx-auto">
-                            The only platform that puts cash back in your pocket.
+                            We level the playing field. And we put cash back in your pocket.
                         </motion.p>
                     </motion.div>
 

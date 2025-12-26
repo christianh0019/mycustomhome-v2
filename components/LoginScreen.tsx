@@ -1,14 +1,30 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export const LoginScreen: React.FC = () => {
-    const [isLogin, setIsLogin] = useState(true);
+    const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
+    const { login, signup, isAuthenticated } = useAuth();
+
+    const [isLogin, setIsLogin] = useState(searchParams.get('mode') !== 'signup');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
-    const { login, signup } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
+
+    // Redirect if already logged in
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/app');
+        }
+    }, [isAuthenticated, navigate]);
+
+    // Update mode if URL changes
+    useEffect(() => {
+        setIsLogin(searchParams.get('mode') !== 'signup');
+    }, [searchParams]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -18,13 +34,14 @@ export const LoginScreen: React.FC = () => {
         try {
             if (isLogin) {
                 await login(email, password);
+                navigate('/app'); // Explicit redirect after login
             } else {
                 await signup(email, password);
+                navigate('/app'); // Explicit redirect after signup (if auto-confirm is off) or show message
             }
         } catch (err: any) {
             console.error(err);
             setError(err.message || "An error occurred");
-        } finally {
             setIsLoading(false);
         }
     };

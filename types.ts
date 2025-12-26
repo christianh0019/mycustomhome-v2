@@ -6,6 +6,7 @@ export enum AppTab {
   Partners = 'The Team',
   Messages = 'Chatting',
   EquityClub = 'The Treasure Chest',
+  KnowledgeBase = 'The Library',
   Settings = 'Profile',
 }
 

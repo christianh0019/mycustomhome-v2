@@ -45,47 +45,74 @@ async function run() {
             console.log(`TARGET: ${vendor.name} (${vendor.city || 'National'})`);
 
             // 1. BBB SEARCH (Strict)
-            const bbbQuery = `site:bbb.org "${vendor.name}" "${vendor.city || ''}"`;
-            console.log(`  🔎 BBB Check: ${bbbQuery}`);
-            const bbbSnippets = await searchGoogle(bbbQuery);
+            // If we already found it, maybe skip? But let's verify.
+            let bbbData = { rating: vendor.bbb_rating, years: vendor.years_in_business };
 
-            let bbbData = { rating: null, years: null };
-            if (bbbSnippets) {
-                const bbbCompletion = await openai.chat.completions.create({
-                    messages: [{
-                        role: 'system', content: `
-                        Review these BBB search results for "${vendor.name}".
-                        ${bbbSnippets}
-                        Goal: Extract exact BBB Accredited Rating (A+, A, B, etc.) and Years in Business if visible.
-                        Return JSON: { "bbb_rating": "A+" or null, "years": "25 Years" or null }
-                    `}],
-                    model: 'gpt-4o',
-                    response_format: { type: "json_object" }
-                });
-                bbbData = JSON.parse(bbbCompletion.choices[0].message.content);
-                console.log(`     -> BBB Found: ${bbbData.bbb_rating} | ${bbbData.years}`);
+            if (!bbbData.rating) {
+                const bbbQuery = `site:bbb.org "${vendor.name}" "${vendor.city || ''}"`;
+                console.log(`  🔎 BBB Check: ${bbbQuery}`);
+                const bbbSnippets = await searchGoogle(bbbQuery);
+                if (bbbSnippets) {
+                    const bbbCompletion = await openai.chat.completions.create({
+                        messages: [{
+                            role: 'system', content: `
+                            Review snippets for "${vendor.name}". Goal: Extract exact BBB Rating (A+, A, B) and Years in Business.
+                            ${bbbSnippets}
+                            Return JSON: { "bbb_rating": "A+" or null, "years": "25 Years" or null }
+                        `}],
+                        model: 'gpt-4o',
+                        response_format: { type: "json_object" }
+                    });
+                    const parsed = JSON.parse(bbbCompletion.choices[0].message.content);
+                    if (parsed.bbb_rating) bbbData = parsed;
+                    console.log(`     -> BBB Found: ${bbbData.rating} | ${bbbData.years}`);
+                }
             }
 
-            // 2. GOOGLE REVIEWS SEARCH (Strict)
-            const googleQuery = `"${vendor.name}" "${vendor.city || ''}" reviews`;
-            console.log(`  🔎 Google Check: ${googleQuery}`);
-            const googleSnippets = await searchGoogle(googleQuery);
+            // 2. GOOGLE REVIEWS SEARCH (Cascading Strategy)
+            let googleData = { rating: 0, count: 0, source: 'None' };
 
-            let googleData = { rating: 0, count: 0 };
+            // Strategy A: Strict Google
+            let googleQuery = `"${vendor.name}" "${vendor.city || ''}" reviews`;
+            let googleSnippets = await searchGoogle(googleQuery);
+
+            // Strategy B: Broad Google (if A failed)
+            if (!googleSnippets || googleSnippets.length < 50) {
+                googleQuery = `${vendor.name} ${vendor.city || ''} mortgage reviews`;
+                console.log(`  ⚠️ Fallback to Broad Query: ${googleQuery}`);
+                googleSnippets = await searchGoogle(googleQuery);
+            }
+
+            // Strategy C: Trusted Authority (if others look weak)
+            // Lenders often live on Zillow/LendingTree
+            if (vendor.category === 'Lender') {
+                const zillowQuery = `${vendor.name} reviews site:zillow.com OR site:lendingtree.com`;
+                console.log(`  ⚠️ Fallback to Zillow/LendingTree: ${zillowQuery}`);
+                const zillowSnippets = await searchGoogle(zillowQuery);
+                googleSnippets = (googleSnippets || "") + "\n\n" + (zillowSnippets || "");
+            }
+
             if (googleSnippets) {
                 const googleCompletion = await openai.chat.completions.create({
                     messages: [{
                         role: 'system', content: `
                         Review these search results for "${vendor.name}".
                         ${googleSnippets}
-                        Goal: Find specifically the GOOGLE REVIEW rating if possible (e.g. "Rating: 4.8 · ‎120 votes"). 
-                        If NO Google rating exists, check strictly for a reputable third-party (Houzz/Zillow/WalletHub) but prioritize Google.
-                        Return JSON: { "rating": number, "count": number, "source": "Google" or "Other" }
+                        
+                        Goal: Find a NUMERIC Star Rating.
+                        Hierarchy of Trust:
+                        1. Google Knowledge Graph ("Rating: 4.8 · ‎120 votes")
+                        2. Zillow / LendingTree (for Lenders)
+                        3. Houzz / BuildZoom (for Builders)
+                        4. Facebook / Yelp (Last resort)
+
+                        Return JSON: { "rating": number, "count": number, "source": "Google" or "Zillow" etc }
                     `}],
                     model: 'gpt-4o',
                     response_format: { type: "json_object" }
                 });
-                googleData = JSON.parse(googleCompletion.choices[0].message.content);
+                const parsed = JSON.parse(googleCompletion.choices[0].message.content);
+                googleData = parsed;
                 console.log(`     -> Reviews Found: ${googleData.rating}/5 (${googleData.count}) via ${googleData.source}`);
             }
 
@@ -94,7 +121,7 @@ async function run() {
                 UPDATE public.recommendations 
                 SET bbb_rating = $1, years_in_business = $2, rating = $3, review_count = $4
                 WHERE id = $5
-            `, [bbbData.bbb_rating, bbbData.years, googleData.rating || 0, googleData.count || 0, vendor.id]);
+            `, [bbbData.rating || bbbData.bbb_rating, bbbData.years, googleData.rating || 0, googleData.count || 0, vendor.id]);
         }
 
     } catch (e) { console.error(e); }

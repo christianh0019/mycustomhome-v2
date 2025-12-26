@@ -319,7 +319,37 @@ export const Partners: React.FC = () => {
                     )
                   })}
                 </div>
-                <button className="w-full py-4 bg-white text-black font-bold uppercase tracking-widest hover:scale-105 transition-all shadow-lg mt-8">
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!user) return;
+
+                    const btn = e.currentTarget;
+                    const originalText = btn.innerText;
+                    btn.innerText = "Sending Invite...";
+                    btn.disabled = true;
+
+                    try {
+                      const { error } = await supabase.from('leads').insert({
+                        homeowner_id: user.id,
+                        vendor_id: selectedVendor.id,
+                        project_scope_snapshot: { city: user.city, budget: user.budgetRange },
+                        status: 'invite_sent'
+                      });
+
+                      if (error) throw error;
+
+                      btn.innerText = "✓ Invite Sent (Anonymous)";
+                      btn.classList.add('bg-green-600', 'text-white', 'border-green-500');
+                      btn.classList.remove('bg-white', 'text-black');
+                    } catch (err) {
+                      console.error(err);
+                      alert("Failed to send invite.");
+                      btn.innerText = originalText;
+                      btn.disabled = false;
+                    }
+                  }}
+                  className="w-full py-4 bg-white text-black font-bold uppercase tracking-widest hover:scale-105 transition-all shadow-lg mt-8 disabled:opacity-50 disabled:cursor-not-allowed">
                   Start Conversation
                 </button>
               </div>

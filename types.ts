@@ -77,3 +77,21 @@ export interface AuditMessage {
   risk: 'low' | 'medium' | 'high';
   riskDetail?: string;
 }
+
+export interface Lead {
+  id: string;
+  homeowner_id: string;
+  vendor_id?: string;
+  status: 'pending' | 'invite_sent' | 'accepted' | 'declined' | 'invoiced';
+  commission_rate: number;
+  project_scope_snapshot?: any;
+  created_at: string;
+}
+
+export interface VendorInvite {
+  id: string;
+  lead_id: string;
+  token: string;
+  email_sent_to: string;
+  expires_at: string;
+}

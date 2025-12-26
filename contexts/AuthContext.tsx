@@ -101,11 +101,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Optimistic update
         setUser(prev => prev ? { ...prev, ...updates } : null);
 
-        // DB Update
-        if (updates.hasOnboarded !== undefined) {
+        // DB Update Payload
+        const dbUpdates: any = {};
+        if (updates.hasOnboarded !== undefined) dbUpdates.has_onboarded = updates.hasOnboarded;
+        if (updates.city !== undefined) dbUpdates.city = updates.city;
+        if (updates.budgetRange !== undefined) dbUpdates.budget_range = updates.budgetRange;
+        if (updates.currentStage !== undefined) dbUpdates.current_stage = updates.currentStage;
+
+        if (Object.keys(dbUpdates).length > 0) {
             const { error } = await supabase
                 .from('profiles')
-                .update({ has_onboarded: updates.hasOnboarded })
+                .update(dbUpdates)
                 .eq('id', user.id);
 
             if (error) console.error('Failed to update profile:', error);

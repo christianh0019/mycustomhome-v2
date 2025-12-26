@@ -21,6 +21,22 @@ export interface User {
   currentStage?: number;
   role?: UserRole;
   companyName?: string;
+  city?: string;
+  budgetRange?: string;
+}
+
+export interface Recommendation {
+  id: string;
+  category: string;
+  name: string;
+  description: string;
+  scores: {
+    reputation: number;
+    affordability: number;
+    locality: number;
+  };
+  status: 'new' | 'viewed' | 'contacted';
+  logo_url?: string;
 }
 
 export interface Message {

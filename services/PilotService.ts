@@ -156,5 +156,63 @@ export const PilotService = {
             console.error('Pilot Error:', error);
             return "network error";
         }
+    },
+
+    async generateVendorRecommendations(userId: string, category: string, city: string, budget: string): Promise<void> {
+        try {
+            // 1. Config
+            let apiKey = process.env.OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY;
+            if (!apiKey) {
+                const encoded = import.meta.env.VITE_OPENAI_ENCODED || process.env.VITE_OPENAI_ENCODED;
+                if (encoded) try { apiKey = atob(encoded); } catch (e) { console.error(e); }
+            }
+            if (!apiKey || !openai) {
+                if (apiKey) openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
+                else return;
+            }
+
+            // 2. Prompt for Research
+            const prompt = `
+                Act as a luxury custom home consultant in ${city}.
+                Recommend 3 real, high-reputation ${category}s suitable for a project budget of ${budget}.
+                
+                Return ONLY valid JSON array with objects:
+                {
+                    "name": "Company Name",
+                    "description": "1 sentence on why they fit this budget/area.",
+                    "scores": { "reputation": 0-100, "affordability": 0-100, "locality": 0-100 }
+                }
+            `;
+
+            const completion = await openai!.chat.completions.create({
+                messages: [{ role: 'system', content: prompt }],
+                model: 'gpt-4o',
+                response_format: { type: "json_object" }
+            });
+
+            const content = completion.choices[0].message.content;
+            if (!content) return;
+
+            // 3. Parse and Save
+            const data = JSON.parse(content);
+            const recommendations = data.recommendations || data.vendors || data; // Handle likely JSON keys
+
+            const rows = (Array.isArray(recommendations) ? recommendations : []).map((rec: any) => ({
+                user_id: userId,
+                category: category,
+                name: rec.name,
+                description: rec.description,
+                scores: rec.scores,
+                status: 'new',
+                logo_url: `https://ui-avatars.com/api/?name=${rec.name}&background=random`
+            }));
+
+            if (rows.length > 0) {
+                await supabase.from('recommendations').insert(rows);
+            }
+
+        } catch (e) {
+            console.error('AI Research Failed:', e);
+        }
     }
 };

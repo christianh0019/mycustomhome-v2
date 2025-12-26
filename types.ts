@@ -5,9 +5,9 @@ export enum AppTab {
   TheVault = 'The Safe Box',
   Partners = 'The Team',
   Messages = 'Chatting',
-  EquityClub = 'The Treasure Chest',
   KnowledgeBase = 'The Library',
   Settings = 'Profile',
+  EquityClub = 'The Treasure Chest',
 }
 
 export type UserRole = 'homeowner' | 'vendor' | 'admin';

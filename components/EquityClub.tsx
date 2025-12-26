@@ -1,80 +1,183 @@
-
 import React from 'react';
+import {
+  CreditCard, TrendingUp, Lock, CheckCircle, Wallet,
+  ArrowUpRight, ShieldCheck, Diamond, Building, ChevronRight
+} from 'lucide-react';
 
 export const EquityClub: React.FC = () => {
   return (
-    <div className="p-6 md:p-12 lg:p-24 max-w-7xl mx-auto w-full space-y-12 md:space-y-24 breathing-fade pb-32">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-end border-b border-white/10 pb-10 md:pb-16 gap-6">
+    <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-32">
+
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
         <div className="space-y-3">
-          <h2 className="text-4xl md:text-7xl font-serif tracking-tighter">The Treasure Chest</h2>
-          <p className="text-[10px] md:text-[11px] uppercase tracking-[0.4em] text-white/50 text-center md:text-left">Your rewards & savings</p>
+          <h2 className="text-4xl md:text-5xl font-serif tracking-tighter">The Treasure Chest</h2>
+          <div className="h-[1px] w-12 bg-white/30"></div>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">Equity Rewards & Rebates</p>
         </div>
-        <div className="text-center md:text-right space-y-1 md:space-y-2 bg-emerald-500/5 p-6 md:p-0 rounded-xl md:bg-transparent">
-          <p className="text-[10px] md:text-[11px] uppercase tracking-[0.3em] text-white/50">Current Total</p>
-          <h3 className="text-5xl md:text-7xl font-serif rebate-text tracking-tighter">$14,250</h3>
+
+        <div className="flex gap-4">
+          <div className="bg-[#0A0A0A] border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-4">
+            <div className="flex flex-col text-right">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-500">Total Value</span>
+              <span className="text-2xl font-serif text-white">$14,250.00</span>
+            </div>
+          </div>
+          <div className="bg-[#0A0A0A] border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-4">
+            <div className="flex flex-col text-right">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-500">Status</span>
+              <span className="text-xs uppercase tracking-widest text-emerald-400 font-bold flex items-center gap-2 justify-end">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Active
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24">
-        {/* Luxury Card Section */}
-        <div className="bg-[#080808] border border-white/10 p-10 md:p-16 h-[380px] md:h-[450px] flex flex-col justify-between group hover:border-emerald-400/40 modern-transition cursor-pointer relative rebate-glow overflow-hidden shadow-2xl">
-           <div className="absolute top-0 right-0 p-8 md:p-10">
-              <div className="w-12 h-12 md:w-14 md:h-14 border border-white/10 flex items-center justify-center opacity-30 modern-transition rotate-12 group-hover:rotate-0">
-                <span className="font-serif text-2xl md:text-3xl">☺</span>
-              </div>
-           </div>
-           
-           <div className="space-y-2">
-              <span className="text-[10px] md:text-[11px] uppercase tracking-[0.4em] text-white/40 font-bold">Preferred Member</span>
-              <h4 className="text-3xl md:text-4xl font-serif italic tracking-tight text-white/90">Johnathan Doe</h4>
-           </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-           <div className="space-y-8 md:space-y-12 z-10">
-              <div className="space-y-2">
-                 <p className="text-[9px] md:text-[10px] uppercase tracking-[0.4em] text-white/50">Your House Reward</p>
-                 <p className="text-5xl md:text-6xl font-serif rebate-text">$14,250.00</p>
-              </div>
-              <div className="flex justify-between items-end border-t border-white/5 pt-6 md:pt-8">
-                 <div className="flex items-center space-x-3">
-                    <div className="w-8 h-[1px] bg-white/30"></div>
-                    <span className="text-[8px] md:text-[9px] uppercase tracking-[0.4em] text-white/60">Verified</span>
-                 </div>
-                 <span className="text-[8px] md:text-[9px] uppercase tracking-[0.3em] text-emerald-400/90 font-bold animate-pulse">Asset Safe</span>
-              </div>
-           </div>
-           <div className="absolute -bottom-16 -right-16 w-64 h-64 border border-white/[0.03] rotate-45 opacity-20"></div>
-        </div>
+        {/* Left Column: The Card & Breakdown */}
+        <div className="lg:col-span-8 space-y-8">
 
-        {/* Detailed Breakdown */}
-        <div className="space-y-12 md:space-y-20 py-4 md:py-10">
-           <div className="space-y-8 md:space-y-10">
-              <h4 className="text-xl md:text-2xl font-serif italic border-b border-white/10 pb-6 text-white/80">Where it comes from</h4>
-              <div className="space-y-8 md:space-y-10">
-                {[
-                  { name: "Architect Bonus", amount: "$2,500", source: "Friendly Builders" },
-                  { name: "Build Bonus", amount: "$11,750", source: "Best Architects" }
-                ].map((item, i) => (
-                  <div key={i} className="flex justify-between items-center group modern-transition border-l-2 border-transparent hover:border-emerald-400/40 hover:pl-4 md:hover:pl-6">
-                    <div className="space-y-1 md:space-y-2">
-                      <p className="text-[10px] md:text-[11px] uppercase tracking-[0.3em] font-bold text-white/90">{item.name}</p>
-                      <p className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-white/40">{item.source}</p>
-                    </div>
-                    <span className="text-2xl md:text-3xl font-serif text-white/90 group-hover:text-emerald-400 transition-colors">{item.amount}</span>
+          {/* THE BLACK CARD */}
+          <div className="relative h-[280px] md:h-[320px] rounded-3xl overflow-hidden group shadow-2xl transition-transform hover:scale-[1.01]">
+            {/* Background Texture */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a1a] to-black"></div>
+            <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent"></div>
+
+            {/* Content */}
+            <div className="relative h-full p-8 md:p-10 flex flex-col justify-between z-10">
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <div className="text-[10px] uppercase tracking-[0.4em] text-white/40">Membership Tier</div>
+                  <div className="text-xl font-serif italic text-white/90 flex items-center gap-2">
+                    <Diamond size={16} className="text-white/60" /> Preferred Partner
                   </div>
-                ))}
+                </div>
+                <img src="https://ui-avatars.com/api/?name=User&background=333&color=fff" className="w-10 h-10 rounded-full opacity-50 grayscale" alt="chip" />
               </div>
-           </div>
 
-           <div className="p-8 md:p-12 border border-white/10 bg-[#080808] flex flex-col items-center text-center space-y-6 md:space-y-8">
-              <p className="text-[10px] md:text-[11px] uppercase tracking-[0.3em] text-white/50 leading-relaxed max-w-sm font-medium">
-                I watch your money to keep it safe for your beautiful new home.
-              </p>
-              <button className="w-full md:w-auto px-12 py-5 bg-white text-black text-[10px] md:text-[11px] uppercase tracking-[0.4em] font-bold hover:bg-white/90 modern-transition shadow-2xl active:scale-95">
-                Full Money Report
-              </button>
-           </div>
+              <div className="space-y-2">
+                <div className="text-[10px] uppercase tracking-[0.4em] text-white/40">Available Balance</div>
+                <div className="text-5xl md:text-6xl font-serif text-white tracking-tight text-shadow-glow">
+                  $14,250.00
+                </div>
+              </div>
+
+              <div className="flex justify-between items-end border-t border-white/10 pt-6">
+                <div className="flex gap-4">
+                  <div className="space-y-1">
+                    <div className="text-[8px] uppercase tracking-widest text-white/30">Account Holder</div>
+                    <div className="text-xs font-medium tracking-widest text-white/60">CHRISTIAN HOSTETLER</div>
+                  </div>
+                  <div className="space-y-1 pl-6 border-l border-white/10">
+                    <div className="text-[8px] uppercase tracking-widest text-white/30">Member Since</div>
+                    <div className="text-xs font-medium tracking-widest text-white/60">2024</div>
+                  </div>
+                </div>
+                <ShieldCheck className="text-emerald-500/50 w-8 h-8" />
+              </div>
+            </div>
+          </div>
+
+          {/* Ledger / Transactions */}
+          <div className="bg-[#0A0A0A] border border-white/5 rounded-3xl p-8">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-lg font-serif">Ledger History</h3>
+              <button className="text-[10px] uppercase tracking-widest text-white/40 hover:text-white transition-colors">Download PDF</button>
+            </div>
+
+            <div className="space-y-4">
+              {[
+                { title: 'Builder Introduction Bonus', date: 'Oct 24, 2024', amount: '+$5,000.00', status: 'Cleared', icon: Building },
+                { title: 'Architect Referral Reward', date: 'Oct 12, 2024', amount: '+$2,500.00', status: 'Cleared', icon: Wallet },
+                { title: 'Lender Origination Rebate', date: 'Pending', amount: '+$6,750.00', status: 'Pending', icon: TrendingUp },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors group">
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-full ${item.status === 'Pending' ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                      <item.icon size={18} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-white/90">{item.title}</div>
+                      <div className="text-[10px] text-white/40 uppercase tracking-wider">{item.date}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-lg font-serif ${item.status === 'Pending' ? 'text-white/40' : 'text-white'}`}>{item.amount}</div>
+                    <div className={`text-[9px] uppercase tracking-widest ${item.status === 'Pending' ? 'text-amber-500/70' : 'text-emerald-500/70'}`}>{item.status}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
+
+        {/* Right Column: Tiers & Actions */}
+        <div className="lg:col-span-4 space-y-8">
+
+          {/* Pending Actions */}
+          <div className="bg-gradient-to-br from-zinc-900 to-black border border-white/10 rounded-3xl p-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10"><Wallet size={80} /></div>
+            <h3 className="text-sm font-medium text-white mb-2 relative z-10">Withdrawal Ready</h3>
+            <p className="text-xs text-zinc-400 mb-6 leading-relaxed relative z-10">
+              You have $7,500.00 in cleared funds available for direct deposit or application towards closing costs.
+            </p>
+            <button className="w-full py-4 bg-white text-black font-bold uppercase tracking-widest text-xs rounded-xl hover:bg-zinc-200 transition-colors shadow-lg relative z-10 flex items-center justify-center gap-2">
+              Connect Bank <ArrowUpRight size={14} />
+            </button>
+            <div className="mt-4 text-[9px] text-center text-zinc-600 uppercase tracking-widest relative z-10">
+              Secured by Stripe Connect
+            </div>
+          </div>
+
+          {/* Progress Tiers */}
+          <div className="bg-[#0A0A0A] border border-white/5 rounded-3xl p-6">
+            <h3 className="text-sm font-medium text-white mb-6">Unlockable Tiers</h3>
+            <div className="space-y-6">
+
+              {/* Active Tier */}
+              <div className="relative pl-6 border-l-2 border-emerald-500">
+                <div className="text-[10px] uppercase tracking-widest text-emerald-500 font-bold mb-1">Current Tier</div>
+                <h4 className="text-white font-serif text-lg">Preferred Partner</h4>
+                <p className="text-xs text-zinc-500 mt-1">10% Rebate on all referred vendor fees.</p>
+                <div className="mt-3 flex items-center gap-2 text-[10px] text-emerald-500 uppercase tracking-wider">
+                  <CheckCircle size={12} /> Active
+                </div>
+              </div>
+
+              {/* Locked Tier */}
+              <div className="relative pl-6 border-l-2 border-white/10 opacity-50">
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Next Tier</div>
+                <h4 className="text-white font-serif text-lg">Equity Club Elite</h4>
+                <p className="text-xs text-zinc-500 mt-1">15% Rebate + Concierge Service.</p>
+                <div className="mt-3 flex items-center gap-2 text-[10px] text-zinc-500 uppercase tracking-wider">
+                  <Lock size={12} /> Locked (Requires $25k)
+                </div>
+              </div>
+
+              {/* Locked Tier 2 */}
+              <div className="relative pl-6 border-l-2 border-white/10 opacity-50">
+                <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">Top Tier</div>
+                <h4 className="text-white font-serif text-lg">Founder's Circle</h4>
+                <p className="text-xs text-zinc-500 mt-1">Equity participation in platform.</p>
+                <div className="mt-3 flex items-center gap-2 text-[10px] text-zinc-500 uppercase tracking-wider">
+                  <Lock size={12} /> Invite Only
+                </div>
+              </div>
+
+            </div>
+
+            <button className="w-full mt-8 py-3 bg-white/5 border border-white/5 text-zinc-400 hover:text-white uppercase tracking-widest text-[10px] rounded-xl hover:bg-white/10 transition-colors flex items-center justify-center gap-2">
+              View Tier Requirements
+            </button>
+          </div>
+
+        </div>
+
       </div>
+
     </div>
   );
 };

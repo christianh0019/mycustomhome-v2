@@ -14,7 +14,7 @@ import { AppTab } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [activeTab, setActiveTab] = useState<AppTab>(AppTab.ProjectPilot);
 
   if (!isAuthenticated) {
@@ -44,6 +44,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-black text-white font-sans overflow-hidden">
+      {user && !user.hasOnboarded && <OnboardingTour />}
       {/* Sidebar - Desktop Only */}
       <div className="hidden md:flex">
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />

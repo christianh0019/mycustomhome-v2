@@ -85,10 +85,19 @@ export const Partners: React.FC = () => {
   };
 
   const getOverallScore = (r: Recommendation) => {
+    // If backend provided a score, use it
     if (r.overall_score) return r.overall_score;
-    const base = (r.scores.reputation + r.scores.affordability + r.scores.locality) / 3;
-    const ratingBonus = (r.rating || 0) * 10;
-    return Math.round((base + ratingBonus) / 1.5); // normalized roughly
+
+    // Fallback Frontend Calc
+    const scores = [r.scores.reputation, r.scores.affordability, r.scores.locality];
+
+    // If we have a rating, normalize it to 100 and include it
+    if (r.rating && r.rating > 0) {
+      scores.push(r.rating * 20); // 5 stars = 100
+    }
+
+    const total = scores.reduce((a, b) => a + b, 0);
+    return Math.round(total / scores.length);
   };
 
   const sortedRecommendations = [...recommendations].sort((a, b) => getOverallScore(b) - getOverallScore(a));

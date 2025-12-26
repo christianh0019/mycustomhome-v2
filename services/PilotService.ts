@@ -246,15 +246,23 @@ export const PilotService = {
             }
 
             const prompt = `
-                Research the company "${vendor.name}" (a ${vendor.category}) in or near ${vendor.city || 'local area'}.
-                Find their website, phone number, and summarize their online reputation (reviews from Google, Houzz, etc).
+                Perform a DEEP RESEARCH analysis on "${vendor.name}" (${vendor.category}) in ${vendor.city || 'local context'}.
+                
+                You must act as a Senior Procurement Officer. Do NOT hallucinate specific review counts if you don't know them. 
+                Instead, adhere to these rules:
+                1. Website/Phone: Must be accurate or null.
+                2. Ratings: If you know the real Google/Houzz/Yelp score, use it. If not, estimate based on tiers: 4.8 (Exceptional), 4.5 (Great), 4.0 (Good).
+                3. Review Count: If unknown, estimate magnitude (e.g., 10+, 50+, 100+) or return 0.
+                4. Summary: Write a professional, detailed 3-sentence analysis citing specifics (years in business, awards, specific strengths).
 
                 Return JSON:
                 {
-                    "website": "url or empty",
-                    "phone": "number or empty",
-                    "reviews_summary": "2-3 sentences summarizing their reputation. Be honest about pros/cons.",
-                    "verified": true (if you found real data)
+                    "website": "url or null",
+                    "phone": "formatted phone or null",
+                    "reviews_summary": "Professional procurement analysis...",
+                    "verified": boolean (true only if you found a real digital footprint),
+                    "rating": number (e.g. 4.8),
+                    "review_count": number (integer)
                 }
             `;
 

@@ -1,8 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabase';
 import { PilotService } from '../services/PilotService';
 import { Recommendation } from '../types';
+import {
+  Shield, Star, Zap, Briefcase, MapPin,
+  ArrowUpRight, CheckCircle, Search, ExternalLink, Phone
+} from 'lucide-react';
 
 const CATEGORIES = ['Lender', 'Builder', 'Architect', 'Land Surveyor'];
 
@@ -14,7 +18,7 @@ export const Partners: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState('All');
 
   const [initialFetchDone, setInitialFetchDone] = useState(false);
-  const autoScoutAttempted = React.useRef(false);
+  const autoScoutAttempted = useRef(false);
 
   // Fetch Recs
   const fetchRecommendations = async () => {
@@ -105,57 +109,48 @@ export const Partners: React.FC = () => {
     ? sortedRecommendations
     : sortedRecommendations.filter(r => r.category === selectedTab || r.category + 's' === selectedTab);
 
-  const renderScoreRing = (score: number, label: string) => (
-    <div className="flex flex-col items-center gap-1">
-      <div className="relative w-12 h-12 flex items-center justify-center">
-        <svg className="w-full h-full transform -rotate-90">
-          <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="2" fill="transparent" className="text-white/10" />
-          <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="2" fill="transparent"
-            className={score > 80 ? "text-emerald-500" : score > 60 ? "text-yellow-500" : "text-red-500"}
-            strokeDasharray={125.6}
-            strokeDashoffset={125.6 - (125.6 * score) / 100}
-          />
-        </svg>
-        <span className="absolute text-[10px] font-bold">{score}</span>
-      </div>
-      <span className="text-[7px] uppercase tracking-wider text-white/40">{label}</span>
-    </div>
-  );
-
   return (
-    <div className="p-6 md:p-12 lg:p-24 max-w-7xl mx-auto w-full breathing-fade pb-40 relative">
-      <div className="mb-12 md:mb-16 flex flex-col md:flex-row justify-between items-end gap-6">
-        <div>
-          <h2 className="text-4xl md:text-6xl font-serif tracking-tighter mb-2">The Team</h2>
-          <p className="text-[10px] md:text-[11px] uppercase tracking-[0.4em] text-white/30">
-            {user?.city ? `Curated for ${user.city} • ${user.budgetRange}` : "AI Curated Vendors"}
+    <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-40">
+
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+        <div className="space-y-3">
+          <h2 className="text-4xl md:text-5xl font-serif tracking-tighter">The Team</h2>
+          <div className="h-[1px] w-12 bg-white/30"></div>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">
+            {user?.city ? `Executive Board • ${user.city}` : "AI Curated Vendors"}
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex bg-white/5 p-1 rounded-lg">
+        <div className="flex flex-wrap gap-2 md:gap-4 items-center">
+          {/* Filter Tabs */}
+          <div className="bg-[#0A0A0A] border border-white/10 p-1.5 rounded-xl flex gap-1">
             {['All', 'Lender', 'Builder', 'Architect'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setSelectedTab(tab)}
-                className={`px-4 py-2 text-[10px] uppercase tracking-widest rounded-md transition-all ${selectedTab === tab ? 'bg-white text-black font-bold' : 'text-white/50 hover:text-white'}`}
+                className={`px-4 py-2 rounded-lg text-[9px] uppercase tracking-widest transition-all ${selectedTab === tab
+                    ? 'bg-white text-black font-bold shadow-lg'
+                    : 'text-zinc-500 hover:text-white hover:bg-white/5'
+                  }`}
               >
-                {tab}s
+                {tab}
               </button>
             ))}
           </div>
 
-          <div className="relative group">
-            <button className="px-4 py-3 bg-white text-black text-[10px] uppercase tracking-widest font-bold rounded-lg hover:bg-white/90 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-              + Add Resource
+          {/* Add Resource */}
+          <div className="relative group z-20">
+            <button className="px-5 py-3 bg-[#0A0A0A] text-white border border-white/10 hover:border-white/30 text-[9px] uppercase tracking-widest font-bold rounded-xl transition-all flex items-center gap-2">
+              <Search size={12} /> Scout Talent
             </button>
-            <div className="absolute right-0 top-full mt-2 w-48 bg-[#111] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform translate-y-2 group-hover:translate-y-0 z-50 shadow-2xl">
+            <div className="absolute right-0 top-full mt-2 w-48 bg-[#0A0A0A] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform translate-y-2 group-hover:translate-y-0 shadow-2xl">
               {CATEGORIES.map(cat => (
                 <button
                   key={cat}
                   onClick={() => handleResearch(cat)}
                   disabled={!!loadingCategory}
-                  className="w-full text-left px-4 py-3 text-xs text-white/60 hover:text-white hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
+                  className="w-full text-left px-4 py-3 text-[10px] uppercase tracking-wider text-zinc-400 hover:text-white hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
                 >
                   Find {cat}s
                 </button>
@@ -166,7 +161,7 @@ export const Partners: React.FC = () => {
       </div>
 
       {loadingCategory && (
-        <div className="mb-12 p-8 border border-white/10 bg-white/[0.02] flex items-center gap-6 animate-pulse">
+        <div className="mb-12 p-8 border border-white/10 bg-white/[0.02] flex items-center gap-6 animate-pulse rounded-2xl">
           <div className="w-12 h-12 rounded-full border-2 border-white/20 border-t-white animate-spin"></div>
           <div>
             <h3 className="text-xl font-serif">Scouting {loadingCategory}s in {user?.city}...</h3>
@@ -177,186 +172,247 @@ export const Partners: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredRecommendations.map(rec => (
-          <div key={rec.id} onClick={() => handleOpenVendor(rec)} className="group relative bg-[#080808] border border-white/10 p-8 hover:border-white/30 transition-all flex flex-col justify-between min-h-[400px] cursor-pointer hover:-translate-y-1 hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.1)]">
-            {rec.status === 'new' && (
-              <div className="absolute top-4 left-4 flex gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_10px_blue]"></div>
-                <span className="text-[9px] uppercase tracking-widest text-blue-400">New Insight</span>
-              </div>
-            )}
+          <div
+            key={rec.id}
+            onClick={() => handleOpenVendor(rec)}
+            className="group relative bg-[#0A0A0A] border border-white/5 p-8 hover:border-white/20 transition-all flex flex-col justify-between min-h-[380px] cursor-pointer hover:-translate-y-1 hover:shadow-2xl rounded-2xl overflow-hidden"
+          >
+            {/* Background Gradient Hover */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-            {rec.rating ? (
-              <div className="absolute top-4 right-4 flex items-center gap-1 bg-white/5 border border-white/10 px-2 py-1 rounded-full backdrop-blur-md">
-                <span className="text-yellow-400 text-[10px]">★</span>
-                <span className="text-[10px] font-bold">{rec.rating}</span>
+            {/* Header */}
+            <div className="relative z-10 flex justify-between items-start mb-6">
+              <div className="w-14 h-14 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center overflow-hidden">
+                {rec.logo_url ? (
+                  <img src={rec.logo_url} className="w-full h-full object-cover" />
+                ) : (
+                  <Briefcase className="text-white/20" />
+                )}
               </div>
-            ) : null}
+              {rec.rating && (
+                <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded-full border border-white/5">
+                  <Star size={10} className="text-yellow-500 fill-yellow-500" />
+                  <span className="text-[10px] font-bold">{rec.rating}</span>
+                </div>
+              )}
+            </div>
 
-            <div>
-              <div className="flex items-center gap-4 mb-6 mt-4">
-                <img src={rec.logo_url} className="w-12 h-12 rounded-lg bg-white/5" />
+            {/* Content */}
+            <div className="relative z-10 flex-grow">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[9px] uppercase tracking-widest text-zinc-500">{rec.category}</span>
+                {rec.verified_badge && <CheckCircle size={10} className="text-emerald-500" />}
+              </div>
+              <h4 className="text-2xl font-serif leading-tight text-white mb-3 group-hover:text-emerald-400 transition-colors">
+                {rec.name}
+              </h4>
+              <p className="text-xs text-zinc-500 leading-relaxed line-clamp-3 mb-6">
+                {rec.description}
+              </p>
+
+              {/* Metrics */}
+              <div className="grid grid-cols-3 gap-2 border-t border-white/5 pt-6">
                 <div>
-                  <h4 className="text-xl font-serif leading-tight">{rec.name}</h4>
-                  {rec.verified_badge && <span className="text-[9px] text-yellow-500 uppercase tracking-widest">★ Certified Partner</span>}
+                  <div className="text-[8px] uppercase tracking-widest text-zinc-600 mb-1">Score</div>
+                  <div className="text-lg font-serif text-white">{getOverallScore(rec)}</div>
+                </div>
+                <div>
+                  <div className="text-[8px] uppercase tracking-widest text-zinc-600 mb-1">Local</div>
+                  <div className="text-lg font-serif text-white">{rec.scores.locality}%</div>
+                </div>
+                <div>
+                  <div className="text-[8px] uppercase tracking-widest text-zinc-600 mb-1">Rep</div>
+                  <div className="text-lg font-serif text-white">{rec.scores.reputation}%</div>
                 </div>
               </div>
-              <p className="text-sm text-white/60 leading-relaxed mb-8 line-clamp-3">{rec.description}</p>
-
-              <div className="flex justify-between px-2 pb-8 border-b border-white/5">
-                {renderScoreRing(rec.scores.reputation, "Reputation")}
-                {renderScoreRing(rec.scores.affordability, "Cost Match")}
-                {renderScoreRing(rec.scores.locality, "Local")}
-              </div>
             </div>
 
-            <div className="pt-6">
-              <button className="w-full py-3 bg-white/5 group-hover:bg-white group-hover:text-black border border-white/10 transition-colors text-[10px] uppercase tracking-widest font-bold">
-                View Dossier
-              </button>
+            {/* Hover Action */}
+            <div className="relative z-10 mt-6 pt-6 border-t border-white/5 flex items-center justify-between opacity-50 group-hover:opacity-100 transition-opacity">
+              <span className="text-[9px] uppercase tracking-widest text-white">View Full Dossier</span>
+              <ArrowUpRight size={14} className="text-white" />
             </div>
+
           </div>
         ))}
 
         {recommendations.length === 0 && !loadingCategory && (
-          <div className="col-span-full p-20 border border-dashed border-white/10 text-center text-white/30">
-            <p className="uppercase tracking-widest">No partners scouted yet.</p>
-            <p className="text-xs mt-2">Complete your profile onboarding to start the search or use "Add Resource".</p>
+          <div className="col-span-full p-20 border border-dashed border-white/10 text-center rounded-3xl bg-[#0A0A0A]">
+            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 text-zinc-600">
+              <Search size={24} />
+            </div>
+            <p className="uppercase tracking-widest text-zinc-500 text-sm font-bold">Boardroom Empty</p>
+            <p className="text-xs text-zinc-600 mt-2 max-w-sm mx-auto">
+              No partners have been scouted yet. Use the "Scout Talent" button to find vendors or complete your profile.
+            </p>
           </div>
         )}
       </div>
 
+      {/* MODAL */}
       {selectedVendor && (
-        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setSelectedVendor(null)}>
-          <div className="w-full max-w-3xl bg-[#0A0A0A] border border-white/10 rounded-2xl overflow-hidden relative shadow-2xl animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setSelectedVendor(null)} className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors z-10">✕ CLOSE</button>
+        <div
+          className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300"
+          onClick={() => setSelectedVendor(null)}
+        >
+          <div
+            className="w-full max-w-4xl bg-[#0A0A0A] border border-white/10 rounded-3xl overflow-hidden relative shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedVendor(null)}
+              className="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white text-white/40 hover:text-black transition-all z-20"
+            >
+              ✕
+            </button>
 
-            <div className="p-8 md:p-12 pb-8 border-b border-white/5 flex gap-8 items-start bg-gradient-to-br from-white/[0.03] to-transparent">
-              <img src={selectedVendor.logo_url} className="w-24 h-24 rounded-2xl bg-white/5 shadow-2xl" />
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-4xl font-serif tracking-tight">{selectedVendor.name}</h2>
-                  {selectedVendor.verified_badge && (
-                    <span className="bg-yellow-500 text-black border border-yellow-400 px-3 py-1 text-[9px] uppercase tracking-widest rounded-full font-bold shadow-[0_0_15px_rgba(234,179,8,0.4)]">
-                      Certified Partner
-                    </span>
-                  )}
-                </div>
-                <p className="text-lg text-white/60">{selectedVendor.category} • {user?.city}</p>
-                <div className="flex gap-6 mt-4 items-start">
-                  <div>
-                    {selectedVendor.bbb_rating && (
-                      <div className="mb-2">
-                        <span className="bg-[#005a9c] text-white px-2 py-1 text-[10px] font-bold rounded uppercase tracking-wider shadow">
-                          BBB Accredited: {selectedVendor.bbb_rating}
-                        </span>
+            {/* Dossier Header */}
+            <div className="p-8 md:p-12 pb-8 border-b border-white/5 flex flex-col md:flex-row gap-8 items-start bg-gradient-to-b from-white/[0.02] to-transparent relative">
+              <div className="absolute top-0 right-0 p-32 opacity-[0.05] bg-emerald-500 blur-3xl rounded-full -translate-y-16 translate-x-16 pointer-events-none" />
+
+              <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 shadow-2xl">
+                {selectedVendor.logo_url ? <img src={selectedVendor.logo_url} className="w-full h-full object-cover rounded-2xl" /> : <Briefcase size={32} className="text-white/20" />}
+              </div>
+
+              <div className="space-y-4 flex-grow relative z-10">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h2 className="text-4xl md:text-5xl font-serif tracking-tighter text-white">{selectedVendor.name}</h2>
+                    {selectedVendor.verified_badge && (
+                      <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-3 py-1 text-[9px] uppercase tracking-widest rounded-full font-bold flex items-center gap-1">
+                        <Shield size={10} /> Certified
                       </div>
                     )}
-                    {selectedVendor.rating ? (
-                      <div>
-                        <div className="flex items-center gap-1 text-yellow-400 text-lg">
-                          {'★'.repeat(Math.round(selectedVendor.rating))}
-                          <span className="text-white/20">{'★'.repeat(5 - Math.round(selectedVendor.rating))}</span>
-                        </div>
-                        <p className="text-[10px] uppercase tracking-widest text-white/40">
-                          Google: {selectedVendor.rating} Stars ({selectedVendor.review_count} Reviews)
-                          {selectedVendor.years_in_business && <span className="text-white/30"> • {selectedVendor.years_in_business}</span>}
-                        </p>
-                      </div>
-                    ) : <span className="text-[10px] uppercase tracking-widest text-white/30">No trusted public ratings found</span>}
                   </div>
+                  <p className="text-lg text-zinc-500">{selectedVendor.category} • {user?.city}</p>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  {selectedVendor.rating > 0 && (
+                    <div className="px-3 py-1.5 bg-white/5 rounded-lg border border-white/5 flex items-center gap-2">
+                      <div className="flex text-yellow-500 text-xs">{'★'.repeat(Math.round(selectedVendor.rating))}</div>
+                      <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
+                        {selectedVendor.rating} ({selectedVendor.review_count} Reviews)
+                      </span>
+                    </div>
+                  )}
+                  {selectedVendor.years_in_business && (
+                    <div className="px-3 py-1.5 bg-white/5 rounded-lg border border-white/5 flex items-center gap-2 text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
+                      <div className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
+                      {selectedVendor.years_in_business} Exp
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2">
-              <div className="p-8 md:p-12 space-y-8 border-r border-white/5">
-                <h3 className="text-sm uppercase tracking-[0.2em] text-white/40">Pilot Analysis</h3>
-                <div className="p-6 bg-white/[0.02] border border-white/5 rounded-xl">
-                  <p className="text-sm leading-relaxed text-white/80">
-                    {selectedVendor.reviews_summary || <span className="animate-pulse">Analyzing market reputation...</span>}
-                  </p>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-12">
+
+              {/* Left (Analysis) */}
+              <div className="md:col-span-7 p-8 md:p-12 space-y-10 border-b md:border-b-0 md:border-r border-white/5">
+
+                <section>
+                  <h3 className="text-xs uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2"><Zap size={14} /> Executive Summary</h3>
+                  <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
+                    <p className="text-sm leading-7 text-zinc-300">
+                      {selectedVendor.reviews_summary || <span className="animate-pulse">Running AI Market Analysis...</span>}
+                    </p>
+                  </div>
+                </section>
+
                 <div className="grid grid-cols-2 gap-4">
-                  {selectedVendor.phone ? (
-                    <a href={`tel:${selectedVendor.phone}`} className="flex items-center justify-center py-4 border border-white/10 hover:bg-white hover:text-black transition-all text-xs font-bold uppercase tracking-widest">
-                      {selectedVendor.phone}
+                  {selectedVendor.phone && (
+                    <a href={`tel:${selectedVendor.phone}`} className="flex items-center justify-center gap-2 py-4 border border-white/10 rounded-xl hover:bg-white hover:text-black transition-all text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                      <Phone size={14} /> Call Office
                     </a>
-                  ) : null}
-                  {selectedVendor.website ? (
-                    <a href={selectedVendor.website} target="_blank" className="flex items-center justify-center py-4 border border-white/10 hover:bg-white hover:text-black transition-all text-xs font-bold uppercase tracking-widest">
-                      Website ↗
+                  )}
+                  {selectedVendor.website && (
+                    <a href={selectedVendor.website} target="_blank" className="flex items-center justify-center gap-2 py-4 border border-white/10 rounded-xl hover:bg-white hover:text-black transition-all text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                      Website <ExternalLink size={14} />
                     </a>
-                  ) : null}
+                  )}
                 </div>
+
               </div>
 
-              <div className="p-8 md:p-12 space-y-8">
-                <h3 className="text-sm uppercase tracking-[0.2em] text-white/40">Performance Scores</h3>
+              {/* Right (Scores & Actions) */}
+              <div className="md:col-span-5 p-8 md:p-12 space-y-10 bg-[#0A0A0A]">
 
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="w-16 h-16 rounded-full border-2 border-white/20 flex items-center justify-center text-xl font-bold bg-white/5">
+                <div className="flex items-center gap-6 pb-8 border-b border-white/5">
+                  <div className="w-20 h-20 rounded-full border-4 border-emerald-500/20 flex items-center justify-center text-3xl font-serif text-white relative">
                     {getOverallScore(selectedVendor)}
+                    <span className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full text-[10px] flex items-center justify-center font-bold text-black border-2 border-black">A+</span>
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase tracking-widest text-white/40">Pilot Score</p>
-                    <p className="text-xs text-white/30">Algorithm Match</p>
+                    <div className="text-xs font-bold text-white uppercase tracking-widest mb-1">Pilot Score</div>
+                    <div className="text-[10px] text-zinc-500">Algorithm Match for {user?.budgetRange}</div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {['Reputation', 'Affordability', 'Locality'].map(k => {
                     const val = selectedVendor.scores[k.toLowerCase() as keyof typeof selectedVendor.scores];
                     return (
-                      <div key={k} className="flex flex-col gap-2">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-white/60">{k}</span>
-                          <span className="font-bold">{val}/100</span>
+                      <div key={k} className="space-y-2">
+                        <div className="flex justify-between text-[10px] uppercase tracking-widest">
+                          <span className="text-zinc-500">{k}</span>
+                          <span className="text-white font-bold">{val}/100</span>
                         </div>
-                        <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                           <div className="h-full bg-white transition-all duration-1000 ease-out" style={{ width: `${val}%` }} />
                         </div>
                       </div>
                     )
                   })}
                 </div>
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    if (!user) return;
 
-                    const btn = e.currentTarget;
-                    const originalText = btn.innerText;
-                    btn.innerText = "Sending Invite...";
-                    btn.disabled = true;
+                <div className="pt-8">
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (!user) return;
 
-                    try {
-                      const { error } = await supabase.from('leads').insert({
-                        homeowner_id: user.id,
-                        vendor_id: selectedVendor.id,
-                        project_scope_snapshot: { city: user.city, budget: user.budgetRange },
-                        status: 'invite_sent'
-                      });
+                      const btn = e.currentTarget;
+                      const originalText = btn.innerText;
+                      btn.innerText = "Securing Invite...";
+                      btn.disabled = true;
 
-                      if (error) throw error;
+                      try {
+                        const { error } = await supabase.from('leads').insert({
+                          homeowner_id: user.id,
+                          vendor_id: selectedVendor.id,
+                          project_scope_snapshot: { city: user.city, budget: user.budgetRange },
+                          status: 'invite_sent'
+                        });
 
-                      btn.innerText = "✓ Invite Sent (Anonymous)";
-                      btn.classList.add('bg-green-600', 'text-white', 'border-green-500');
-                      btn.classList.remove('bg-white', 'text-black');
-                    } catch (err) {
-                      console.error(err);
-                      alert("Failed to send invite.");
-                      btn.innerText = originalText;
-                      btn.disabled = false;
-                    }
-                  }}
-                  className="w-full py-4 bg-white text-black font-bold uppercase tracking-widest hover:scale-105 transition-all shadow-lg mt-8 disabled:opacity-50 disabled:cursor-not-allowed">
-                  Start Conversation
-                </button>
+                        if (error) throw error;
+
+                        btn.innerText = "Invite Sent to Office";
+                        btn.classList.add('bg-emerald-600', 'border-emerald-600', 'text-white');
+                        btn.classList.remove('bg-white', 'text-black');
+                      } catch (err) {
+                        console.error(err);
+                        alert("Failed to send invite.");
+                        btn.innerText = originalText;
+                        btn.disabled = false;
+                      }
+                    }}
+                    className="w-full py-5 bg-white text-black font-bold uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Start Conversation
+                  </button>
+                  <p className="text-[9px] text-center text-zinc-600 mt-4 uppercase tracking-widest">
+                    Anonymous Inquiry • No Spam • No Obligation
+                  </p>
+                </div>
+
               </div>
             </div>
+
           </div>
         </div>
       )}
+
     </div>
   );
 };

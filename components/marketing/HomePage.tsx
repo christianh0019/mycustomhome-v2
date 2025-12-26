@@ -80,19 +80,16 @@ export const HomePage: React.FC = () => {
     ];
 
     return (
-        <div className="bg-[#030303] text-zinc-100 font-sans selection:bg-white/20 selection:text-white overflow-x-hidden">
+        <div className="bg-[#030303] text-zinc-100 font-sans selection:bg-white/20 selection:text-white overflow-x-hidden relative">
+
+            {/* UNIFIED GLOBAL BACKGROUND - Fixed simple spotlight */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1400px] h-[800px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-800/20 via-[#030303] to-[#030303]"></div>
+            </div>
 
             {/* HER0 - Elegant, Centered, Spotlight */}
-            <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden py-32">
-                {/* Ambient Background */}
-                <motion.div
-                    animate={{ opacity: [0.4, 0.6, 0.4], scale: [1, 1.1, 1] }}
-                    transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-white/[0.03] rounded-[100%] blur-[120px] pointer-events-none"
-                />
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-900/20 via-[#030303] to-[#030303]"></div>
-
-                <div className="relative z-20 max-w-7xl mx-auto px-6 text-center">
+            <section className="relative z-10 min-h-[90vh] flex items-center justify-center py-32">
+                <div className="max-w-7xl mx-auto px-6 text-center">
                     <motion.div
                         initial="hidden"
                         animate="visible"
@@ -129,7 +126,7 @@ export const HomePage: React.FC = () => {
             </section>
 
             {/* SECTION 2: THE MINEFIELD - Red/Black, Bento Grid */}
-            <section className="py-32 relative">
+            <section className="relative z-10 py-32">
                 <div className="max-w-7xl mx-auto px-6 mb-24">
                     <motion.div
                         initial="hidden"
@@ -210,7 +207,7 @@ export const HomePage: React.FC = () => {
             </section>
 
             {/* SECTION 3: THE TRUST TRAP - Centered Layout */}
-            <section className="py-40 bg-black border-y border-white/[0.03]">
+            <section className="relative z-10 py-32">
                 <div className="max-w-7xl mx-auto px-6">
                     <motion.div
                         initial="hidden"
@@ -255,14 +252,7 @@ export const HomePage: React.FC = () => {
             </section>
 
             {/* SECTION 4: THE SOLUTION - Green/Black, High Tech */}
-            <section className="py-32 relative overflow-hidden">
-                {/* Subtle Green Glow */}
-                <motion.div
-                    animate={{ opacity: [0.2, 0.4, 0.2] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-green-500/[0.03] rounded-full blur-[120px] pointer-events-none"
-                />
-
+            <section className="relative z-10 py-32">
                 <div className="max-w-7xl mx-auto px-6 relative z-10">
                     <motion.div
                         initial="hidden"
@@ -314,7 +304,7 @@ export const HomePage: React.FC = () => {
             </section>
 
             {/* SECTION 5: THE RESULTS - Big Type */}
-            <section className="py-32 bg-[#020202] border-y border-white/[0.03]">
+            <section className="relative z-10 py-32">
                 <div className="max-w-7xl mx-auto px-6">
                     <motion.div
                         initial="hidden"
@@ -353,7 +343,7 @@ export const HomePage: React.FC = () => {
             </section>
 
             {/* SECTION 6: HOW IT WORKS - SCROLL REVEAL TIMELINE */}
-            <section className="py-40 relative px-6 bg-black">
+            <section className="relative z-10 py-32 px-6">
                 <div className="max-w-5xl mx-auto">
                     <motion.div
                         initial="hidden"
@@ -381,7 +371,7 @@ export const HomePage: React.FC = () => {
             </section>
 
             {/* SECTION 8: CTA - Elegant Finish */}
-            <section className="py-40 relative text-center">
+            <section className="relative z-10 py-32 text-center">
                 <div className="relative z-10 max-w-4xl mx-auto px-6">
                     <motion.div
                         initial="hidden"

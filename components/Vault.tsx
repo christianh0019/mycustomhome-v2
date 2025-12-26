@@ -1,76 +1,323 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Shield, Upload, FileText, Image as ImageIcon, Lock,
+  MoreVertical, Trash2, Download, Search, HardDrive
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '../services/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
-import React from 'react';
+interface VaultFile {
+  name: string;
+  id: string; // usually path
+  size: number;
+  type: string;
+  created_at: string;
+  updated_at: string;
+  metadata?: any;
+}
 
 const CATEGORIES = [
-  { name: "Our Dreams", count: 12, desc: "Ideas for the house" },
-  { id: "money", name: "The Money", count: 4, desc: "Savings and bank" },
-  { name: "The Land", count: 8, desc: "Our future garden" },
-  { name: "The Build", count: 15, desc: "Worker agreements" },
+  { id: 'all', name: 'All Files' },
+  { id: 'contracts', name: 'Contracts' },
+  { id: 'plans', name: 'Plans & Drawings' },
+  { id: 'financials', name: 'Financials' },
 ];
 
 export const Vault: React.FC = () => {
+  const { user } = useAuth();
+  const [files, setFiles] = useState<VaultFile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('all');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchFiles();
+    }
+  }, [user]);
+
+  const fetchFiles = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      // List files in user's folder
+      const { data, error } = await supabase
+        .storage
+        .from('vault')
+        .list(user.id, {
+          limit: 100,
+          offset: 0,
+          sortBy: { column: 'created_at', order: 'desc' },
+        });
+
+      if (error) {
+        console.error('Error fetching vault files:', error);
+      } else {
+        setFiles(data || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement> | DragEvent) => {
+    if (!user) return;
+    let file: File | null = null;
+
+    if ('target' in event && (event.target as HTMLInputElement).files) {
+      file = (event.target as HTMLInputElement).files?.[0] || null;
+    } else if ('dataTransfer' in event && (event as any).dataTransfer.files) {
+      file = (event as any).dataTransfer.files?.[0] || null;
+    }
+
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${file.name.replace(/\s/g, '_')}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('vault')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Refresh list
+      await fetchFiles();
+    } catch (error) {
+      alert('Error uploading file: ' + (error as Error).message);
+    } finally {
+      setUploading(false);
+      setDragActive(false);
+    }
+  };
+
+  // Drag handlers
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleUpload(e as unknown as DragEvent); // Type casting for simplicity in this hybrid handler
+  };
+
+  const handleDownload = async (fileName: string) => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase.storage
+        .from('vault')
+        .download(`${user.id}/${fileName}`);
+
+      if (error) throw error;
+
+      // Create blob link to download
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Error downloading:', err);
+    }
+  };
+
+  const handleDelete = async (fileName: string) => {
+    if (!user || !window.confirm('Are you sure you want to delete this file?')) return;
+    try {
+      const { error } = await supabase.storage
+        .from('vault')
+        .remove([`${user.id}/${fileName}`]);
+
+      if (error) throw error;
+      await fetchFiles();
+    } catch (err) {
+      console.error('Error deleting:', err);
+    }
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
   return (
-    <div className="p-6 md:p-12 lg:p-24 max-w-7xl mx-auto w-full breathing-fade pb-32">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-12 md:mb-24">
-        <div className="space-y-2">
-          <h2 className="text-4xl md:text-6xl font-serif tracking-tighter">The Safe Box</h2>
-          <p className="text-[10px] md:text-[11px] uppercase tracking-[0.4em] text-white/50">Stored securely and privately</p>
-        </div>
-        <button className="w-full md:w-auto px-10 py-4 bg-white text-black text-[10px] md:text-[11px] uppercase tracking-[0.3em] font-bold hover:bg-white/90 modern-transition shadow-xl">
-          Add New File
-        </button>
-      </div>
+    <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-32">
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-16 md:mb-24">
-        {CATEGORIES.map((cat, i) => (
-          <div key={i} className="group border border-white/10 p-6 md:p-12 bg-[#080808] hover:border-white/40 modern-transition cursor-pointer flex flex-col justify-between aspect-square hover:bg-[#0c0c0c]">
-            <div className="flex justify-between items-start">
-               <span className="text-xl md:text-3xl font-serif text-white/10">0{i+1}</span>
-               <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover:bg-white modern-transition"></div>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+        <div className="space-y-3">
+          <h2 className="text-4xl md:text-5xl font-serif tracking-tighter">The Safe Box</h2>
+          <div className="h-[1px] w-12 bg-white/30"></div>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">Secure Encrypted Storage</p>
+        </div>
+
+        <div className="flex gap-4">
+          <div className="bg-[#0A0A0A] border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-4">
+            <HardDrive size={16} className="text-zinc-500" />
+            <div className="flex flex-col text-right">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-500">Storage Used</span>
+              <span className="text-xs font-bold text-white flex items-center gap-2 justify-end">
+                {files.length > 0 ? formatSize(files.reduce((acc, f) => acc + (f.metadata?.size || 0), 0)) : '0 MB'}
+              </span>
             </div>
-            <div className="space-y-1 md:space-y-3">
-              <h4 className="text-lg md:text-2xl font-serif text-white/90 truncate">{cat.name}</h4>
-              <p className="text-[8px] uppercase tracking-[0.2em] text-white/40 hidden md:block">{cat.desc}</p>
-            </div>
-            <span className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-white/60">{cat.count} Items</span>
           </div>
-        ))}
+        </div>
       </div>
 
-      <div className="border border-white/10 bg-[#050505] overflow-hidden shadow-2xl">
-        <div className="p-6 md:p-10 border-b border-white/5 flex justify-between items-center bg-[#0a0a0a]">
-           <span className="text-[9px] md:text-[11px] uppercase tracking-[0.4em] text-white/50 font-semibold">The Archive</span>
-           <span className="text-[8px] md:text-[11px] uppercase tracking-[0.3em] text-emerald-400/60 font-bold">Secure Link</span>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+
+        {/* Left: Upload Zone */}
+        <div className="lg:col-span-4 space-y-8">
+          <div
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            className={`relative h-[300px] rounded-3xl border-2 border-dashed modern-transition flex flex-col items-center justify-center p-8 text-center cursor-pointer group bg-[#0A0A0A] overflow-hidden
+                            ${dragActive ? 'border-emerald-500 bg-emerald-900/10' : 'border-white/10 hover:border-white/20'}`}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={handleUpload}
+            />
+
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+            <div className={`w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6 modern-transition ${uploading ? 'animate-pulse' : 'group-hover:scale-110'}`}>
+              {uploading ? (
+                <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Upload size={32} className="text-zinc-400 group-hover:text-white" />
+              )}
+            </div>
+
+            <h3 className="text-xl font-serif text-white mb-2 relative z-10">
+              {uploading ? 'Securing File...' : 'Drop files to secure'}
+            </h3>
+            <p className="text-xs text-zinc-500 max-w-[200px] relative z-10">
+              Drag & drop contracts, plans, drawings here.
+            </p>
+
+            <div className="mt-8 flex items-center gap-2 text-[9px] uppercase tracking-widest text-zinc-600 bg-black/50 px-3 py-1 rounded-full border border-white/5 relative z-10">
+              <Lock size={10} className="text-emerald-500" />
+              AES-256 Encrypted
+            </div>
+          </div>
+
+          {/* Security Badge */}
+          <div className="p-6 rounded-2xl bg-[#0A0A0A] border border-white/5 flex items-center gap-4">
+            <div className="p-3 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+              <Shield size={20} className="text-emerald-500" />
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-widest text-zinc-500">Vault Status</div>
+              <div className="text-sm font-medium text-white">Secure & Private</div>
+            </div>
+          </div>
         </div>
-        <div className="divide-y divide-white/5">
-           {[
-             { name: "Land_Paper_Final.pdf", category: "The Land", audit: "Looks Good!", date: "Oct 15" },
-             { name: "Money_Plan_Step1.xls", category: "The Money", audit: "Check now", date: "Oct 12", risk: true },
-             { name: "House_Pictures_V1.pdf", category: "Dreams", audit: "Verified", date: "Oct 09" }
-           ].map((file, idx) => (
-             <div key={idx} className="p-6 md:p-10 flex justify-between items-center group cursor-pointer hover:bg-white/[0.03] modern-transition">
-                <div className="flex flex-col space-y-1 flex-1 min-w-0 pr-4">
-                   <span className="text-[12px] md:text-[13px] uppercase tracking-[0.1em] font-medium truncate group-hover:text-white transition-colors">{file.name}</span>
-                   <div className="flex items-center space-x-3 md:space-x-6">
-                      <span className="text-[8px] text-white/40 uppercase tracking-[0.1em]">{file.category}</span>
-                      <span className="text-[8px] text-white/20 uppercase">/</span>
-                      <span className="text-[8px] text-white/40 uppercase tracking-[0.1em]">{file.date}</span>
-                   </div>
+
+        {/* Right: File List */}
+        <div className="lg:col-span-8">
+          {/* Filter Tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-6 mb-2 no-scrollbar">
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`px-4 py-2 rounded-full text-[10px] uppercase tracking-widest transition-all whitespace-nowrap border ${activeCategory === cat.id
+                    ? 'bg-white text-black border-white font-bold'
+                    : 'bg-transparent text-zinc-500 border-transparent hover:bg-white/5'
+                  }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-[#0A0A0A] border border-white/5 rounded-3xl overflow-hidden min-h-[400px]">
+            {loading ? (
+              <div className="w-full h-[400px] flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              </div>
+            ) : files.length === 0 ? (
+              <div className="w-full h-[400px] flex flex-col items-center justify-center text-zinc-600 p-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                  <Search size={24} className="opacity-50" />
                 </div>
-                <div className="flex items-center space-x-4 md:space-x-16">
-                   <div className="flex flex-col items-end">
-                      <span className={`text-[8px] md:text-[10px] uppercase tracking-[0.2em] font-bold ${file.risk ? 'text-red-400' : 'text-emerald-400/80'}`}>
-                        {file.audit}
-                      </span>
-                   </div>
-                   <div className="w-8 h-8 md:w-12 md:h-12 border border-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-black modern-transition">
-                      ↓
-                   </div>
-                </div>
-             </div>
-           ))}
+                <p className="text-sm font-serif mb-1 text-zinc-400">Vault is Empty</p>
+                <p className="text-xs max-w-xs">Upload important documents to keep them safe.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/5">
+                {files.map((file) => (
+                  <div key={file.id} className="p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-colors relative">
+                    <div className="flex items-center gap-5 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        {file.metadata?.mimetype?.includes('image') ? (
+                          <ImageIcon size={18} className="text-purple-400" />
+                        ) : (
+                          <FileText size={18} className="text-blue-400" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-medium text-white truncate pr-4">{file.name}</h4>
+                        <div className="flex items-center gap-3 text-[10px] uppercase tracking-wider text-zinc-500 mt-1">
+                          <span>{new Date(file.created_at).toLocaleDateString()}</span>
+                          <span className="w-1 h-1 rounded-full bg-zinc-700" />
+                          <span>{formatSize(file.metadata?.size || 0)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleDownload(file.name)}
+                        className="p-2 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white"
+                        title="Download"
+                      >
+                        <Download size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(file.name)}
+                        className="p-2 rounded-lg hover:bg-red-500/10 text-zinc-400 hover:text-red-500"
+                        title="Delete"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+
       </div>
+
     </div>
   );
 };

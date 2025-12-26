@@ -44,6 +44,11 @@ export interface Recommendation {
   phone?: string;
   reviews_summary?: string;
   verified_badge?: boolean;
+  rating?: number;
+  review_count?: number;
+  overall_score?: number;
+  bbb_rating?: string;
+  years_in_business?: string;
 }
 
 export interface Message {

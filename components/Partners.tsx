@@ -242,16 +242,28 @@ export const Partners: React.FC = () => {
                   )}
                 </div>
                 <p className="text-lg text-white/60">{selectedVendor.category} • {user?.city}</p>
-                <div className="flex gap-6 mt-4">
-                  {selectedVendor.rating ? (
-                    <div>
-                      <div className="flex items-center gap-1 text-yellow-400 text-lg">
-                        {'★'.repeat(Math.round(selectedVendor.rating))}
-                        <span className="text-white/20">{'★'.repeat(5 - Math.round(selectedVendor.rating))}</span>
+                <div className="flex gap-6 mt-4 items-start">
+                  <div>
+                    {selectedVendor.bbb_rating && (
+                      <div className="mb-2">
+                        <span className="bg-[#005a9c] text-white px-2 py-1 text-[10px] font-bold rounded uppercase tracking-wider shadow">
+                          BBB Accredited: {selectedVendor.bbb_rating}
+                        </span>
                       </div>
-                      <p className="text-[10px] uppercase tracking-widest text-white/40">{selectedVendor.rating} Rating ({selectedVendor.review_count || 0} Reviews)</p>
-                    </div>
-                  ) : <span className="text-[10px] uppercase tracking-widest text-white/30">No public ratings found</span>}
+                    )}
+                    {selectedVendor.rating ? (
+                      <div>
+                        <div className="flex items-center gap-1 text-yellow-400 text-lg">
+                          {'★'.repeat(Math.round(selectedVendor.rating))}
+                          <span className="text-white/20">{'★'.repeat(5 - Math.round(selectedVendor.rating))}</span>
+                        </div>
+                        <p className="text-[10px] uppercase tracking-widest text-white/40">
+                          Google: {selectedVendor.rating} Stars ({selectedVendor.review_count} Reviews)
+                          {selectedVendor.years_in_business && <span className="text-white/30"> • {selectedVendor.years_in_business}</span>}
+                        </p>
+                      </div>
+                    ) : <span className="text-[10px] uppercase tracking-widest text-white/30">No trusted public ratings found</span>}
+                  </div>
                 </div>
               </div>
             </div>

@@ -24,16 +24,31 @@ Stage 8: The Summit (The Payday) - Moved in?
 Interaction Style:
 - Be concise. Mobile-first.
 - Warm but authoritative. You are protecting them from the "Wild West" of construction.
-- Ask one question at a time to determine their stage.
 
-Logic:
-1. If this is the first message (or history is empty), Welcome them and ask: "To best serve you, tell me: Do you already have land, or are we just starting to dream?"
-2. If they have land -> Ask for the location to "run a preliminary audit". (This implies Stage 4 readiness).
-3. If they have a loan -> Ask who the lender is to "verify their terms". (This implies Stage 3 readiness).
-4. If they are dreaming -> Encourage them to start the "Vision Board" (Stage 1).
-5. ALWAYS Identify the "Next Step" or "Unlock" based on their answer.
+LOGIC TREE (Follow strictly):
+1. **First Interaction**: "Welcome to MyCustomHome. I am your Project Pilot, here to guide you from idea to move-in. To serve you best, do you currently OWN the land you want to build on?"
+   - IF YES -> GOTO "Land Branch".
+   - IF NO -> GOTO "Loan Branch".
 
-Output format: Just the text response. No markdown.
+2. **Land Branch**: 
+   - Ask: "Great. Do you have the property address or a survey I can analyze?"
+   - IF PROVIDED -> Reply: "I've logged that location. I'll begin a preliminary zoning analysis."
+     - **CRITICAL**: Append '[STAGE_4]' to your response.
+
+3. **Loan Branch**:
+   - Ask: "No problem. Do you have a construction loan pre-approval yet?"
+   - IF YES -> Ask: "Excellent. Which lender is it with? I'll verify their draw schedule terms."
+     - **CRITICAL**: Append '[STAGE_3]' to your response.
+   - IF NO -> Reply: "Understood. The best place to start is with your Vision, so we can estimate costs before talking to banks."
+     - **CRITICAL**: Append '[STAGE_1]' to your response.
+
+4. **Vision Branch (Stage 1)**:
+   - Ask: "Tell me about the home you're dreaming of. Style, size, or any must-haves?"
+   
+IMPORTANT:
+- If the user qualifies for a stage, YOU MUST include the tag '[STAGE_X]' (e.g., [STAGE_1], [STAGE_3], [STAGE_4]) at the very end of your message.
+- Do not output markdown.
+- Do not make up fake analysis data yet, just say "I will analyze...".
 `;
 
 export const PilotService = {
@@ -53,7 +68,7 @@ export const PilotService = {
         return (data || []).map(row => ({
             id: row.id,
             role: row.role as 'pilot' | 'user',
-            text: row.content,
+            text: row.content, // We verify parsing happened on save, but here we just read raw content
             timestamp: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }));
     },
@@ -104,7 +119,7 @@ export const PilotService = {
                     role: m.role === 'pilot' ? 'assistant' : 'user',
                     content: m.text
                 } as const)),
-                { role: 'user', content: userMessage }
+                { role: 'user', content: userMessage } // Explicitly add latest message
             ];
 
             const completion = await openai.chat.completions.create({
@@ -112,18 +127,38 @@ export const PilotService = {
                 model: 'gpt-4o',
             });
 
-            const responseText = completion.choices[0]?.message?.content || "I apologize, I'm having trouble connecting to the network. Please try again.";
+            const rawResponse = completion.choices[0]?.message?.content || "I apologize, I'm having trouble connecting to the network. Please try again.";
+
+            // --- PARSE STAGE COMMANDS ---
+            let cleanResponse = rawResponse;
+            const stageMatch = rawResponse.match(/\[STAGE_(\d+)\]/);
+
+            if (stageMatch && userId) {
+                const newStage = parseInt(stageMatch[1]);
+                console.log(`Pilot identified Stage: ${newStage}`);
+
+                // 1. Update Profile in Supabase
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ current_stage: newStage })
+                    .eq('id', userId);
+
+                if (error) console.error('Failed to update stage:', error);
+
+                // 2. Strip the tag from the message shown to user
+                cleanResponse = rawResponse.replace(/\[STAGE_\d+\]/, '').trim();
+            }
 
             // Save Pilot Response to DB
             if (userId) {
                 await supabase.from('chat_messages').insert({
                     user_id: userId,
                     role: 'pilot',
-                    content: responseText
+                    content: cleanResponse
                 });
             }
 
-            return responseText;
+            return cleanResponse;
         } catch (error) {
             console.error('Pilot Error:', error);
             return "I'm having trouble reaching the main server. Please ensure your connection is stable.";

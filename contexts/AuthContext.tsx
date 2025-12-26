@@ -8,6 +8,7 @@ interface AuthContextType {
     login: (email: string, password?: string) => Promise<void>;
     signup: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    updateProfile: (updates: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -15,28 +16,43 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
 
+    // Helper to fetch profile from DB
+    const fetchProfile = async (sessionUser: any) => {
+        try {
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', sessionUser.id)
+                .single();
+
+            if (error && error.code !== 'PGRST116') {
+                console.error('Error fetching profile:', error);
+            }
+
+            setUser({
+                id: sessionUser.id,
+                name: sessionUser.user_metadata.full_name || sessionUser.email?.split('@')[0] || 'Member',
+                email: sessionUser.email || '',
+                avatarUrl: sessionUser.user_metadata.avatar_url,
+                hasOnboarded: profile?.has_onboarded || false
+            });
+        } catch (err) {
+            console.error('Profile fetch failed', err);
+        }
+    };
+
     useEffect(() => {
         // Check active session
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
-                setUser({
-                    id: session.user.id,
-                    name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'Member',
-                    email: session.user.email || '',
-                    avatarUrl: session.user.user_metadata.avatar_url
-                });
+                fetchProfile(session.user);
             }
         });
 
         // Listen for changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session?.user) {
-                setUser({
-                    id: session.user.id,
-                    name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'Member',
-                    email: session.user.email || '',
-                    avatarUrl: session.user.user_metadata.avatar_url
-                });
+                fetchProfile(session.user);
             } else {
                 setUser(null);
             }
@@ -46,15 +62,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, []);
 
     const login = async (email: string, password?: string) => {
-        // If password is provided, use Email/Password Sign In
         if (password) {
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password
-            });
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) throw error;
         } else {
-            // Fallback to OTP if no password (legacy support or alternative)
             const { error } = await supabase.auth.signInWithOtp({ email });
             if (error) throw error;
             alert('Check your email for the login link!');
@@ -81,8 +92,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(null);
     };
 
+    const updateProfile = async (updates: Partial<User>) => {
+        if (!user) return;
+
+        // Optimistic update
+        setUser(prev => prev ? { ...prev, ...updates } : null);
+
+        // DB Update
+        if (updates.hasOnboarded !== undefined) {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ has_onboarded: updates.hasOnboarded })
+                .eq('id', user.id);
+
+            if (error) console.error('Failed to update profile:', error);
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout, updateProfile }}>
             {children}
         </AuthContext.Provider>
     );

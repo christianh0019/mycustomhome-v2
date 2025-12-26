@@ -62,7 +62,7 @@ export const PublicLayout: React.FC = () => {
                     <div>
                         <h4 className="text-xs font-bold uppercase tracking-widest mb-6">Platform</h4>
                         <div className="flex flex-col gap-4 text-white/40 text-sm">
-                            <Link to="/homeowners" className="hover:text-white transition-colors">Project Pilot</Link>
+                            <Link to="/" className="hover:text-white transition-colors">Project Pilot</Link>
                             <Link to="/vendors" className="hover:text-white transition-colors">Vendor Network</Link>
                             <Link to="/login" className="hover:text-white transition-colors">Log In</Link>
                         </div>

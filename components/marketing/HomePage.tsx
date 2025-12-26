@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, Shield, Zap, TrendingUp, Cpu, Coins, Lock, Search, Heart, Map, Home, FileText } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ArrowRight, Check, Shield, Zap, TrendingUp, Cpu, Coins, Lock, Search, Heart, Map, Home, FileText, Users } from 'lucide-react';
+
 
 export const HomePage: React.FC = () => {
     return (
@@ -17,11 +17,7 @@ export const HomePage: React.FC = () => {
                 </div>
 
                 <div className="relative z-20 max-w-7xl mx-auto px-6 text-center">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8 }}
-                    >
+                    <div>
                         <div className="inline-flex items-center gap-2 border border-white/20 rounded-full px-4 py-1 mb-8 bg-white/5 backdrop-blur-sm">
                             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                             <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-white/70">The AI Home Platform</span>
@@ -44,7 +40,7 @@ export const HomePage: React.FC = () => {
                             </Link>
                             <span className="text-xs uppercase tracking-[0.2em] text-white/40">We don't charge you a dime</span>
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
             </section>
 

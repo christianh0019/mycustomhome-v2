@@ -48,9 +48,15 @@ export const Partners: React.FC = () => {
       return;
     }
     setLoadingCategory(category);
-    await PilotService.generateVendorRecommendations(user.id, category, user.city, user.budgetRange);
-    await fetchRecommendations();
-    setLoadingCategory(null);
+    try {
+      await PilotService.generateVendorRecommendations(user.id, category, user.city, user.budgetRange);
+      await fetchRecommendations();
+    } catch (err) {
+      console.error(err);
+      alert("Scouting failed. Please try again or check your connection.");
+    } finally {
+      setLoadingCategory(null);
+    }
   };
 
   const renderScoreRing = (score: number, label: string) => (

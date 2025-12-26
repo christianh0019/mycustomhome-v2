@@ -176,11 +176,16 @@ export const PilotService = {
                 Act as a luxury custom home consultant in ${city}.
                 Recommend 3 real, high-reputation ${category}s suitable for a project budget of ${budget}.
                 
-                Return ONLY valid JSON array with objects:
+                You MUST return a JSON object with a single key "vendors" containing an array of objects.
+                Response Format:
                 {
-                    "name": "Company Name",
-                    "description": "1 sentence on why they fit this budget/area.",
-                    "scores": { "reputation": 0-100, "affordability": 0-100, "locality": 0-100 }
+                    "vendors": [
+                        {
+                            "name": "Company Name",
+                            "description": "1 sentence on why they fit this budget/area.",
+                            "scores": { "reputation": 0-100, "affordability": 0-100, "locality": 0-100 }
+                        }
+                    ]
                 }
             `;
 
@@ -191,13 +196,18 @@ export const PilotService = {
             });
 
             const content = completion.choices[0].message.content;
-            if (!content) return;
+            if (!content) throw new Error("Empty response from AI");
 
             // 3. Parse and Save
             const data = JSON.parse(content);
-            const recommendations = data.recommendations || data.vendors || data; // Handle likely JSON keys
+            const recommendations = data.vendors;
 
-            const rows = (Array.isArray(recommendations) ? recommendations : []).map((rec: any) => ({
+            if (!Array.isArray(recommendations) || recommendations.length === 0) {
+                console.warn("AI returned no vendors:", data);
+                return; // Or throw, but UI handles empty via re-fetch
+            }
+
+            const rows = recommendations.map((rec: any) => ({
                 user_id: userId,
                 category: category,
                 name: rec.name,
@@ -208,11 +218,13 @@ export const PilotService = {
             }));
 
             if (rows.length > 0) {
-                await supabase.from('recommendations').insert(rows);
+                const { error } = await supabase.from('recommendations').insert(rows);
+                if (error) console.error('Supabase Insert Error:', error);
             }
 
         } catch (e) {
             console.error('AI Research Failed:', e);
+            throw e; // Propagate to UI
         }
     }
 };

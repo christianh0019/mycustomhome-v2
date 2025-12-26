@@ -1,9 +1,12 @@
-
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { Message } from '../types';
 import { PilotService } from '../services/PilotService';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import {
+  Send, Paperclip, X, Image as ImageIcon, FileText,
+  Sparkles, ArrowUp, Bot, User
+} from 'lucide-react';
 
 interface Attachment {
   name: string;
@@ -19,8 +22,6 @@ export const ProjectPilot: React.FC = () => {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [currentAttachment, setCurrentAttachment] = useState<Attachment | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-
-  // State to track if we've done the initial load scroll
   const [hasInitialized, setHasInitialized] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -49,19 +50,13 @@ export const ProjectPilot: React.FC = () => {
     initChat();
   }, [user, hasInitialized]);
 
-  // SCROLL LOGIC
-  // 1. On init (history load), snap instantly to bottom
+  // Scroll: Snap on init, smooth after
   useLayoutEffect(() => {
-    if (hasInitialized) {
-      scrollToBottom('auto');
-    }
+    if (hasInitialized) scrollToBottom('auto');
   }, [hasInitialized]);
 
-  // 2. On new messages, scroll smoothly
   useEffect(() => {
-    if (hasInitialized) {
-      scrollToBottom('smooth');
-    }
+    if (hasInitialized) scrollToBottom('smooth');
   }, [messages, isTyping]);
 
   const scrollToBottom = (behavior: 'auto' | 'smooth') => {
@@ -127,19 +122,18 @@ export const ProjectPilot: React.FC = () => {
         <div className="space-y-4">
           {pureText && <p>{pureText}</p>}
           {isImage ? (
-            <div onClick={() => setLightboxUrl(url)} className="group relative cursor-zoom-in w-full max-w-sm rounded-lg overflow-hidden border border-white/10 bg-black/50 hover:border-white/30 modern-transition shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-50"></div>
+            <div onClick={() => setLightboxUrl(url)} className="group relative cursor-zoom-in w-full max-w-sm rounded-2xl overflow-hidden border border-white/10 bg-black/50 hover:border-white/30 transition-all shadow-lg">
               <img src={url} alt="attachment" className="w-full h-auto object-cover max-h-64" onLoad={() => scrollToBottom('smooth')} />
-              <div className="absolute bottom-0 left-0 right-0 p-3 bg-black/60 backdrop-blur-md text-[10px] text-white/90 truncate opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
-                {name}
-              </div>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
             </div>
           ) : (
-            <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-4 bg-white/[0.03] border border-white/10 rounded-xl hover:bg-white/[0.08] transition-all group hover:scale-[1.02] hover:shadow-lg">
-              <div className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-lg text-xl group-hover:scale-110 transition-transform">📄</div>
+            <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-4 bg-white/[0.05] border border-white/10 rounded-2xl hover:bg-white/[0.1] transition-all group">
+              <div className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl text-white group-hover:scale-110 transition-transform">
+                <FileText size={20} />
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white/90 truncate">{name}</p>
-                <p className="text-[9px] text-white/40 uppercase tracking-widest">Document</p>
+                <p className="text-[10px] text-white/40 uppercase tracking-widest">Document</p>
               </div>
             </a>
           )}
@@ -150,94 +144,126 @@ export const ProjectPilot: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-black max-w-4xl mx-auto w-full px-4 md:px-12 relative">
+    <div className="h-full flex flex-col bg-black w-full relative overflow-hidden">
+
+      {/* Background Ambience */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-emerald-500/5 blur-[100px] rounded-full" />
+      </div>
+
       {lightboxUrl && (
         <div className="fixed inset-0 z-[100] bg-black/98 flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setLightboxUrl(null)}>
-          <img src={lightboxUrl} className="max-w-full max-h-screen object-contain rounded-sm shadow-2xl scale-in-95 animate-in duration-300" />
-          <button className="absolute top-8 right-8 text-white/50 hover:text-white text-4xl transition-colors">&times;</button>
+          <img src={lightboxUrl} className="max-w-full max-h-screen object-contain rounded-lg shadow-2xl scale-in-95 animate-in duration-300" />
+          <button className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors">
+            <X size={32} />
+          </button>
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto py-10 md:py-20 space-y-8 pr-1 no-scrollbar scroll-smooth">
-        {messages.map((m, idx) => (
-          <div key={m.id} className={`flex ${m.role === 'pilot' ? 'justify-start' : 'justify-end'} group`}>
-            <div className={`max-w-[90%] md:max-w-[85%] space-y-2 animate-in slide-in-from-bottom-2 duration-500 fade-in fill-mode-backwards`} style={{ animationDelay: `${idx * 50}ms` }}>
-              <div className={`flex items-center space-x-2 mb-1 ${m.role === 'pilot' ? 'opacity-50' : 'opacity-50 justify-end'}`}>
-                {m.role === 'pilot' && <div className="w-3 h-[1px] bg-white"></div>}
-                <span className="text-[9px] uppercase tracking-[0.3em] font-medium text-white/60">
-                  {m.role === 'pilot' ? 'Guide' : 'You'}
-                </span>
-                {m.role !== 'pilot' && <div className="w-3 h-[1px] bg-white"></div>}
-              </div>
-              <div className={`p-5 md:p-8 text-[13px] md:text-[14px] leading-relaxed tracking-wide border backdrop-blur-md transition-all duration-300 ${m.role === 'pilot'
-                ? 'bg-white/[0.02] border-white/5 text-white/80 rounded-tr-2xl rounded-br-2xl rounded-bl-2xl'
-                : 'bg-white text-black font-medium border-white shadow-[0_10px_40px_rgba(255,255,255,0.1)] rounded-tl-2xl rounded-bl-2xl rounded-br-2xl'
-                }`}>
-                {renderMessageContent(m.text)}
+      {/* Chat Area */}
+      <div className="flex-1 overflow-y-auto px-4 md:px-0 py-8 scroll-smooth no-scrollbar relative z-10 w-full max-w-3xl mx-auto">
+
+        {/* Welcome Spacer */}
+        <div className="h-12" />
+
+        {messages.map((m, idx) => {
+          const isPilot = m.role === 'pilot';
+          return (
+            <div key={m.id} className={`flex ${isPilot ? 'justify-start' : 'justify-end'} mb-8 group w-full`}>
+              <div className={`max-w-[85%] md:max-w-[80%] flex gap-4 ${isPilot ? 'flex-row' : 'flex-row-reverse'}`}>
+
+                {/* Avatar */}
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-2 shadow-lg border border-white/5
+                            ${isPilot ? 'bg-gradient-to-br from-emerald-500/20 to-black text-emerald-400' : 'bg-white/10 text-white/60'}
+                        `}>
+                  {isPilot ? <Sparkles size={14} /> : <User size={14} />}
+                </div>
+
+                <div className={`space-y-1 ${isPilot ? 'items-start' : 'items-end'} flex flex-col`}>
+                  {/* Name */}
+                  <span className="text-[9px] uppercase tracking-widest text-white/30 px-1">
+                    {isPilot ? 'Project Pilot' : 'You'}
+                  </span>
+
+                  {/* Message Bubble */}
+                  <div className={`p-4 md:p-6 text-sm leading-7 tracking-wide backdrop-blur-xl border shadow-xl transition-all duration-300
+                                ${isPilot
+                      ? 'bg-white/[0.03] border-white/5 text-zinc-300 rounded-2xl rounded-tl-sm'
+                      : 'bg-white text-black font-medium border-white rounded-2xl rounded-tr-sm'
+                    }`}>
+                    {renderMessageContent(m.text)}
+                  </div>
+                </div>
+
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
+
         {isTyping && (
-          <div className="flex justify-start animate-in fade-in duration-500">
-            <div className="bg-white/[0.02] border border-white/5 px-6 py-4 rounded-full flex gap-1 items-center">
-              <div className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <div className="flex justify-start mb-8 w-full max-w-[85%] gap-4">
+            <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 border border-white/5 flex items-center justify-center flex-shrink-0 mt-2">
+              <Sparkles size={14} className="animate-pulse" />
+            </div>
+            <div>
+              <span className="text-[9px] uppercase tracking-widest text-white/30 px-1 mb-1 block">Project Pilot</span>
+              <div className="bg-white/[0.03] border border-white/5 px-4 py-3 rounded-2xl rounded-tl-sm flex gap-1 items-center h-[48px] w-[80px]">
+                <div className="w-1.5 h-1.5 bg-emerald-500/50 rounded-full animate-[bounce_1s_infinite_0ms]"></div>
+                <div className="w-1.5 h-1.5 bg-emerald-500/50 rounded-full animate-[bounce_1s_infinite_150ms]"></div>
+                <div className="w-1.5 h-1.5 bg-emerald-500/50 rounded-full animate-[bounce_1s_infinite_300ms]"></div>
+              </div>
             </div>
           </div>
         )}
-        {/* INVISIBLE ANCHOR FOR SCROLLING */}
+
         <div ref={messagesEndRef} className="h-4" />
       </div>
 
-      <div className="pb-8 pt-6 sticky bottom-0 bg-gradient-to-t from-black via-black/95 to-transparent backdrop-blur-sm -mx-4 px-4 md:mx-0 md:px-0 z-10 transition-all overflow-hidden">
+      {/* Input Area (Sticky Bottom) */}
+      <div className="pb-8 pt-4 px-4 sticky bottom-0 bg-gradient-to-t from-black via-black to-transparent z-20 w-full max-w-3xl mx-auto">
         {currentAttachment && (
-          <div className="mx-auto max-w-3xl mb-4 flex items-center gap-3 p-3 bg-white/[0.03] border border-white/10 rounded-xl animate-in slide-in-from-bottom-2 backdrop-blur-md">
-            {currentAttachment.type === 'image' ? (
-              <img src={currentAttachment.url} className="w-12 h-12 rounded object-cover border border-white/10 shadow-sm" />
-            ) : (
-              <div className="w-12 h-12 flex items-center justify-center bg-white/10 rounded text-xl">📄</div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-white/50 uppercase tracking-wider mb-0.5">Attached</p>
-              <p className="text-xs font-medium text-white/90 truncate">{currentAttachment.name}</p>
-            </div>
-            <button
-              onClick={() => setCurrentAttachment(null)}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-colors"
-            >
-              ✕
+          <div className="flex items-center gap-3 p-3 bg-[#111] border border-white/10 rounded-xl mb-3 animate-in slide-in-from-bottom-2">
+            {currentAttachment.type === 'image' ? <ImageIcon size={16} className="text-purple-400" /> : <Paperclip size={16} className="text-blue-400" />}
+            <span className="text-xs text-white truncate max-w-[200px]">{currentAttachment.name}</span>
+            <button onClick={() => setCurrentAttachment(null)} className="ml-auto p-1 hover:bg-white/10 rounded text-white/50 hover:text-white">
+              <X size={14} />
             </button>
           </div>
         )}
 
-        <div className="relative group max-w-3xl mx-auto flex items-center gap-3">
+        <div className="relative group flex items-center gap-3 bg-[#0A0A0A] border border-white/10 rounded-[2rem] p-2 pr-2 shadow-2xl focus-within:border-white/30 transition-all">
           <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className={`w-12 h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all transform hover:scale-105 active:scale-95 border border-transparent hover:border-white/10 ${isUploading ? 'animate-pulse' : ''}`}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
           >
-            {isUploading ? '...' : '📎'}
+            {isUploading ? <div className="w-4 h-4 border-2 border-t-white rounded-full animate-spin" /> : <Paperclip size={18} />}
           </button>
+
           <input
-            autoFocus value={input}
+            autoFocus
+            value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            className="flex-1 bg-white/[0.03] hover:bg-white/[0.05] focus:bg-white/[0.08] border border-white/10 rounded-full py-4 px-8 text-[13px] tracking-[0.05em] outline-none focus:border-white/20 transition-all placeholder:text-white/20 shadow-inner"
-            placeholder={isUploading ? "Uploading..." : "Type your instruction..."}
+            className="flex-1 bg-transparent text-sm text-white placeholder:text-zinc-600 outline-none h-10"
+            placeholder={isUploading ? "Uploading..." : "Message Project Pilot..."}
             disabled={isUploading}
           />
+
           <button
             onClick={handleSend}
             disabled={isUploading || (!input.trim() && !currentAttachment)}
-            className="w-14 h-14 flex items-center justify-center bg-white text-black rounded-full font-bold transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:shadow-none"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white text-black hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all"
           >
-            ↑
+            <ArrowUp size={18} strokeWidth={3} />
           </button>
         </div>
+        <div className="text-center mt-3">
+          <p className="text-[9px] text-zinc-600 uppercase tracking-widest">AI Pilot can make mistakes. Verify important details.</p>
+        </div>
       </div>
+
     </div>
   );
 };

@@ -59,6 +59,7 @@ export const PilotService = {
     },
 
     async sendMessage(history: Message[], userMessage: string, userId?: string): Promise<string> {
+        console.log('PilotService: Sending message...');
         try {
             const apiKey = process.env.OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY;
 

@@ -1,3 +1,4 @@
+
 import OpenAI from 'openai';
 import { Message } from '../types';
 import { supabase } from './supabase';
@@ -8,25 +9,26 @@ let openai: OpenAI | null = null;
 const SYSTEM_PROMPT = `
 You are the "Project Pilot" for MyCustomHome, an elite, fiduciary Custom Home Agency.
 Your Role: A warm, professional, and protective guide (The "Sorting Hat").
-Your Goal: Assess where the user is in their home building journey (The "9 Stages") and welcome them.
+Your Goal: Assess the user's journey (The "9 Stages") and analyze any visual inputs they provide.
 
 The 9 Stages:
 Stage 0: Onboarding (You are here)
-Stage 1: Vision (The Dreaming) - Do they know what they want?
-Stage 2: Pre-Approval (The Reality Check) - Do they have a soft credit check?
-Stage 3: Lenders (The Gate) - Do they have a bank loan?
-Stage 4: Land (The Dirt) - Do they own land?
-Stage 5: Architect (The Blueprint) - Do they have plans?
-Stage 6: Builder (The Match) - Do they have a builder?
-Stage 7: Management (The Watchdog) - Under construction?
-Stage 8: The Summit (The Payday) - Moved in?
+Stage 1: Vision - Do they know what they want?
+Stage 2: Pre-Approval - Soft credit check?
+Stage 3: Lenders - Bank loan?
+Stage 4: Land - Own land?
+Stage 5: Architect - Plans?
+Stage 6: Builder - Builder?
+Stage 7: Management - Construction?
+Stage 8: The Summit - Move in?
 
 Interaction Style:
 - Be concise. Mobile-first.
-- Warm but authoritative. You are protecting them from the "Wild West" of construction.
+- Warm but authoritative.
+- **Vision Capable**: If the user sends an image, analyze it for architectural style, land terrain, or document details.
 
 LOGIC TREE (Follow strictly):
-1. **First Interaction**: "Welcome to MyCustomHome. I am your Project Pilot, here to guide you from idea to move-in. To serve you best, do you currently OWN the land you want to build on?"
+1. **First Interaction**: "Welcome to MyCustomHome. I am your Project Pilot. To serve you best, do you currently OWN the land you want to build on?"
    - IF YES -> GOTO "Land Branch".
    - IF NO -> GOTO "Loan Branch".
 
@@ -48,7 +50,6 @@ LOGIC TREE (Follow strictly):
 IMPORTANT:
 - If the user qualifies for a stage, YOU MUST include the tag '[STAGE_X]' (e.g., [STAGE_1], [STAGE_3], [STAGE_4]) at the very end of your message.
 - Do not output markdown.
-- Do not make up fake analysis data yet, just say "I will analyze...".
 `;
 
 export const PilotService = {
@@ -68,100 +69,92 @@ export const PilotService = {
         return (data || []).map(row => ({
             id: row.id,
             role: row.role as 'pilot' | 'user',
-            text: row.content, // We verify parsing happened on save, but here we just read raw content
+            text: row.content,
             timestamp: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }));
     },
 
     async sendMessage(history: Message[], userMessage: string, userId?: string): Promise<string> {
-        console.log('PilotService: Sending message...');
         try {
-            // Try to find the key in standard vars, or decode the encoded fallback
+            // 1. Config & API Key
             let apiKey = process.env.OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY;
-
-            // Decaying fallback: If direct key is missing, check for encoded version (Bypasses GitHub Scanning)
             if (!apiKey) {
                 const encoded = import.meta.env.VITE_OPENAI_ENCODED || process.env.VITE_OPENAI_ENCODED;
-                if (encoded) {
-                    try {
-                        apiKey = atob(encoded);
-                    } catch (e) {
-                        console.error('Failed to decode key', e);
-                    }
-                }
+                if (encoded) try { apiKey = atob(encoded); } catch (e) { console.error(e); }
             }
+            if (!apiKey) return "I'm currently offline (API Key Missing).";
 
-            if (!apiKey) {
-                console.warn('OPENAI_API_KEY is missing');
-                return "I'm currently offline (API Key Missing). Please check your configuration.";
-            }
+            if (!openai) openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
 
-            if (!openai) {
-                openai = new OpenAI({
-                    apiKey: apiKey,
-                    dangerouslyAllowBrowser: true
-                });
-            }
-
-            // Save User Message to DB
+            // 2. Save User Message (Raw Text with [Attachment] tag)
             if (userId) {
                 await supabase.from('chat_messages').insert({
-                    user_id: userId,
-                    role: 'user',
-                    content: userMessage
+                    user_id: userId, role: 'user', content: userMessage
                 });
             }
 
-            // Format history for OpenAI
+            // 3. Helper to format content for GPT-4 Vision
+            const formatContent = (text: string): any[] | string => {
+                const attachMatch = text.match(/\[Attachment: .*?\]\((.*?)\)/);
+                if (attachMatch) {
+                    const url = attachMatch[1];
+                    const cleanText = text.replace(attachMatch[0], '').trim();
+
+                    // Simple extension check to see if it's an image
+                    const isImage = /\.(jpg|jpeg|png|webp|gif)$/i.test(url);
+
+                    if (isImage) {
+                        return [
+                            { type: "text", text: cleanText || "Analyze this image." },
+                            { type: "image_url", image_url: { url: url } }
+                        ];
+                    }
+                    // PDFs/Docs: AI can't read directly yet via standard vision, treat as text link context
+                    return text;
+                }
+                return text;
+            };
+
+            // 4. Construct Payload
             const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
                 { role: 'system', content: SYSTEM_PROMPT },
                 ...history.map(m => ({
                     role: m.role === 'pilot' ? 'assistant' : 'user',
-                    content: m.text
-                } as const)),
-                { role: 'user', content: userMessage } // Explicitly add latest message
+                    content: formatContent(m.text)
+                } as any)), // Cast to 'any' to handle the complex content union type
+                { role: 'user', content: formatContent(userMessage) as any }
             ];
 
+            // 5. Call OpenAI
             const completion = await openai.chat.completions.create({
                 messages,
-                model: 'gpt-4o',
+                model: 'gpt-4o', // Vision enabled model
             });
 
-            const rawResponse = completion.choices[0]?.message?.content || "I apologize, I'm having trouble connecting to the network. Please try again.";
+            const rawResponse = completion.choices[0]?.message?.content || "I apologize, I'm having trouble connecting.";
 
-            // --- PARSE STAGE COMMANDS ---
+            // 6. Handle Stage Logic
             let cleanResponse = rawResponse;
             const stageMatch = rawResponse.match(/\[STAGE_(\d+)\]/);
 
             if (stageMatch && userId) {
                 const newStage = parseInt(stageMatch[1]);
-                console.log(`Pilot identified Stage: ${newStage}`);
-
-                // 1. Update Profile in Supabase
-                const { error } = await supabase
-                    .from('profiles')
-                    .update({ current_stage: newStage })
-                    .eq('id', userId);
-
-                if (error) console.error('Failed to update stage:', error);
-
-                // 2. Strip the tag from the message shown to user
+                await supabase.from('profiles').update({ current_stage: newStage }).eq('id', userId);
                 cleanResponse = rawResponse.replace(/\[STAGE_\d+\]/, '').trim();
             }
 
-            // Save Pilot Response to DB
+            // 7. Save and Return
             if (userId) {
                 await supabase.from('chat_messages').insert({
-                    user_id: userId,
-                    role: 'pilot',
-                    content: cleanResponse
+                    user_id: userId, role: 'pilot', content: cleanResponse
                 });
             }
 
             return cleanResponse;
+
         } catch (error) {
             console.error('Pilot Error:', error);
-            return "I'm having trouble reaching the main server. Please ensure your connection is stable.";
+            return "network error";
         }
     }
 };

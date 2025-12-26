@@ -40,6 +40,10 @@ export interface Recommendation {
   };
   status: 'new' | 'viewed' | 'contacted';
   logo_url?: string;
+  website?: string;
+  phone?: string;
+  reviews_summary?: string;
+  verified_badge?: boolean;
 }
 
 export interface Message {

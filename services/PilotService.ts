@@ -158,7 +158,7 @@ export const PilotService = {
         }
     },
 
-    async generateVendorRecommendations(userId: string, category: string, city: string, budget: string): Promise<void> {
+    async generateVendorRecommendations(userId: string, category: string, city: string, budget: string, existingNames: string[] = []): Promise<void> {
         try {
             // 1. Config
             let apiKey = process.env.OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY;
@@ -176,6 +176,8 @@ export const PilotService = {
                 Act as a luxury custom home consultant in ${city}.
                 Recommend 3 real, high-reputation ${category}s suitable for a project budget of ${budget}.
                 
+                IMPORTANT: Do NOT recommend these companies: ${existingNames.join(', ')}.
+
                 You MUST return a JSON object with a single key "vendors" containing an array of objects.
                 Response Format:
                 {
@@ -218,13 +220,64 @@ export const PilotService = {
             }));
 
             if (rows.length > 0) {
-                const { error } = await supabase.from('recommendations').insert(rows);
+                // Use upsert to handle unique constraint violation gracefully
+                const { error } = await supabase.from('recommendations')
+                    .upsert(rows, { onConflict: 'user_id, name', ignoreDuplicates: true });
+
                 if (error) console.error('Supabase Insert Error:', error);
             }
 
         } catch (e) {
             console.error('AI Research Failed:', e);
             throw e; // Propagate to UI
+        }
+    },
+
+    async enrichVendorData(vendor: any): Promise<void> {
+        try {
+            let apiKey = process.env.OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY;
+            if (!apiKey) {
+                const encoded = import.meta.env.VITE_OPENAI_ENCODED || process.env.VITE_OPENAI_ENCODED;
+                if (encoded) try { apiKey = atob(encoded); } catch (e) { console.error(e); }
+            }
+            if (!apiKey || !openai) {
+                if (apiKey) openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
+                else return;
+            }
+
+            const prompt = `
+                Research the company "${vendor.name}" (a ${vendor.category}) in or near ${vendor.city || 'local area'}.
+                Find their website, phone number, and summarize their online reputation (reviews from Google, Houzz, etc).
+
+                Return JSON:
+                {
+                    "website": "url or empty",
+                    "phone": "number or empty",
+                    "reviews_summary": "2-3 sentences summarizing their reputation. Be honest about pros/cons.",
+                    "verified": true (if you found real data)
+                }
+            `;
+
+            const completion = await openai!.chat.completions.create({
+                messages: [{ role: 'system', content: prompt }],
+                model: 'gpt-4o',
+                response_format: { type: "json_object" }
+            });
+
+            const content = completion.choices[0].message.content;
+            if (!content) return;
+
+            const data = JSON.parse(content);
+
+            await supabase.from('recommendations').update({
+                website: data.website,
+                phone: data.phone,
+                reviews_summary: data.reviews_summary,
+                verified_badge: data.verified
+            }).eq('id', vendor.id);
+
+        } catch (e) {
+            console.error('Enrichment Failed:', e);
         }
     }
 };

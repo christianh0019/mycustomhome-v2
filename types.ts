@@ -23,6 +23,9 @@ export interface User {
   companyName?: string;
   city?: string;
   budgetRange?: string;
+  phone?: string;
+  lenderName?: string;
+  preApprovalInfo?: string;
 }
 
 export interface Recommendation {

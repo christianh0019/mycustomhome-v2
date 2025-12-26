@@ -37,6 +37,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 hasOnboarded: profile?.has_onboarded ?? false,
                 currentStage: profile?.current_stage ?? 0,
                 role: (profile?.role as UserRole) || 'homeowner',
+                city: profile?.city,
+                budgetRange: profile?.budget_range,
+                phone: profile?.phone,
+                lenderName: profile?.lender_name,
+                preApprovalInfo: profile?.pre_approval_info,
                 // companyName: profile?.company_name // Would need to add this column
             });
         } catch (err) {
@@ -107,6 +112,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updates.city !== undefined) dbUpdates.city = updates.city;
         if (updates.budgetRange !== undefined) dbUpdates.budget_range = updates.budgetRange;
         if (updates.currentStage !== undefined) dbUpdates.current_stage = updates.currentStage;
+        if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
+        if (updates.lenderName !== undefined) dbUpdates.lender_name = updates.lenderName;
+        if (updates.preApprovalInfo !== undefined) dbUpdates.pre_approval_info = updates.preApprovalInfo;
 
         if (Object.keys(dbUpdates).length > 0) {
             const { error } = await supabase

@@ -9,7 +9,7 @@ import { EquityClub } from './components/EquityClub';
 import { BottomNav } from './components/BottomNav';
 import { Settings } from './components/Settings';
 import { LoginScreen } from './components/LoginScreen';
-import { OnboardingTour } from './components/OnboardingTour';
+import { SmartOnboarding } from './components/SmartOnboarding';
 import { KnowledgeBase } from './components/KnowledgeBase';
 import { VendorDashboard } from './components/VendorDashboard';
 import { AppTab } from './types';
@@ -54,7 +54,7 @@ const AppContent: React.FC = () => {
   // RENDER: Homeowner App
   return (
     <div className="flex h-screen bg-black text-white font-sans overflow-hidden">
-      {user && !user.hasOnboarded && <OnboardingTour />}
+      {user && !user.hasOnboarded && <SmartOnboarding />}
       {/* Sidebar - Desktop Only */}
       <div className="hidden md:flex">
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />

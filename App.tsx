@@ -8,6 +8,9 @@ import { PublicLayout } from './components/marketing/PublicLayout';
 import { HomePage } from './components/marketing/HomePage';
 import { VendorPage } from './components/marketing/VendorPage';
 
+// Vendor
+import { VendorConnectPage } from './components/vendor/VendorConnectPage';
+
 // App Components
 import { MainApp } from './components/MainApp';
 import { LoginScreen } from './components/LoginScreen';
@@ -32,6 +35,9 @@ const AppRoutes = () => {
 
       {/* AUTH */}
       <Route path="/login" element={<LoginScreen />} />
+
+      {/* VENDOR CONNECTION (Token Access - No Auth Required) */}
+      <Route path="/connect/:token" element={<VendorConnectPage />} />
 
       {/* PROTECTED APP - The Dashboard */}
       <Route path="/app/*" element={

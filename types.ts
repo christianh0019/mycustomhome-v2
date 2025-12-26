@@ -78,20 +78,32 @@ export interface AuditMessage {
   riskDetail?: string;
 }
 
+// Vendor Connection Types
+export type LeadStatus = 'draft' | 'vetting' | 'active' | 'matched' | 'closed';
+export type InviteStatus = 'sent' | 'viewed' | 'accepted' | 'declined' | 'expired';
+
 export interface Lead {
   id: string;
   homeowner_id: string;
-  vendor_id?: string;
-  status: 'pending' | 'invite_sent' | 'accepted' | 'declined' | 'invoiced';
-  commission_rate: number;
-  project_scope_snapshot?: any;
   created_at: string;
+  status: LeadStatus;
+  project_title: string;
+  budget_range: string;
+  location_city: string;
+  location_state: string;
+  scope_summary: string;
+  timeline: string;
 }
 
 export interface VendorInvite {
   id: string;
   lead_id: string;
+  lead?: Lead; // Joined
+  vendor_email: string;
   token: string;
-  email_sent_to: string;
+  status: InviteStatus;
+  created_at: string;
   expires_at: string;
+  viewed_at?: string;
+  accepted_at?: string;
 }

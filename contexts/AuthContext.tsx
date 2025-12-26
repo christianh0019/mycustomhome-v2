@@ -34,7 +34,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 id: sessionUser.id,
                 name: sessionUser.user_metadata.full_name || sessionUser.email?.split('@')[0] || 'Member',
                 email: sessionUser.email || '',
-                avatarUrl: sessionUser.user_metadata.avatar_url,
+                bio: profile?.bio || '',
+                avatarUrl: profile?.avatar_url || sessionUser.user_metadata.avatar_url,
                 hasOnboarded: profile?.has_onboarded ?? false,
                 currentStage: profile?.current_stage ?? 0,
                 role: (profile?.role as UserRole) || 'homeowner',
@@ -43,7 +44,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 phone: profile?.phone,
                 lenderName: profile?.lender_name,
                 preApprovalInfo: profile?.pre_approval_info,
-                // companyName: profile?.company_name // Would need to add this column
             });
         } catch (err) {
             console.error('Profile fetch failed', err);
@@ -126,6 +126,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
         if (updates.lenderName !== undefined) dbUpdates.lender_name = updates.lenderName;
         if (updates.preApprovalInfo !== undefined) dbUpdates.pre_approval_info = updates.preApprovalInfo;
+        if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
+        if (updates.avatarUrl !== undefined) dbUpdates.avatar_url = updates.avatarUrl;
 
         if (Object.keys(dbUpdates).length > 0) {
             const { error } = await supabase

@@ -16,6 +16,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  bio?: string; // User biography/status
   avatarUrl?: string; // Optional URL for profile picture
   hasOnboarded?: boolean;
   currentStage?: number;

@@ -235,6 +235,21 @@ export const PilotService = {
 
     async enrichVendorData(vendor: any): Promise<void> {
         try {
+            // Google Credentials (Encoded for basic obfuscation)
+            const GOOGLE_KEY = atob("QUl6YVN5QmsxMWlUbnRUVkx3c1dlZDE1cGU2UjJFbFR2RFZCMURV");
+            const GOOGLE_CX = "013e75e3328574069";
+
+            async function searchGoogle(query: string) {
+                try {
+                    const res = await fetch(`https://www.googleapis.com/customsearch/v1?key=${GOOGLE_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(query)}`);
+                    const data = await res.json();
+                    return data.items?.map((item: any) => `Title: ${item.title}\nSnippet: ${item.snippet}\nLink: ${item.link}`).join('\n\n') || "";
+                } catch (e) {
+                    console.error("Google Search Failed", e);
+                    return "";
+                }
+            }
+
             let apiKey = process.env.OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY;
             if (!apiKey) {
                 const encoded = import.meta.env.VITE_OPENAI_ENCODED || process.env.VITE_OPENAI_ENCODED;
@@ -245,22 +260,32 @@ export const PilotService = {
                 else return;
             }
 
+            // 1. PERFORM LIVE GOOGLE SEARCH
+            const searchQuery = `${vendor.name} ${vendor.city || ''} reviews phone number`;
+            console.log("Searching Google for:", searchQuery);
+            const searchResults = await searchGoogle(searchQuery);
+
             const prompt = `
-                Perform a DEEP RESEARCH analysis on "${vendor.name}" (${vendor.category}) in ${vendor.city || 'local context'}.
+                Analyze these search results for "${vendor.name}" (${vendor.category}) in ${vendor.city}:
                 
-                You must act as a Senior Procurement Officer. Do NOT hallucinate specific review counts if you don't know them. 
-                Instead, adhere to these rules:
-                1. Website/Phone: Must be accurate or null.
-                2. Ratings: If you know the real Google/Houzz/Yelp score, use it. If not, estimate based on tiers: 4.8 (Exceptional), 4.5 (Great), 4.0 (Good).
-                3. Review Count: If unknown, estimate magnitude (e.g., 10+, 50+, 100+) or return 0.
-                4. Summary: Write a professional, detailed 3-sentence analysis citing specifics (years in business, awards, specific strengths).
+                --- SEARCH RESULTS ---
+                ${searchResults}
+                ----------------------
+
+                Act as a Data Verification Expert. Extract the EXACT data found in the text above.
+                
+                Rules:
+                1. Rating/Count: Look for text like "4.8 (120)" or "4.5 stars". Use the highest confidence source (Google/Houzz/BBB).
+                2. Website/Phone: Extract the most likely official URL and phone number from the links/snippets.
+                3. Summary: Write a 2-sentence summary based ONLY on the snippets (e.g. "Rated highly on Houzz for custom builds...").
+                4. Verified: Set true if you found matching results.
 
                 Return JSON:
                 {
                     "website": "url or null",
                     "phone": "formatted phone or null",
-                    "reviews_summary": "Professional procurement analysis...",
-                    "verified": boolean (true only if you found a real digital footprint),
+                    "reviews_summary": "Summary...",
+                    "verified": boolean,
                     "rating": number (e.g. 4.8),
                     "review_count": number (integer)
                 }

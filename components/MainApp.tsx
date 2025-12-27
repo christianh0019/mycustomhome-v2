@@ -23,25 +23,6 @@ export const MainApp: React.FC = () => {
     const { user } = useAuth();
     const { activeTab, setActiveTab } = useNavigation();
 
-    // TEMP: Reset logic for demo user as requested
-    useEffect(() => {
-        if (user && user.id === '948d73db-0897-473e-b6e8-0281f31e5643') { // christian@buildsurge.co
-            // Check if we already reset this session? 
-            // Ideally we only do it once. 
-            // But for now, let's assume if currentStage > 0 we reset?
-            // Or user said "set my account back".
-            // I will run it once on mount if condition met.
-            const hasReset = sessionStorage.getItem('has_reset_demo_user');
-            if (!hasReset) {
-                console.log("Resetting Demo User...");
-                RoadmapService.resetProgress(user.id).then(() => {
-                    sessionStorage.setItem('has_reset_demo_user', 'true');
-                    window.location.reload(); // Reload to reflect
-                });
-            }
-        }
-    }, [user]);
-
     // RENDER: Vendor App
     if (user && user.role === 'vendor') {
         return <VendorDashboard />;

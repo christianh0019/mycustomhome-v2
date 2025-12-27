@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 // Define the shape of our form data
@@ -15,15 +15,14 @@ interface FormData {
 }
 
 const STAGES = [
-    { id: 1, title: 'Stage 1: Vision', desc: 'I have an idea, but nothing else.' },
-    { id: 2, title: 'Stage 2: Pre-Approval', desc: 'I need to know my buying power.' },
-    { id: 3, title: 'Stage 3: Lenders', desc: 'I need a construction loan.' },
-    { id: 4, title: 'Stage 4: Land', desc: 'I am looking for the perfect lot.' },
-    { id: 5, title: 'Stage 5: Architect', desc: 'I have land, I need drawings.' },
-    { id: 6, title: 'Stage 6: Builder', desc: 'I have plans, I need a builder.' },
-    { id: 7, title: 'Stage 7: Contracts', desc: 'I am signing paperwork.' },
-    { id: 8, title: 'Stage 8: Build', desc: 'Dirt is moving!' },
-    { id: 9, title: 'Stage 9: Move-In', desc: 'Pack the boxes.' },
+    { id: 1, title: 'Orientation', desc: 'I am just getting started.' },
+    { id: 2, title: 'Financial Foundation', desc: 'I need to know my buying power.' },
+    { id: 3, title: 'Land Acquisition', desc: 'I am looking for or have a lot.' },
+    { id: 4, title: 'Design & Engineering', desc: 'I need architectural drawings.' },
+    { id: 5, title: 'Permitting', desc: 'I am ready to submit to the city.' },
+    { id: 6, title: 'Bidding', desc: 'I need to select a builder/subs.' },
+    { id: 7, title: 'Construction Admin', desc: 'Dirt is moving / Building.' },
+    { id: 8, title: 'Closeout', desc: 'Final inspections and move-in.' },
 ];
 
 import { RoadmapService } from '../services/RoadmapService';
@@ -56,32 +55,36 @@ export const SmartOnboarding: React.FC = () => {
     const flow = getFlow();
     const currentStepId = flow[stepIndex];
 
+    // AUTO-SUBMIT / AUTO-VERIFY when reaching COMPLETE
+    useEffect(() => {
+        if (currentStepId === 'COMPLETE') {
+            const timer = setTimeout(() => {
+                submit();
+            }, 500); // Short delay for animation
+            return () => clearTimeout(timer);
+        }
+    }, [currentStepId]);
+
     const next = () => {
         if (stepIndex < flow.length - 1) setStepIndex(stepIndex + 1);
     };
 
     const submit = async () => {
         // 1. Update Profile Basics
-        await updateProfile({
-            hasOnboarded: true,
-            name: `${data.firstName} ${data.lastName}`,
-            phone: data.phone,
-            city: data.city,
-            budgetRange: data.budget,
-            currentStage: 0,
-            lenderName: data.lenderName,
-            preApprovalInfo: data.preApprovalStatus
-        });
-
-        // 2. Initial Verification (Orientation > Smart Onboarding)
         if (user) {
+            await updateProfile({
+                hasOnboarded: true,
+                name: `${data.firstName} ${data.lastName}`,
+                phone: data.phone,
+                city: data.city,
+                budgetRange: data.budget,
+                currentStage: 0,
+                lenderName: data.lenderName,
+                preApprovalInfo: data.preApprovalStatus
+            });
+
+            // 2. Initial Verification (Orientation > Smart Onboarding)
             try {
-                // Verify 'profile_setup' in Stage 0
-                // We pass empty stage_progress or current because updateProfile is async and context might lag slightly
-                // But verified is independent.
-                // We fetch current progress locally if needed, but verifyTask handles merging.
-                // Actually verifyTask needs the OLD progress map to merge. 
-                // We can pass user.stage_progress (which might be stale, but likely empty if new).
                 await RoadmapService.verifyTask(user.id, 0, 'profile_setup', user.stage_progress || {});
             } catch (err) {
                 console.error("Failed to auto-verify onboarding task", err);
@@ -94,7 +97,7 @@ export const SmartOnboarding: React.FC = () => {
     const renderIntro = () => (
         <div className="space-y-6 animate-in slide-in-from-right duration-500">
             <h1 className="text-4xl md:text-6xl font-serif tracking-tighter">Welcome.</h1>
-            <p className="text-xl md:text-2xl font-light text-white/60">Let's build your Digital Family Office.</p>
+            <p className="text-xl md:text-2xl font-light text-white/60">Let's build your custom home the right way.</p>
             <button onClick={next} className="mt-8 px-12 py-4 bg-white text-black font-bold uppercase tracking-widest hover:scale-105 transition-transform">
                 Start
             </button>
@@ -253,11 +256,13 @@ export const SmartOnboarding: React.FC = () => {
                 {currentStepId === 'COMPLETE' && (
                     <div className="text-center space-y-6 animate-in zoom-in-95 duration-700">
                         <div className="w-24 h-24 bg-white text-black rounded-full flex items-center justify-center text-4xl mx-auto mb-6">✓</div>
-                        <h2 className="text-4xl font-serif">Setup Complete.</h2>
-                        <p className="text-white/50">Your Digital Family Office is ready.</p>
-                        <button onClick={submit} className="px-12 py-4 bg-white text-black font-bold uppercase tracking-widest hover:scale-105 transition-transform shadow-[0_0_40px_rgba(255,255,255,0.3)]">
-                            Enter MCH
-                        </button>
+                        <h2 className="text-4xl font-serif">You're Verified.</h2>
+                        <p className="text-white/50">Your orientation is complete. Entering your dashboard...</p>
+                        {/* Auto-redirect or minimal button */}
+                        <div className="flex items-center justify-center gap-2 text-sm text-emerald-400 animate-pulse">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            Configuring your map...
+                        </div>
                     </div>
                 )}
             </div>

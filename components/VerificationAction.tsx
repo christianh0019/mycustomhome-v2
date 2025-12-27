@@ -35,25 +35,27 @@ export const VerificationAction: React.FC<VerificationActionProps> = ({ action, 
     }
 
     const handleClick = (e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent card from toggling if inside a clickable area
+        e.stopPropagation();
 
-        // TODO: Replace these alerts with actual Modal Triggers
         if (action.type === 'UPLOAD_FILE') {
-            console.log("Trigger Upload Modal", action.config);
-            // Simulate completion for now until we have real file upload events
-            // In real app, this button opens a modal, and the modal calls onVerify upon success.
-            const confirmed = window.confirm(`[MOCK] Upload ${action.config.targetFolder}? \n\nClick OK to simulate successful upload and verification.`);
-            if (confirmed) onVerify();
+            // For file uploads, we generally want to direct them to Vault or Pilot or specific input
+            // But if it's "Upload Inspiration", we want to send them to Project Pilot (as per user request)
+            if (action.config.targetFolder === 'Inspiration') {
+                // Trigger Navigation
+                window.dispatchEvent(new CustomEvent('navigate-tab', { detail: { tab: 'ProjectPilot' } }));
+                // Also maybe trigger a pilot intent?
+                return;
+            }
+
+            // Standard Upload
+            const confirmed = window.confirm(`Please upload your ${action.config.targetFolder} documents in the Vault or Project Pilot to verify this step.`);
         }
         else if (action.type === 'TALK_TO_PILOT') {
-            console.log("Trigger Chat Intent", action.config);
-            window.alert(`[MOCK] Opening Chat with intent: ${action.config.intent}`);
-            // Chat usually doesn't auto-verify. The user might need to manually check it after chatting.
-            // For this MVP, let's allow manual verify after clicking "Chat".
-            onVerify();
+            // Direct to Project Pilot
+            window.dispatchEvent(new CustomEvent('navigate-tab', { detail: { tab: 'ProjectPilot' } }));
+            return;
         }
         else if (action.type === 'FORM_INPUT') {
-            console.log("Trigger Form Modal", action.config);
             const input = window.prompt(`[MOCK] Form: ${action.label}\nEnter value to verify:`, "Simulated Input");
             if (input) onVerify();
         }

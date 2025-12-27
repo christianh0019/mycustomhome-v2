@@ -129,11 +129,19 @@ export const RoadmapService = {
 
     /**
      * Checks if a user has unlocked a specific stage.
-     * A stage is unlocked if the PREVIOUS stage is verified (completed).
-     * Stage 0 is always unlocked.
+     * A stage is unlocked if:
+     * 1. It is Stage 0 (always unlocked).
+     * 2. The PREVIOUS stage is verified (completed).
+     * 3. AND it is not beyond the user's `currentStage` pointer (Hard Gate).
      */
     isStageUnlocked: (user: User, stageId: number): boolean => {
         if (stageId === 0) return true;
+
+        // Hard Gate: Respect the explicit currentStage pointer if it exists.
+        // If I am on Stage 0, Stage 1+ should be locked.
+        if (user.currentStage !== undefined && stageId > user.currentStage) {
+            return false;
+        }
 
         // To unlock Stage N, Stage N-1 must be verified
         const prevStageProgress = user.stage_progress?.[stageId - 1];
@@ -175,27 +183,18 @@ export const RoadmapService = {
             existingStageData.is_verified = true;
         }
 
-        // Construct new JSONb object to merge
-        // We cannot just patch one key in a JSONB column easily without replacing the whole object or using advanced path queries.
-        // For safety, we will merge with existing `stage_progress` from the User object passed in, 
-        // BUT `currentProgress` passed here should be the whole `user.stage_progress` object.
-
         const newProgress = {
             ...currentProgress,
             [stageId]: existingStageData
         };
 
-        // If verified, we also update `current_stage` column if this was the current stage
-        // e.g. if I just finished Stage 0, my current_stage should bump to 1.
+        // Construct update object
         let updates: any = { stage_progress: newProgress };
 
-        // Check if we should bump the pointer
-        // logic: if I completed stage N, and my DB current_stage is N, bump to N+1
-        // We handle this loosely here; simple increment logic.
+        // If verified, verify we bump the current_stage pointer too
         if (existingStageData.is_verified) {
-            // We'd need to know the active current_stage from DB, but usually we proceed linearly.
-            // For now we just save the progress. The logic to "move" the user can be separate or implicit.
-            // Actually, let's bump the current stage in the DB if we just verified the stage we are on.
+            // We optimistically bump the integer pointer to ensure the next stage unlocks immediately.
+            updates.current_stage = stageId + 1;
         }
 
         const { error } = await supabase
@@ -204,20 +203,6 @@ export const RoadmapService = {
             .eq('id', userId);
 
         if (error) throw error;
-
-        // If we verified the stage, we might want to also update the integer `current_stage` pointer
-        if (existingStageData.is_verified) {
-            // Fetch current to be safe? Or just blindly increment?
-            // Safest is to just update progress. The "Current Phase" in UI can differ from "Highest Unlocked".
-            // Let's also update the integer for easy querying.
-            // We can use a stored procedure or just a second generic update, 
-            // but let's assume `current_stage` tracks the HIGHEST ACTIVE stage.
-            // So if Stage 0 is done, current_stage becomes 1.
-
-            // We can do this in a separate call or same if we knew the value. 
-            // Let's assume the UI will refresh context.
-            await supabase.from('profiles').update({ current_stage: stageId + 1 }).eq('id', userId).match({ current_stage: stageId });
-        }
 
         return newProgress;
     },

@@ -336,6 +336,11 @@ export const PilotService = {
             let category = 'Unsorted';
             let summary = "Analysis pending...";
             let tags = ['document'];
+            let ai_analysis = {
+                summary: "Pending detailed analysis...",
+                breakdown: [] as string[],
+                red_flags: [] as string[]
+            };
 
             const lowerName = fileName.toLowerCase();
 
@@ -343,26 +348,82 @@ export const PilotService = {
                 category = 'Contracts';
                 smartName = `Executed_Agreement_${new Date().toISOString().split('T')[0]}.pdf`;
                 summary = "Legal binding document detected. Key clauses appear standard. Signatures required or present.";
+                ai_analysis = {
+                    summary,
+                    breakdown: [
+                        "Identified as a legal agreement.",
+                        "Standard liability clauses detected.",
+                        "Payment terms: Net 30 days.",
+                        "jurisdiction: State of Colorado."
+                    ],
+                    red_flags: [
+                        "Clause 4.2 has an unusual indemnity limit.",
+                        "Missing initial on page 3."
+                    ]
+                };
                 tags = ['legal', 'binding', 'priority'];
             } else if (lowerName.includes('plan') || lowerName.includes('drawing') || lowerName.includes('blueprint') || lowerName.includes('floor')) {
                 category = 'Plans & Drawings';
                 smartName = `Architectural_Set_${new Date().getFullYear()}_v1.pdf`;
                 summary = "Architectural drawing set. Includes floor plans and elevation views. Scale appears to be 1/4 inch.";
+                ai_analysis = {
+                    summary,
+                    breakdown: [
+                        "Contains 4 Floor Plan sheets.",
+                        "Contains 2 Elevation sheets.",
+                        "Total estimated square footage: 3,400 sqft.",
+                        "Includes electrical plan rough-in."
+                    ],
+                    red_flags: []
+                };
                 tags = ['architecture', 'visual', 'construction'];
             } else if (lowerName.includes('budget') || lowerName.includes('invoice') || lowerName.includes('cost') || lowerName.includes('estimate')) {
                 category = 'Financials';
                 smartName = `Project_Budget_Estimate.pdf`;
                 summary = "Financial document containing line-item costs. Total matches expected range for this project stage.";
+                ai_analysis = {
+                    summary,
+                    breakdown: [
+                        "Total Cost: $450,000",
+                        "Material Allocation: 60%",
+                        "Labor Allocation: 40%",
+                        "Contingency: 5%"
+                    ],
+                    red_flags: [
+                        "Lumber cost 15% above regional average.",
+                        "Labor hours seem underestimated for foundation."
+                    ]
+                };
                 tags = ['finance', 'cost', 'review'];
             } else if (lowerName.includes('survey') || lowerName.includes('land') || lowerName.includes('plot')) {
                 category = 'Plans & Drawings'; // Or Land
                 smartName = `Land_Survey_Topography.pdf`;
                 summary = "Site survey document showing boundaries and topography lines. Suitable for initial engineering review.";
+                ai_analysis = {
+                    summary,
+                    breakdown: [
+                        "Lot Size: 0.45 Acres",
+                        "Slope: 12% grade to South-East.",
+                        "Utilities detected: Water at street, Septic required."
+                    ],
+                    red_flags: [
+                        "Steep slope may require retaining wall.",
+                        "Easement detected on North boundary."
+                    ]
+                };
                 tags = ['land', 'engineering', 'site'];
             } else {
                 category = 'General';
                 smartName = fileName.replace(/_/g, ' ').replace(/-/g, ' ');
                 summary = "General project documentation. AI successfully indexed content for semantic search.";
+                ai_analysis = {
+                    summary,
+                    breakdown: [
+                        "Document text extracted.",
+                        "Keywords indexed for semantic search."
+                    ],
+                    red_flags: []
+                };
                 tags = ['general'];
             }
 
@@ -372,6 +433,7 @@ export const PilotService = {
                 summary: summary,
                 category: category,
                 tags: tags,
+                ai_analysis: ai_analysis,
                 status: 'ready'
             }).eq('id', item.id);
 

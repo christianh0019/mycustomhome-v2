@@ -230,8 +230,8 @@ export const Vault: React.FC = () => {
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
                 className={`px-4 py-2 rounded-full text-[10px] uppercase tracking-widest transition-all whitespace-nowrap border ${activeCategory === cat.id
-                    ? 'bg-white text-black border-white font-bold'
-                    : 'bg-transparent text-zinc-500 border-transparent hover:bg-white/5'
+                  ? 'bg-white text-black border-white font-bold'
+                  : 'bg-transparent text-zinc-500 border-transparent hover:bg-white/5'
                   }`}
               >
                 {cat.name}
@@ -313,7 +313,26 @@ export const Vault: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-8 space-y-8">
+            <div className="space-y-6">
+
+              {/* Red Flags Alert */}
+              {selectedFile.ai_analysis?.red_flags && selectedFile.ai_analysis.red_flags.length > 0 && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl animate-pulse">
+                  <h4 className="text-[10px] uppercase tracking-widest text-red-400 mb-2 flex items-center gap-2">
+                    <Shield size={12} /> Critical Attention Required
+                  </h4>
+                  <ul className="space-y-1">
+                    {selectedFile.ai_analysis.red_flags.map((flag, idx) => (
+                      <li key={idx} className="text-xs text-red-200 flex items-start gap-2">
+                        <span className="mt-1 w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
+                        {flag}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* AI Summary */}
               <div>
                 <h4 className="text-[10px] uppercase tracking-widest text-zinc-500 mb-3 flex items-center gap-2">
                   <Sparkles size={12} className="text-purple-400" /> AI Executive Summary
@@ -322,12 +341,28 @@ export const Vault: React.FC = () => {
                   <p className="text-sm text-zinc-300 leading-relaxed">
                     {selectedFile.status === 'analyzing'
                       ? <span className="animate-pulse">AI is currently processing this document to extract key insights...</span>
-                      : selectedFile.summary || "No summary available."}
+                      : selectedFile.ai_analysis?.summary || selectedFile.summary || "No summary available."}
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* Key Breakdown */}
+              {selectedFile.ai_analysis?.breakdown && selectedFile.ai_analysis.breakdown.length > 0 && (
+                <div>
+                  <h4 className="text-[10px] uppercase tracking-widest text-zinc-500 mb-3 flex items-center gap-2">
+                    <BrainCircuit size={12} className="text-emerald-400" /> Key Insights
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {selectedFile.ai_analysis.breakdown.map((item, idx) => (
+                      <div key={idx} className="p-3 bg-white/[0.02] border border-white/5 rounded-lg text-xs text-zinc-400 flex items-start gap-2">
+                        <span className="text-emerald-500/50">•</span> {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
                 <div>
                   <p className="text-[9px] uppercase tracking-widest text-zinc-600 mb-1">Category</p>
                   <p className="text-sm text-white">{selectedFile.category}</p>
@@ -337,23 +372,22 @@ export const Vault: React.FC = () => {
                   <p className="text-sm text-zinc-400 truncate">{selectedFile.original_name}</p>
                 </div>
               </div>
-
-              <div className="flex gap-4 pt-4 border-t border-white/5">
-                <button
-                  onClick={() => handleDownload(selectedFile)}
-                  className="flex-1 py-3 bg-white text-black font-bold text-xs uppercase tracking-widest rounded hover:bg-white/90 flex items-center justify-center gap-2"
-                >
-                  <Download size={14} /> Download
-                </button>
-                <button
-                  onClick={() => handleDelete(selectedFile)}
-                  className="px-6 py-3 border border-red-500/20 hover:bg-red-500/10 text-red-400 text-xs uppercase tracking-widest rounded transition-colors flex items-center gap-2"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
             </div>
 
+            <div className="flex gap-4 pt-4 border-t border-white/5">
+              <button
+                onClick={() => handleDownload(selectedFile)}
+                className="flex-1 py-3 bg-white text-black font-bold text-xs uppercase tracking-widest rounded hover:bg-white/90 flex items-center justify-center gap-2"
+              >
+                <Download size={14} /> Download
+              </button>
+              <button
+                onClick={() => handleDelete(selectedFile)}
+                className="px-6 py-3 border border-red-500/20 hover:bg-red-500/10 text-red-400 text-xs uppercase tracking-widest rounded transition-colors flex items-center gap-2"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           </div>
         </div>
       )}

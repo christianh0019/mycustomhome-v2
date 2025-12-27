@@ -108,3 +108,23 @@ export interface VendorInvite {
   viewed_at?: string;
   accepted_at?: string;
 }
+
+export interface VaultItem {
+  id: string;
+  user_id: string;
+  file_path: string;
+  original_name: string;
+  smart_name?: string;
+  summary?: string;
+  category: string;
+  tags?: string[];
+  status: 'analyzing' | 'ready' | 'error';
+  ai_analysis?: {
+    summary: string;
+    breakdown: string[];
+    red_flags: string[];
+  };
+  created_at: string;
+  file_size?: number;
+  file_type?: string;
+}

@@ -2,11 +2,13 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabase';
 import { PilotService } from '../services/PilotService';
-import { Recommendation } from '../types';
+import { Recommendation, AppTab } from '../types';
 import {
   Shield, Star, Zap, Briefcase, MapPin,
   ArrowUpRight, CheckCircle, Search, ExternalLink, Phone
 } from 'lucide-react';
+import { OnboardingModal } from './OnboardingModal';
+import { markFeatureAsSeen } from './NewBadge';
 
 const CATEGORIES = ['Lender', 'Builder', 'Architect', 'Land Surveyor'];
 
@@ -19,6 +21,26 @@ export const Partners: React.FC = () => {
 
   const [initialFetchDone, setInitialFetchDone] = useState(false);
   const autoScoutAttempted = useRef(false);
+
+  // Tour State
+  const [showTour, setShowTour] = useState(false);
+
+  // Check Local Storage for Tour
+  useEffect(() => {
+    const TOUR_KEY = 'has_seen_partners_tour';
+    const hasSeen = localStorage.getItem(TOUR_KEY);
+
+    if (!hasSeen) {
+      setShowTour(true);
+    }
+  }, []);
+
+  const handleTourClose = () => {
+    const TOUR_KEY = 'has_seen_partners_tour';
+    localStorage.setItem(TOUR_KEY, 'true');
+    setShowTour(false);
+    markFeatureAsSeen(AppTab.Partners);
+  };
 
   // Fetch Recs
   const fetchRecommendations = async () => {
@@ -110,7 +132,19 @@ export const Partners: React.FC = () => {
     : sortedRecommendations.filter(r => r.category === selectedTab || r.category + 's' === selectedTab);
 
   return (
-    <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-40">
+    <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-32">
+      <OnboardingModal
+        isOpen={showTour}
+        onClose={handleTourClose}
+        title="Your Dream Team"
+        description="Building a custom home requires a team of experts. We help you find and manage them."
+        features={[
+          "AI Vetting: We analyze track records to find the best matches.",
+          "Direct Access: Communicate directly with lenders, architects, and builders.",
+          "Unified Management: Keep all your contracts and contacts in one secure place."
+        ]}
+        type="TAB_WELCOME"
+      />
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
@@ -130,8 +164,8 @@ export const Partners: React.FC = () => {
                 key={tab}
                 onClick={() => setSelectedTab(tab)}
                 className={`px-4 py-2 rounded-lg text-[9px] uppercase tracking-widest transition-all ${selectedTab === tab
-                    ? 'bg-white text-black font-bold shadow-lg'
-                    : 'text-zinc-500 hover:text-white hover:bg-white/5'
+                  ? 'bg-white text-black font-bold shadow-lg'
+                  : 'text-zinc-500 hover:text-white hover:bg-white/5'
                   }`}
               >
                 {tab}

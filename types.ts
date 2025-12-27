@@ -58,6 +58,7 @@ export interface Recommendation {
   rating?: number;
   review_count?: number;
   overall_score?: number;
+  percentage_match?: number;
   content_warnings?: string[];
   safety_score?: number;
   bbb_rating?: string;

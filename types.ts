@@ -12,12 +12,18 @@ export enum AppTab {
 
 export type UserRole = 'homeowner' | 'vendor' | 'admin';
 
+// Roadmap Gating
+export interface StageProgress {
+  completed_tasks: string[];
+  is_verified: boolean;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
-  bio?: string; // User biography/status
-  avatarUrl?: string; // Optional URL for profile picture
+  bio?: string;
+  avatarUrl?: string;
   hasOnboarded?: boolean;
   currentStage?: number;
   role?: UserRole;
@@ -27,6 +33,9 @@ export interface User {
   phone?: string;
   lenderName?: string;
   preApprovalInfo?: string;
+
+  // Roadmap Gating
+  stage_progress?: Record<number, StageProgress>;
 }
 
 export interface Recommendation {
@@ -48,6 +57,8 @@ export interface Recommendation {
   rating?: number;
   review_count?: number;
   overall_score?: number;
+  content_warnings?: string[];
+  safety_score?: number;
   bbb_rating?: string;
   years_in_business?: string;
 }

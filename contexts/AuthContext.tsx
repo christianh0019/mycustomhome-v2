@@ -44,6 +44,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 phone: profile?.phone,
                 lenderName: profile?.lender_name,
                 preApprovalInfo: profile?.pre_approval_info,
+                stage_progress: profile?.stage_progress || {},
             });
         } catch (err) {
             console.error('Profile fetch failed', err);

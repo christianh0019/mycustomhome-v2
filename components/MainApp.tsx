@@ -15,9 +15,11 @@ import { VendorDashboard } from './VendorDashboard';
 import { AppTab } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
+import { useNavigation } from '../contexts/NavigationContext';
+
 export const MainApp: React.FC = () => {
     const { user } = useAuth();
-    const [activeTab, setActiveTab] = useState<AppTab>(AppTab.ProjectPilot);
+    const { activeTab, setActiveTab } = useNavigation();
 
     // RENDER: Vendor App
     if (user && user.role === 'vendor') {

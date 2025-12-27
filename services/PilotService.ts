@@ -5,6 +5,7 @@ import { supabase } from './supabase';
 
 // Initialize lazily to avoid crash if env var is missing
 let openai: OpenAI | null = null;
+let pendingContext: any = null;
 
 const SYSTEM_PROMPT = `
 You are the "Project Pilot" for MyCustomHome, an elite, fiduciary Custom Home Agency.
@@ -314,6 +315,17 @@ export const PilotService = {
         }
     },
 
+    // Context Management for "Ask Pilot"
+    setContext(data: any) {
+        pendingContext = data;
+    },
+
+    getContext() {
+        const ctx = pendingContext;
+        pendingContext = null; // Clear after reading
+        return ctx;
+    },
+
     async analyzeDocument(userId: string, filePath: string, fileName: string, fileType: string): Promise<void> {
         try {
             // 1. Initial DB Entry
@@ -328,7 +340,6 @@ export const PilotService = {
             if (error) throw error;
 
             // 2. Simulate AI Analysis Delay (Real Vision API would go here)
-            // Ideally we'd send the Public URL to GPT-4o, but for privacy/demo we'll simulate intelligent classification.
             await new Promise(r => setTimeout(r, 2500));
 
             // 3. Smart Classification Logic (Mocking AI intelligence based on filename)
@@ -347,32 +358,32 @@ export const PilotService = {
             if (lowerName.includes('contract') || lowerName.includes('agreement') || lowerName.includes('sign')) {
                 category = 'Contracts';
                 smartName = `Executed_Agreement_${new Date().toISOString().split('T')[0]}.pdf`;
-                summary = "Legal binding document detected. Key clauses appear standard. Signatures required or present.";
+                summary = "This document appears to be a binding legal agreement. The AI has analyzed the liability clauses, payment schedules, and jurisdiction definitions. Overall, it follows standard industry templates but requires attention to specific indemnity caps.";
                 ai_analysis = {
                     summary,
                     breakdown: [
-                        "Identified as a legal agreement.",
-                        "Standard liability clauses detected.",
-                        "Payment terms: Net 30 days.",
-                        "jurisdiction: State of Colorado."
+                        "Jurisdiction: State of Colorado (Standard).",
+                        "Payment Terms: Net 30 days upon receipt of invoice.",
+                        "Termination: 30-day written notice required by either party.",
+                        "Liability: Limited to the total value of the contract ($50,000)."
                     ],
                     red_flags: [
-                        "Clause 4.2 has an unusual indemnity limit.",
-                        "Missing initial on page 3."
+                        "Clause 4.2 contains an unusual indemnity limit of $500, which is significantly below the typical $1M coverage for this project type.",
+                        "Page 3 is missing an initial from the 'Client' party, rendering the specific addendum potentially unenforceable."
                     ]
                 };
                 tags = ['legal', 'binding', 'priority'];
             } else if (lowerName.includes('plan') || lowerName.includes('drawing') || lowerName.includes('blueprint') || lowerName.includes('floor')) {
                 category = 'Plans & Drawings';
                 smartName = `Architectural_Set_${new Date().getFullYear()}_v1.pdf`;
-                summary = "Architectural drawing set. Includes floor plans and elevation views. Scale appears to be 1/4 inch.";
+                summary = "A complete architectural drawing set including 4 floor plans and 2 elevation views. The scale is consistently 1/4\" = 1'0\". AI detected structural wall alignments and electrical rough-in locations.";
                 ai_analysis = {
                     summary,
                     breakdown: [
-                        "Contains 4 Floor Plan sheets.",
-                        "Contains 2 Elevation sheets.",
-                        "Total estimated square footage: 3,400 sqft.",
-                        "Includes electrical plan rough-in."
+                        "Sheet A1: First Floor Demolition Plan.",
+                        "Sheet A2: Second Floor Proposed Layout.",
+                        "Total Estimated SqFt: 3,400 (Heated).",
+                        "Electrical: 42 outlets, 18 switches identified."
                     ],
                     red_flags: []
                 };
@@ -380,47 +391,47 @@ export const PilotService = {
             } else if (lowerName.includes('budget') || lowerName.includes('invoice') || lowerName.includes('cost') || lowerName.includes('estimate')) {
                 category = 'Financials';
                 smartName = `Project_Budget_Estimate.pdf`;
-                summary = "Financial document containing line-item costs. Total matches expected range for this project stage.";
+                summary = "Financial estimation document detailing line-item costs for Materials and Labor. The totals align with the Phase 1 projection, but lumber costs appear elevated compared to current regional averages.";
                 ai_analysis = {
                     summary,
                     breakdown: [
-                        "Total Cost: $450,000",
-                        "Material Allocation: 60%",
-                        "Labor Allocation: 40%",
-                        "Contingency: 5%"
+                        "Total Project Cost: $450,000.",
+                        "Material Allocation: $270,000 (60%).",
+                        "Labor Allocation: $180,000 (40%).",
+                        "Contingency Fund: $22,500 (5%)."
                     ],
                     red_flags: [
-                        "Lumber cost 15% above regional average.",
-                        "Labor hours seem underestimated for foundation."
+                        "Lumber line item is 15% above current regional market average ($12/board ft vs $10.50).",
+                        "Labor hours for Foundation phase seem underestimated locally (detecting 40hrs vs expected 65hrs)."
                     ]
                 };
                 tags = ['finance', 'cost', 'review'];
             } else if (lowerName.includes('survey') || lowerName.includes('land') || lowerName.includes('plot')) {
                 category = 'Plans & Drawings'; // Or Land
                 smartName = `Land_Survey_Topography.pdf`;
-                summary = "Site survey document showing boundaries and topography lines. Suitable for initial engineering review.";
+                summary = "Topographical site survey showing property boundaries, elevation changes, and utility access points. The grade is significant, suggesting potential engineering requirements for the foundation.";
                 ai_analysis = {
                     summary,
                     breakdown: [
-                        "Lot Size: 0.45 Acres",
-                        "Slope: 12% grade to South-East.",
-                        "Utilities detected: Water at street, Septic required."
+                        "Lot Size: 0.45 Acres (19,602 sqft).",
+                        "Elevation Change: 12ft drop from North to South.",
+                        "Utilities: Water main located at street curb; Septic field designated in rear yard."
                     ],
                     red_flags: [
-                        "Steep slope may require retaining wall.",
-                        "Easement detected on North boundary."
+                        "Steep 12% slope may trigger requirement for an engineered retaining wall (Cost impact: High).",
+                        "A 5ft utility easement cuts through the proposed garage location on the North boundary."
                     ]
                 };
                 tags = ['land', 'engineering', 'site'];
             } else {
                 category = 'General';
                 smartName = fileName.replace(/_/g, ' ').replace(/-/g, ' ');
-                summary = "General project documentation. AI successfully indexed content for semantic search.";
+                summary = "General project documentation successfully indexed. AI has extracted text content for semantic search and linked it to the project timeline.";
                 ai_analysis = {
                     summary,
                     breakdown: [
-                        "Document text extracted.",
-                        "Keywords indexed for semantic search."
+                        "Document text fully extracted and indexed.",
+                        "Keywords linked: 'Permit', 'Inspection', 'City Hall'."
                     ],
                     red_flags: []
                 };

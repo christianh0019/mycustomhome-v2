@@ -8,7 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { PilotService } from '../services/PilotService';
-import { VaultItem } from '../types';
+import { VaultItem, AppTab } from '../types';
+import { useNavigation } from '../contexts/NavigationContext';
 
 const CATEGORIES = [
   { id: 'all', name: 'All Files' },
@@ -19,6 +20,7 @@ const CATEGORIES = [
 
 export const Vault: React.FC = () => {
   const { user } = useAuth();
+  const { setActiveTab } = useNavigation();
   const [files, setFiles] = useState<VaultItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);

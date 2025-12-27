@@ -27,11 +27,36 @@ export const ProjectPilot: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initial Load
+  // Initial Load & Context Check
   useEffect(() => {
     const initChat = async () => {
       if (user && !hasInitialized) {
+        // 1. Load History
         const history = await PilotService.loadHistory(user.id);
+
+        // 2. Check for Injected Context (e.g. from Vault)
+        const context = PilotService.getContext();
+
+        if (context && context.type === 'file_analysis') {
+          // If we have history, just append a new "system" or "pilot" message acknowledging the file
+          // If no history, it's a fresh start
+
+          const file = context.file;
+          const contextMsg = `I see you want to discuss **${file.original_name}**. \n\nI've loaded the breakdown:\n${file.ai_analysis?.summary}\n\nWhat would you like to know?`;
+
+          setMessages(prev => {
+            const newHistory = history.length > 0 ? history : [];
+            return [...newHistory, {
+              id: 'context-' + Date.now(),
+              role: 'pilot',
+              text: contextMsg,
+              timestamp: 'Now'
+            }];
+          });
+          setHasInitialized(true);
+          return;
+        }
+
         if (history.length > 0) {
           setMessages(history);
           setHasInitialized(true);

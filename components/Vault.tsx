@@ -10,6 +10,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { PilotService } from '../services/PilotService';
 import { VaultItem, AppTab } from '../types';
 import { useNavigation } from '../contexts/NavigationContext';
+import { OnboardingModal } from './OnboardingModal';
+import { markFeatureAsSeen } from './NewBadge';
 
 const CATEGORIES = [
   { id: 'all', name: 'All Files' },
@@ -28,6 +30,26 @@ export const Vault: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [selectedFile, setSelectedFile] = useState<VaultItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Tour State
+  const [showTour, setShowTour] = useState(false);
+
+  // Check Local Storage for Tour
+  useEffect(() => {
+    const TOUR_KEY = 'has_seen_vault_tour';
+    const hasSeen = localStorage.getItem(TOUR_KEY);
+
+    if (!hasSeen) {
+      setShowTour(true);
+    }
+  }, []);
+
+  const handleTourClose = () => {
+    const TOUR_KEY = 'has_seen_vault_tour';
+    localStorage.setItem(TOUR_KEY, 'true');
+    setShowTour(false);
+    markFeatureAsSeen(AppTab.TheVault);
+  };
 
   useEffect(() => {
     if (user) {
@@ -157,6 +179,18 @@ export const Vault: React.FC = () => {
 
   return (
     <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-32">
+      <OnboardingModal
+        isOpen={showTour}
+        onClose={handleTourClose}
+        title="The Vault"
+        description="Your project's digital safe. Everything uploaded here is secured and analyzed."
+        features={[
+          "Bank-Grade Security: Your contracts and financials are encrypted.",
+          "AI Auto-Sorting: Drag any file here, and we'll file it in the right category.",
+          "Context Awareness: Your AI Helper reads these files to give you better advice."
+        ]}
+        type="TAB_WELCOME"
+      />
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">

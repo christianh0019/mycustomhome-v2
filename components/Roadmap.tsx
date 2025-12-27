@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { ROADMAP_CONFIG, RoadmapService } from '../services/RoadmapService';
 import { VerificationAction } from './VerificationAction';
@@ -27,6 +27,8 @@ const ICONS: Record<number, any> = {
 
 import { ProceedButton } from './ProceedButton';
 import { OnboardingModal } from './OnboardingModal';
+import { markFeatureAsSeen } from './NewBadge';
+import { AppTab } from '../types';
 
 export const Roadmap: React.FC = () => {
   const { user, updateProfile } = useAuth();
@@ -37,9 +39,30 @@ export const Roadmap: React.FC = () => {
   // State for expanded detail view
   const [expandedStage, setExpandedStage] = useState<number | null>(currentStageIndex);
 
-  // State for celebration modal
+  // State for celebration modal (Stage Welcome)
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [modalContent, setModalContent] = useState({ title: '', description: '' });
+
+  // State for Map Tour (First Time)
+  const [showMapTour, setShowMapTour] = useState(false);
+
+  // Check Local Storage for Tour
+  useEffect(() => {
+    const TOUR_KEY = 'has_seen_map_tour';
+    const hasSeen = localStorage.getItem(TOUR_KEY);
+
+    if (!hasSeen) {
+      setShowMapTour(true);
+    }
+  }, []);
+
+  const handleMapTourClose = () => {
+    const TOUR_KEY = 'has_seen_map_tour';
+    localStorage.setItem(TOUR_KEY, 'true');
+    setShowMapTour(false);
+    markFeatureAsSeen(AppTab.Roadmap);
+  };
+
 
   const handleVerifyTask = async (stageId: number, taskId: string) => {
     if (!user) return;
@@ -81,12 +104,27 @@ export const Roadmap: React.FC = () => {
 
   return (
     <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-32">
+      {/* Stage Welcome Modal (Level Up) */}
       <OnboardingModal
         isOpen={showWelcomeModal}
         onClose={() => setShowWelcomeModal(false)}
         title={modalContent.title}
         description={modalContent.description}
         type="STAGE_WELCOME"
+      />
+
+      {/* General Map Tour (First Time) */}
+      <OnboardingModal
+        isOpen={showMapTour}
+        onClose={handleMapTourClose}
+        title="Your Master Roadmap"
+        description="Building a home is a journey. We've broken it down into clear, manageable steps."
+        features={[
+          "Step-by-Step Guide: Never wonder what to do next.",
+          "Unlock Features: As you complete stages, new tools (like Ledger & Team) unlock.",
+          "Track Progress: See exactly how close you are to breaking ground."
+        ]}
+        type="TAB_WELCOME"
       />
 
       {/* Header */}

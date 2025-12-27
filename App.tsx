@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NavigationProvider } from './contexts/NavigationContext';
+import { UIProvider } from './contexts/UIContext';
 
 // Marketing Pages
 import { PublicLayout } from './components/marketing/PublicLayout';
@@ -43,9 +44,11 @@ const AppRoutes = () => {
       {/* PROTECTED APP - The Dashboard */}
       <Route path="/app/*" element={
         <ProtectedRoute>
-          <NavigationProvider>
-            <MainApp />
-          </NavigationProvider>
+          <UIProvider>
+            <NavigationProvider>
+              <MainApp />
+            </NavigationProvider>
+          </UIProvider>
         </ProtectedRoute>
       } />
     </Routes>

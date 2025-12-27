@@ -12,6 +12,7 @@ import { VaultItem, AppTab } from '../types';
 import { useNavigation } from '../contexts/NavigationContext';
 import { OnboardingModal } from './OnboardingModal';
 import { markFeatureAsSeen } from './NewBadge';
+import { useUI } from '../contexts/UIContext';
 
 const CATEGORIES = [
   { id: 'all', name: 'All Files' },
@@ -22,6 +23,7 @@ const CATEGORIES = [
 
 export const Vault: React.FC = () => {
   const { user } = useAuth();
+  const { confirm, showToast } = useUI();
   const { setActiveTab } = useNavigation();
   const [files, setFiles] = useState<VaultItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -159,13 +161,15 @@ export const Vault: React.FC = () => {
   };
 
   const handleDelete = async (file: VaultItem) => {
-    if (!window.confirm('Are you sure you want to delete this file?')) return;
+    const isConfirmed = await confirm('Are you sure you want to delete this file?', 'Delete File');
+    if (!isConfirmed) return;
     try {
       // 1. Delete Blob
       await supabase.storage.from('vault').remove([file.file_path]);
       // 2. Delete Meta
       await supabase.from('vault_items').delete().eq('id', file.id);
 
+      showToast('File deleted successfully', 'success');
       await fetchFiles();
       setSelectedFile(null);
     } catch (err) {

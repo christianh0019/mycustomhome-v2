@@ -2,6 +2,7 @@ import React from 'react';
 import { VerificationActionConfig } from '../services/RoadmapService';
 import { UploadCloud, MessageSquare, FileText, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useUI } from '../contexts/UIContext';
 
 interface VerificationActionProps {
     action: VerificationActionConfig | undefined;
@@ -10,6 +11,7 @@ interface VerificationActionProps {
 }
 
 export const VerificationAction: React.FC<VerificationActionProps> = ({ action, isVerified, onVerify }) => {
+    const { alert, prompt } = useUI();
 
     // If already verified, show a static "Done" state
     if (isVerified) {
@@ -21,42 +23,31 @@ export const VerificationAction: React.FC<VerificationActionProps> = ({ action, 
         );
     }
 
+    // ... custom ...
+
     if (!action) {
-        // Fallback for tasks without explicit action config (shouldn't happen often now)
         return (
-            <button
-                onClick={onVerify}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition-colors text-[10px] uppercase tracking-wider font-medium group"
-            >
-                <div className="w-3 h-3 rounded-full border border-current group-hover:bg-white/20" />
-                <span>Mark Done</span>
-            </button>
+            <button onClick={onVerify} className="text-xs text-white">Mark Done</button>
         );
     }
 
-    const handleClick = (e: React.MouseEvent) => {
+    const handleClick = async (e: React.MouseEvent) => {
         e.stopPropagation();
 
         if (action.type === 'UPLOAD_FILE') {
-            // For file uploads, we generally want to direct them to Vault or Pilot or specific input
-            // But if it's "Upload Inspiration", we want to send them to Project Pilot (as per user request)
             if (action.config.targetFolder === 'Inspiration') {
-                // Trigger Navigation
                 window.dispatchEvent(new CustomEvent('navigate-tab', { detail: { tab: 'ProjectPilot' } }));
-                // Also maybe trigger a pilot intent?
                 return;
             }
-
-            // Standard Upload
-            const confirmed = window.confirm(`Please upload your ${action.config.targetFolder} documents in the Vault or Project Pilot to verify this step.`);
+            // Standard Upload Instruction
+            await alert(`Please upload your ${action.config.targetFolder} documents in the Vault or Project Pilot to verify this step.`, 'Upload Required');
         }
         else if (action.type === 'TALK_TO_PILOT') {
-            // Direct to Project Pilot
             window.dispatchEvent(new CustomEvent('navigate-tab', { detail: { tab: 'ProjectPilot' } }));
             return;
         }
         else if (action.type === 'FORM_INPUT') {
-            const input = window.prompt(`[MOCK] Form: ${action.label}\nEnter value to verify:`, "Simulated Input");
+            const input = await prompt(`Enter value for: ${action.label}`, '', 'Verification Input');
             if (input) onVerify();
         }
     };

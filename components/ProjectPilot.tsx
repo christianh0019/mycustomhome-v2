@@ -14,6 +14,10 @@ interface Attachment {
   type: 'image' | 'file';
 }
 
+import { OnboardingModal } from './OnboardingModal';
+import { markFeatureAsSeen } from './NewBadge';
+import { AppTab } from '../types';
+
 export const ProjectPilot: React.FC = () => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -24,8 +28,29 @@ export const ProjectPilot: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
+  // Tour State
+  const [showTour, setShowTour] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check Local Storage for Tour
+  useEffect(() => {
+    const TOUR_KEY = 'has_seen_pilot_tour';
+    const hasSeen = localStorage.getItem(TOUR_KEY);
+
+    if (!hasSeen) {
+      setShowTour(true);
+    }
+  }, []);
+
+  const handleTourClose = () => {
+    const TOUR_KEY = 'has_seen_pilot_tour';
+    localStorage.setItem(TOUR_KEY, 'true');
+    setShowTour(false);
+    // Also mark the badge as seen if it hasn't been already (redundancy)
+    markFeatureAsSeen(AppTab.ProjectPilot);
+  };
 
   // Initial Load & Context Check
   useEffect(() => {
@@ -169,7 +194,20 @@ export const ProjectPilot: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-black w-full relative overflow-hidden">
+    <div className="flex flex-col h-full bg-black relative">
+      <OnboardingModal
+        isOpen={showTour}
+        onClose={handleTourClose}
+        title="Meet Your Helper"
+        description="I am your 24/7 AI General Contractor. I don't just chat—I work."
+        features={[
+          "Analyze contracts & bids for hidden risks.",
+          "Answer technical questions about plumbing, framing, or code.",
+          "Draft emails to qualified builders on your behalf.",
+          "Remember every detail of your project context."
+        ]}
+        type="TAB_WELCOME"
+      />
 
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none">

@@ -239,5 +239,22 @@ export const RoadmapService = {
         if (featureKey === 'TheJobsite') return RoadmapService.isStageUnlocked(user, 5);
 
         return false;
+    },
+
+    /**
+     * DEBUG: Resets user progress to zero.
+     */
+    resetProgress: async (userId: string) => {
+        const { error } = await supabase
+            .from('profiles')
+            .update({
+                current_stage: 0,
+                stage_progress: {},
+                hasOnboarded: false // Force SmartOnboarding to reappear
+            })
+            .eq('id', userId);
+
+        if (error) throw error;
+        return true;
     }
 };

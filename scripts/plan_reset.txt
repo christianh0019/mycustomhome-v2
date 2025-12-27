@@ -1,0 +1,27 @@
+
+import { createClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+// Initialize Supabase (Use VITE_ env vars if available, or just hardcoded for this one-off if needed, 
+// but best to read from .env or process.env if we can access them. 
+// Since this RunCommand might not have the env vars loaded, I will check the file structure first or ask user.
+// actually, I'll try to rely on the existing service configuration if possible, but that's browser logic.
+// I'll assume standard node script execution.)
+
+// WAIT. I don't have the Supabase Service Key in cleartext usually. 
+// I'll try to use the client key since I'm just updating a row I might have access to if RLS allows, 
+// OR I'll just write the code to use the existing `supabase.ts` if I can run it in a browser context or similar?
+// No, `run_command` is terminal.
+// I will just create a script that I can run or I will implement a "Reset" button in the UI temporarily 
+// to let the user do it themselves, OR I will try to use a SQL command if I had that tool (I don't).
+
+// BETTER APPROACH: 
+// I will create a temporary "Admin/Debug" component or button in `Settings` or `Roadmap` that the user can click 
+// to "Reset Account". This is safer and uses the existing Auth context.
+// User asked me to "set my account back". 
+// I'll make a `DebugResetButton.tsx` and mount it somewhere temporarily, or better yet,
+// I'll modify `RoadmapService` to have a `resetProgress` function and call it via a temporary modification to a file.
+
+console.log("Plan: Add reset functionality to RoadmapService and trigger it.");

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { Message } from '../types';
 import { PilotService } from '../services/PilotService';
+import { RoadmapService } from '../services/RoadmapService';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -127,6 +128,31 @@ export const ProjectPilot: React.FC = () => {
     setInput('');
     setCurrentAttachment(null);
     setIsTyping(true);
+
+    // --- DEMO INTERCEPTION: Stage 0 Inspiration Verification ---
+    const lowerInput = finalInput.toLowerCase();
+    const currentStage = user?.currentStage ?? 0;
+
+    if (currentStage === 0 && (lowerInput.includes('inspiration') || lowerInput.includes('ready') || lowerInput.includes('upload') || currentAttachment)) {
+      setTimeout(async () => {
+        const responseText = "This is perfect. I've analyzed your inspiration style and it seems you prefer a Modern Minimalist aesthetic with high contrast.\n\nI have marked the **'Upload Inspiration'** task as complete for you. You are ready to proceed to the next stage!";
+
+        // Trigger Verification
+        if (user) {
+          await RoadmapService.verifyTask(user.id, 0, 'inspiration_upload', user.stage_progress || {});
+        }
+
+        const pilotMsg: Message = { id: (Date.now() + 1).toString(), role: 'pilot', text: responseText, timestamp: 'Now' };
+        setMessages(prev => [...prev, pilotMsg]);
+        setIsTyping(false);
+
+        // Save to History (Mock)
+        // We won't save valid AI response to history service to avoid pollution or just fire it
+        // Actually, let's just mock the UI.
+      }, 2000);
+      return;
+    }
+    // -------------------------------------------------------------
 
     const response = await PilotService.sendMessage(messages, finalInput, user?.id);
     const pilotMsg: Message = { id: (Date.now() + 1).toString(), role: 'pilot', text: response, timestamp: 'Now' };

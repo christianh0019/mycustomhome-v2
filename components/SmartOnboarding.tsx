@@ -26,8 +26,10 @@ const STAGES = [
     { id: 9, title: 'Stage 9: Move-In', desc: 'Pack the boxes.' },
 ];
 
+import { RoadmapService } from '../services/RoadmapService';
+
 export const SmartOnboarding: React.FC = () => {
-    const { updateProfile } = useAuth();
+    const { user, updateProfile } = useAuth(); // Need 'user' to get ID
     const [stepIndex, setStepIndex] = useState(0);
     const [data, setData] = useState<FormData>({
         firstName: '', lastName: '', phone: '',
@@ -59,16 +61,32 @@ export const SmartOnboarding: React.FC = () => {
     };
 
     const submit = async () => {
+        // 1. Update Profile Basics
         await updateProfile({
             hasOnboarded: true,
             name: `${data.firstName} ${data.lastName}`,
             phone: data.phone,
             city: data.city,
             budgetRange: data.budget,
-            currentStage: data.selfSelectedStage,
+            currentStage: 0,
             lenderName: data.lenderName,
             preApprovalInfo: data.preApprovalStatus
         });
+
+        // 2. Initial Verification (Orientation > Smart Onboarding)
+        if (user) {
+            try {
+                // Verify 'profile_setup' in Stage 0
+                // We pass empty stage_progress or current because updateProfile is async and context might lag slightly
+                // But verified is independent.
+                // We fetch current progress locally if needed, but verifyTask handles merging.
+                // Actually verifyTask needs the OLD progress map to merge. 
+                // We can pass user.stage_progress (which might be stale, but likely empty if new).
+                await RoadmapService.verifyTask(user.id, 0, 'profile_setup', user.stage_progress || {});
+            } catch (err) {
+                console.error("Failed to auto-verify onboarding task", err);
+            }
+        }
     };
 
     // --- RENDERERS ---
@@ -161,8 +179,8 @@ export const SmartOnboarding: React.FC = () => {
                         key={stage.id}
                         onClick={() => { setData({ ...data, selfSelectedStage: stage.id }); setTimeout(next, 300); }}
                         className={`p-6 border transition-all cursor-pointer group flex items-center justify-between ${data.selfSelectedStage === stage.id
-                                ? 'bg-white text-black border-white'
-                                : 'bg-white/5 border-white/10 hover:border-white/40 hover:bg-white/10'
+                            ? 'bg-white text-black border-white'
+                            : 'bg-white/5 border-white/10 hover:border-white/40 hover:bg-white/10'
                             }`}
                     >
                         <div>

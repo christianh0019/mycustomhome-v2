@@ -361,12 +361,39 @@ export const PilotService = {
 
             const lowerName = fileName.toLowerCase();
 
-            if (lowerName.includes('contract') || lowerName.includes('agreement') || lowerName.includes('sign')) {
+            if (lowerName.includes('marketing') || lowerName.includes('social') || lowerName.includes('media') || lowerName.includes('ad')) {
+                category = 'Contracts';
+                smartName = `Marketing_Service_Agreement_${new Date().getFullYear()}.pdf`;
+
+                ai_analysis = {
+                    summary: "I've analyzed this Marketing Agreement. It outlines the scope of digital services and monthly retainers. It's generally standard, but watch out for the auto-renewal clause and the ownership of ad account data.",
+                    breakdown: [
+                        "Type: Service Retainer",
+                        "Term: 6 Months Initial",
+                        "Notice: 30 Days"
+                    ],
+                    red_flags: [
+                        {
+                            clause: "Auto-Renewal (12 Months)",
+                            danger_level: 6,
+                            explanation: "The contract renews automatically for a full year if you don't cancel 30 days before the end. Set a reminder so you don't get stuck!"
+                        },
+                        {
+                            clause: "IP Ownership (Ambiguous)",
+                            danger_level: 4,
+                            explanation: "It's not 100% clear if you own the 'Ad Creative' after the contract ends. We should ask them to clarify that you keep all rights to your images."
+                        }
+                    ],
+                    safety_score: 82
+                };
+                tags = ['marketing', 'service', 'admin'];
+
+            } else if ((lowerName.includes('contract') || lowerName.includes('agreement') || lowerName.includes('sign')) && (lowerName.includes('construction') || lowerName.includes('build') || lowerName.includes('contractor') || lowerName.includes('home') || lowerName.includes('executed'))) {
                 category = 'Contracts';
                 smartName = `Executed_Agreement_${new Date().toISOString().split('T')[0]}.pdf`;
 
                 ai_analysis = {
-                    summary: "I read this contract like a hawk! Ideally, we want agreements to be fair for everyone. This one is mostly okay, but there are two tricky rules that could cost you money or freedom later. Think of it like a game where the other team made up some extra rules in their favor.",
+                    summary: "I read this construction contract like a hawk! Ideally, we want agreements to be fair for everyone. This one is mostly okay, but there are two tricky rules that could cost you money or freedom later.",
                     breakdown: [
                         "Value: $50,000 Total",
                         "Parties: You vs. Contractor",
@@ -388,6 +415,21 @@ export const PilotService = {
                 };
                 tags = ['legal', 'binding', 'priority'];
 
+            } else if (lowerName.includes('contract') || lowerName.includes('agreement')) {
+                // General Catch-all for other agreements
+                category = 'Contracts';
+                smartName = `Service_Agreement_${new Date().toISOString().split('T')[0]}.pdf`;
+                ai_analysis = {
+                    summary: "This looks like a standard service agreement. It defines what you pay and what you get. It's relatively short and simple, which is good. Just make sure the 'Scope of Work' matches exactly what you discussed.",
+                    breakdown: [
+                        "Type: General Service",
+                        "Signatures: Pending",
+                        " Jurisdiction: State of CO"
+                    ],
+                    red_flags: [],
+                    safety_score: 90
+                };
+                tags = ['legal', 'general'];
             } else if (lowerName.includes('plan') || lowerName.includes('drawing') || lowerName.includes('blueprint') || lowerName.includes('floor')) {
                 category = 'Plans & Drawings';
                 smartName = `Architectural_Set_${new Date().getFullYear()}_v1.pdf`;

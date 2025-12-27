@@ -1,14 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { LedgerService } from '../services/LedgerService';
-import { BudgetCategory, Transaction, LedgerSummary } from '../types';
+import { BudgetCategory, Transaction, LedgerSummary, AppTab } from '../types';
 import { DollarSign, TrendingUp, AlertCircle, FileText, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { OnboardingModal } from './OnboardingModal';
+import { markFeatureAsSeen } from './NewBadge';
 
 export const Ledger: React.FC = () => {
     const [summary, setSummary] = useState<LedgerSummary | null>(null);
     const [categories, setCategories] = useState<BudgetCategory[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Tour State
+    const [showTour, setShowTour] = useState(false);
+
+    // Check Local Storage for Tour
+    useEffect(() => {
+        const TOUR_KEY = 'has_seen_ledger_tour';
+        const hasSeen = localStorage.getItem(TOUR_KEY);
+
+        if (!hasSeen) {
+            setShowTour(true);
+        }
+    }, []);
+
+    const handleTourClose = () => {
+        const TOUR_KEY = 'has_seen_ledger_tour';
+        localStorage.setItem(TOUR_KEY, 'true');
+        setShowTour(false);
+        markFeatureAsSeen(AppTab.TheLedger);
+    };
 
     useEffect(() => {
         const loadData = async () => {
@@ -40,6 +62,18 @@ export const Ledger: React.FC = () => {
 
     return (
         <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-32">
+            <OnboardingModal
+                isOpen={showTour}
+                onClose={handleTourClose}
+                title="Financial Command Center"
+                description="This is your single source of financial truth. No more spreadsheets, no more guessing."
+                features={[
+                    "Real-time Budget Tracking: See exactly what is committed vs paid.",
+                    "Loan Health: Watch your loan utilization thermometer to avoid overruns.",
+                    "Live Feed: Every transaction recorded instantly."
+                ]}
+                type="TAB_WELCOME"
+            />
 
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
@@ -182,8 +216,8 @@ export const Ledger: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <span className={`text-[10px] px-2 py-1 rounded border capitalize ${tx.status === 'cleared'
-                                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                                                    : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+                                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+                                                : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
                                                 }`}>
                                                 {tx.status}
                                             </span>

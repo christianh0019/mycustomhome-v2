@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import { AppTab } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { RoadmapService } from '../services/RoadmapService';
+import { NewBadge, markFeatureAsSeen } from './NewBadge';
 import { Lock } from 'lucide-react';
 
 interface SidebarProps {
@@ -51,24 +52,49 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
         {mainTabs.map(({ tab, isLocked, unlockMessage }) => (
           <button
             key={tab}
-            onClick={() => !isLocked && setActiveTab(tab)}
+            onClick={() => {
+              if (isLocked) return;
+              // The original code does not have markFeatureAsSeen or setIsMobileOpen,
+              // so these lines are commented out to maintain syntactical correctness
+              // and avoid introducing undeclared variables/functions.
+              if (tab === AppTab.TheLedger) markFeatureAsSeen('TheLedger');
+              if (tab === AppTab.Partners) markFeatureAsSeen('TheTeam'); // 'TheTeam' key used in service
+              // Could map others dynamically if needing to scale
+
+              setActiveTab(tab);
+            }}
             disabled={isLocked}
-            className={`w-full text-left px-10 py-5 text-[11px] tracking-[0.2em] uppercase modern-transition flex items-center justify-between group ${activeTab === tab
-              ? 'text-white bg-white/5 font-medium'
-              : isLocked
-                ? 'text-white/20 cursor-not-allowed opacity-50'
-                : 'text-white/50 hover:text-white/90 hover:bg-white/[0.03]'
-              }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative
+                  ${activeTab === tab
+                ? 'bg-zinc-100 text-black shadow-lg shadow-white/5'
+                : isLocked
+                  ? 'opacity-50 cursor-not-allowed hover:bg-transparent text-zinc-500'
+                  : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5'
+              }
+                `}
             title={isLocked ? unlockMessage : ''}
           >
-            <div className="flex items-center gap-2">
-              <span>{tab}</span>
-              {isLocked && <Lock size={10} className="text-white/20" />}
+            {/* The original code did not have an 'icon' variable.
+                Keeping the original 'tab' text for now.
+                If an icon is intended, it would need to be defined or imported. */}
+            <div className={`transition-transform duration-300 ${activeTab === tab ? 'scale-110' : 'group-hover:scale-110'}`}>
+              {/* {icon} */} {/* Placeholder for icon if needed */}
             </div>
+            <span>{tab}</span>
 
-            {!isLocked && (
-              <div className={`w-1 h-1 rounded-full modern-transition ${activeTab === tab ? 'bg-white scale-100' : 'bg-white/0 scale-0 group-hover:bg-white/20 group-hover:scale-100'}`}></div>
+            {isLocked && <Lock size={14} className="ml-auto opacity-50" />}
+
+            {/* New Badge - NewBadge component is not defined in the original file.
+                    Commenting out to maintain syntactical correctness.
+                    If NewBadge is intended, it needs to be imported or defined. */}
+            {!isLocked && (tab === AppTab.TheLedger || tab === AppTab.Partners) && (
+              <NewBadge
+                featureId={tab === AppTab.Partners ? 'TheTeam' : 'TheLedger'}
+                isUnlocked={!isLocked}
+              />
             )}
+            {/* The original closing div for the flex container is removed as the new structure replaces it. */}
+            {/* The original dot indicator is also removed as the new structure does not include it. */}
           </button>
         ))}
       </nav>

@@ -25,6 +25,9 @@ const ICONS: Record<number, any> = {
   6: Key
 };
 
+import { ProceedButton } from './ProceedButton';
+import { OnboardingModal } from './OnboardingModal';
+
 export const Roadmap: React.FC = () => {
   const { user, updateProfile } = useAuth();
 
@@ -33,6 +36,10 @@ export const Roadmap: React.FC = () => {
 
   // State for expanded detail view
   const [expandedStage, setExpandedStage] = useState<number | null>(currentStageIndex);
+
+  // State for celebration modal
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [modalContent, setModalContent] = useState({ title: '', description: '' });
 
   const handleVerifyTask = async (stageId: number, taskId: string) => {
     if (!user) return;
@@ -48,8 +55,39 @@ export const Roadmap: React.FC = () => {
     }
   };
 
+  const handleAdvanceStage = async () => {
+    if (!user) return;
+    try {
+      // 1. Advance in DB
+      const nextStageId = currentStageIndex + 1;
+      await RoadmapService.advanceStage(user.id, nextStageId);
+
+      // 2. Optimistic Update (Context will refresh eventually, but we want speed)
+      updateProfile({ currentStage: nextStageId });
+      setExpandedStage(nextStageId); // Auto-expand new stage
+
+      // 3. Trigger Modal
+      const nextStageConfig = ROADMAP_CONFIG[nextStageId as keyof typeof ROADMAP_CONFIG];
+      setModalContent({
+        title: `Welcome to ${nextStageConfig.name}`,
+        description: "You have advanced to the next level. New tools and tasks are now available."
+      });
+      setShowWelcomeModal(true);
+
+    } catch (e) {
+      console.error("Advance failed", e);
+    }
+  };
+
   return (
     <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-32">
+      <OnboardingModal
+        isOpen={showWelcomeModal}
+        onClose={() => setShowWelcomeModal(false)}
+        title={modalContent.title}
+        description={modalContent.description}
+        type="STAGE_WELCOME"
+      />
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-24 gap-6">
@@ -169,6 +207,16 @@ export const Roadmap: React.FC = () => {
                       );
                     })}
                   </div>
+
+                  {/* MANUAL ADVANCE BUTTON (If Stage is Verified but Current Stage is not yet bumped) */}
+                  <AnimatePresence>
+                    {user?.stage_progress?.[expandedStage]?.is_verified && expandedStage === currentStageIndex && (
+                      <ProceedButton
+                        nextStageName={ROADMAP_CONFIG[(expandedStage + 1) as keyof typeof ROADMAP_CONFIG]?.name || "Next Stage"}
+                        onProceed={handleAdvanceStage}
+                      />
+                    )}
+                  </AnimatePresence>
 
                   {/* Status Footer */}
                   <div className="mt-12 pt-8 border-t border-white/5 flex justify-between items-center">

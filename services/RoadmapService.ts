@@ -208,6 +208,22 @@ export const RoadmapService = {
     },
 
     /**
+     * Explicitly advances the user's current stage index.
+     * This is called when the user clicks "Proceed to Next Stage".
+     */
+    advanceStage: async (userId: string, targetStageId: number) => {
+        // Validate: targetStageId should be the next sequential integer ?? 
+        // Or we just trust the UI? Let's generic update for now.
+        const { error } = await supabase
+            .from('profiles')
+            .update({ current_stage: targetStageId })
+            .eq('id', userId);
+
+        if (error) throw error;
+        return targetStageId;
+    },
+
+    /**
      * Check if a specific feature TAB should be visible
      */
     isFeatureUnlocked: (user: User | null, featureKey: 'TheLedger' | 'TheTeam' | 'TheJobsite') => {

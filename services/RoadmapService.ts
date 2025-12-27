@@ -1,22 +1,56 @@
 import { supabase } from './supabase';
 import { User, StageProgress } from '../types';
 
+export type ActionType = 'UPLOAD_FILE' | 'TALK_TO_PILOT' | 'FORM_INPUT';
+
+export interface VerificationActionConfig {
+    type: ActionType;
+    label: string;
+    config: {
+        targetFolder?: string; // For Uploads
+        aiAnalysisType?: string; // For Uploads
+        intent?: string; // For Chat
+        formId?: string; // For Forms
+        allowMultiple?: boolean;
+    };
+}
+
 export const ROADMAP_CONFIG = {
     0: {
         id: 0,
         name: "Orientation",
         required_tasks: [
-            { id: 'profile_setup', label: "Complete Smart Onboarding" },
-            { id: 'inspiration_upload', label: "Upload Inspiration" }
+            {
+                id: 'profile_setup',
+                label: "Complete Smart Onboarding",
+                action: { type: 'TALK_TO_PILOT', label: 'Start Onboarding Chat', config: { intent: 'onboarding-intro' } }
+            },
+            {
+                id: 'inspiration_upload',
+                label: "Upload Inspiration",
+                action: { type: 'UPLOAD_FILE', label: 'Upload Images', config: { targetFolder: 'Inspiration', allowMultiple: true } }
+            }
         ]
     },
     1: {
         id: 1,
         name: "Financial Foundation",
         required_tasks: [
-            { id: 'lender_path', label: "Select Financial Pathway" },
-            { id: 'proof_of_funds', label: "Upload Pre-Approval / POF" },
-            { id: 'hard_budget', label: "Define Hard Budget Cap" }
+            {
+                id: 'lender_path',
+                label: "Select Financial Pathway",
+                action: { type: 'FORM_INPUT', label: 'Select Path', config: { formId: 'select-lender-type' } }
+            },
+            {
+                id: 'proof_of_funds',
+                label: "Upload Pre-Approval / POF",
+                action: { type: 'UPLOAD_FILE', label: 'Upload Financials', config: { targetFolder: 'Financials', aiAnalysisType: 'pre-approval' } }
+            },
+            {
+                id: 'hard_budget',
+                label: "Define Hard Budget Cap",
+                action: { type: 'FORM_INPUT', label: 'Set Budget', config: { formId: 'set-hard-budget' } }
+            }
         ],
         unlocks_tab: 'TheLedger'
     },
@@ -24,18 +58,42 @@ export const ROADMAP_CONFIG = {
         id: 2,
         name: "Land Acquisition",
         required_tasks: [
-            { id: 'land_contract', label: "Upload Land Contract/Deed" },
-            { id: 'survey_report', label: "Upload Survey/Soil Report" },
-            { id: 'address_confirm', label: "Confirm Site Address" }
+            {
+                id: 'land_contract',
+                label: "Upload Land Contract/Deed",
+                action: { type: 'UPLOAD_FILE', label: 'Upload Contract', config: { targetFolder: 'Land', aiAnalysisType: 'contract' } }
+            },
+            {
+                id: 'survey_report',
+                label: "Upload Survey/Soil Report",
+                action: { type: 'UPLOAD_FILE', label: 'Upload Survey', config: { targetFolder: 'Land', aiAnalysisType: 'survey' } }
+            },
+            {
+                id: 'address_confirm',
+                label: "Confirm Site Address",
+                action: { type: 'FORM_INPUT', label: 'Confirm Address', config: { formId: 'confirm-address' } }
+            }
         ]
     },
     3: {
         id: 3,
         name: "Design & Engineering",
         required_tasks: [
-            { id: 'design_contract', label: "Sign Design-Only Agreement" },
-            { id: 'floor_plans', label: "Finalize Floor Plans" },
-            { id: 'builder_select', label: "Select Builder" }
+            {
+                id: 'design_contract',
+                label: "Sign Design-Only Agreement",
+                action: { type: 'UPLOAD_FILE', label: 'Upload Agreement', config: { targetFolder: 'Contracts', aiAnalysisType: 'pcs-agreement' } }
+            },
+            {
+                id: 'floor_plans',
+                label: "Finalize Floor Plans",
+                action: { type: 'UPLOAD_FILE', label: 'Upload Plans', config: { targetFolder: 'Plans', aiAnalysisType: 'floor-plan' } }
+            },
+            {
+                id: 'builder_select',
+                label: "Select Builder",
+                action: { type: 'TALK_TO_PILOT', label: 'Vet Builders', config: { intent: 'vet-builders' } }
+            }
         ],
         unlocks_tab: 'TheTeam'
     },
@@ -43,17 +101,17 @@ export const ROADMAP_CONFIG = {
         id: 4,
         name: "Preconstruction",
         required_tasks: [
-            { id: 'construction_contract', label: "Sign Construction Contract" },
-            { id: 'permit_receipt', label: "Verify Permit Submission" },
-            { id: 'bank_closing', label: "Bank Closing Complete" }
+            { id: 'construction_contract', label: "Sign Construction Contract", action: { type: 'UPLOAD_FILE', label: 'Upload Contract', config: { targetFolder: 'Contracts' } } },
+            { id: 'permit_receipt', label: "Verify Permit Submission", action: { type: 'UPLOAD_FILE', label: 'Upload Receipt', config: { targetFolder: 'Permits' } } },
+            { id: 'bank_closing', label: "Bank Closing Complete", action: { type: 'FORM_INPUT', label: 'Confirm Closing', config: { formId: 'confirm-closing' } } }
         ]
     },
     5: {
         id: 5,
         name: "Construction",
         required_tasks: [
-            { id: 'schedule_uploaded', label: "Upload Construction Schedule" },
-            { id: 'first_draw', label: "First Draw Processed" }
+            { id: 'schedule_uploaded', label: "Upload Construction Schedule", action: { type: 'UPLOAD_FILE', label: 'Upload Schedule', config: { targetFolder: 'Schedules' } } },
+            { id: 'first_draw', label: "First Draw Processed", action: { type: 'FORM_INPUT', label: 'Verify Draw', config: { formId: 'verify-draw' } } }
         ],
         unlocks_tab: 'TheJobsite'
     },
@@ -61,8 +119,8 @@ export const ROADMAP_CONFIG = {
         id: 6,
         name: "The Summit",
         required_tasks: [
-            { id: 'punch_list', label: "Final Walkthrough List" },
-            { id: 'occupancy_permit', label: "Upload Occupancy Permit" }
+            { id: 'punch_list', label: "Final Walkthrough List", action: { type: 'FORM_INPUT', label: 'Start Punch List', config: { formId: 'punch-list' } } },
+            { id: 'occupancy_permit', label: "Upload Occupancy Permit", action: { type: 'UPLOAD_FILE', label: 'Upload CO', config: { targetFolder: 'Permits' } } }
         ]
     }
 };

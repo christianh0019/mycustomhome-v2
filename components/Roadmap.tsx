@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { ROADMAP_CONFIG, RoadmapService } from '../services/RoadmapService';
+import { VerificationAction } from './VerificationAction';
 import {
   MapPin, CheckCircle, Lock, Landmark, Ruler, Key, ArrowRight, Shield, ShieldCheck, Square, FileText, Construction
 } from 'lucide-react';
@@ -33,7 +34,7 @@ export const Roadmap: React.FC = () => {
   // State for expanded detail view
   const [expandedStage, setExpandedStage] = useState<number | null>(currentStageIndex);
 
-  const handleTaskToggle = async (stageId: number, taskId: string) => {
+  const handleVerifyTask = async (stageId: number, taskId: string) => {
     if (!user) return;
     try {
       const newProgress = await RoadmapService.verifyTask(user.id, stageId, taskId, user.stage_progress);
@@ -82,21 +83,21 @@ export const Roadmap: React.FC = () => {
             return (
               <div
                 key={stage.id}
-                className={`relative group cursor-pointer ${isLocked ? 'opacity-30 grayscale' : 'opacity-100'}`}
+                className={`relative group cursor - pointer ${isLocked ? 'opacity-30 grayscale' : 'opacity-100'} `}
                 onClick={() => !isLocked && setExpandedStage(stage.id)}
               >
                 {/* Node */}
-                <div className={`absolute -left-[45px] top-0 size-8 rounded-full border-2 flex items-center justify-center transition-all duration-500 z-10 ${isCompleted ? 'bg-emerald-500 border-emerald-500 text-black' :
+                <div className={`absolute - left - [45px] top - 0 size - 8 rounded - full border - 2 flex items - center justify - center transition - all duration - 500 z - 10 ${isCompleted ? 'bg-emerald-500 border-emerald-500 text-black' :
                   isActive ? 'bg-[#0A0A0A] border-white text-white shadow-[0_0_20px_rgba(255,255,255,0.3)]' :
                     'bg-[#0A0A0A] border-white/10 text-white/20'
-                  }`}>
+                  } `}>
                   {isCompleted ? <CheckCircle size={14} /> : isLocked ? <Lock size={12} /> : <div className="size-2 bg-white rounded-full animate-pulse" />}
                 </div>
 
                 {/* Content */}
                 <div>
-                  <span className={`text-[9px] font-bold uppercase tracking-widest mb-1 block ${isActive ? 'text-emerald-400' : 'text-zinc-600'}`}>0{stage.id}</span>
-                  <h3 className={`text-2xl font-serif transition-colors ${isActive ? 'text-white' : 'text-white/60 group-hover:text-white'}`}>{stage.name}</h3>
+                  <span className={`text - [9px] font - bold uppercase tracking - widest mb - 1 block ${isActive ? 'text-emerald-400' : 'text-zinc-600'} `}>0{stage.id}</span>
+                  <h3 className={`text - 2xl font - serif transition - colors ${isActive ? 'text-white' : 'text-white/60 group-hover:text-white'} `}>{stage.name}</h3>
 
                   {isActive && (
                     <motion.div layoutId="active-glow" className="absolute -inset-4 bg-white/5 rounded-xl -z-10 blur-xl opacity-50" />
@@ -141,15 +142,13 @@ export const Roadmap: React.FC = () => {
                       return (
                         <div
                           key={task.id}
-                          onClick={() => handleTaskToggle(expandedStage, task.id)}
-                          className={`p-5 rounded-xl border transition-all duration-300 flex items-center gap-5 cursor-pointer group ${isDone
+                          className={`p-5 rounded-xl border transition-all duration-300 flex items-center gap-5 group ${isDone
                             ? 'bg-emerald-500/10 border-emerald-500/30'
                             : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]'
                             }`}
                         >
-                          <div className={`size-6 rounded flex items-center justify-center border transition-colors ${isDone ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/20 text-transparent group-hover:border-white/40'
-                            }`}>
-                            <CheckCircle size={14} />
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isDone ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/20 text-transparent'}`}>
+                            {isDone && <CheckCircle size={14} />}
                           </div>
 
                           <div className="flex-1">
@@ -158,7 +157,14 @@ export const Roadmap: React.FC = () => {
                             </span>
                           </div>
 
-                          {isDone && <ShieldCheck size={16} className="text-emerald-500" />}
+                          {/* Verification Action Button */}
+                          <div className="ml-4">
+                            <VerificationAction
+                              action={task.action}
+                              isVerified={isDone || false}
+                              onVerify={() => handleVerifyTask(expandedStage, task.id)}
+                            />
+                          </div>
                         </div>
                       );
                     })}
@@ -170,21 +176,23 @@ export const Roadmap: React.FC = () => {
                       {user?.stage_progress?.[expandedStage]?.is_verified
                         ? "Stage Verified & Complete"
                         : `${user?.stage_progress?.[expandedStage]?.completed_tasks?.length || 0} / ${ROADMAP_CONFIG[expandedStage as keyof typeof ROADMAP_CONFIG].required_tasks.length} Required Tasks`}
-                    </div>
-                    {user?.stage_progress?.[expandedStage]?.is_verified && (
-                      <span className="px-4 py-2 bg-emerald-500/10 text-emerald-500 text-xs uppercase tracking-widest font-bold rounded-lg border border-emerald-500/20">
-                        Verified
-                      </span>
-                    )}
-                  </div>
+                    </div >
+                    {
+                      user?.stage_progress?.[expandedStage]?.is_verified && (
+                        <span className="px-4 py-2 bg-emerald-500/10 text-emerald-500 text-xs uppercase tracking-widest font-bold rounded-lg border border-emerald-500/20">
+                          Verified
+                        </span>
+                      )
+                    }
+                  </div >
 
-                </div>
-              </motion.div>
+                </div >
+              </motion.div >
             )}
-          </AnimatePresence>
-        </div>
-      </div>
-    </div>
+          </AnimatePresence >
+        </div >
+      </div >
+    </div >
   );
 };
 

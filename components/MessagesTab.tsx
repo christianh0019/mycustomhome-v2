@@ -1,5 +1,8 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { AppTab } from '../types';
+import { OnboardingModal } from './OnboardingModal';
+import { markFeatureAsSeen } from './NewBadge';
 
 // --- Types ---
 interface ChatUser {
@@ -59,13 +62,30 @@ const THREADS: Thread[] = [
 ];
 
 export const MessagesTab: React.FC = () => {
-   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+   const [activeThreadId, setActiveThreadId] = useState<string>(THREADS[0].id);
    const [input, setInput] = useState('');
 
-   // Mobile: If activeThreadId is null, show list. If set, show chat.
-   // Desktop: Always show both.
+   const activeThread = THREADS.find(t => t.id === activeThreadId);
 
-   const activeThread = THREADS.find(t => t.id === activeThreadId) || null;
+   // Tour State
+   const [showTour, setShowTour] = useState(false);
+
+   // Check Local Storage for Tour
+   useEffect(() => {
+      const TOUR_KEY = 'has_seen_messages_tour';
+      const hasSeen = localStorage.getItem(TOUR_KEY);
+
+      if (!hasSeen) {
+         setShowTour(true);
+      }
+   }, []);
+
+   const handleTourClose = () => {
+      const TOUR_KEY = 'has_seen_messages_tour';
+      localStorage.setItem(TOUR_KEY, 'true');
+      setShowTour(false);
+      markFeatureAsSeen(AppTab.Messages);
+   };
 
    const handleSend = () => {
       if (!input.trim() || !activeThread) return;
@@ -75,10 +95,22 @@ export const MessagesTab: React.FC = () => {
    };
 
    return (
-      <div className="flex h-full bg-[#0a0a0a] text-white overflow-hidden">
+      <div className="h-full flex flex-col md:flex-row bg-black text-white relative">
+         <OnboardingModal
+            isOpen={showTour}
+            onClose={handleTourClose}
+            title="Unified Communications"
+            description="Keep all your conversations in one place. No more lost emails or scattered texts."
+            features={[
+               "Project-Based Threads: Chats are organized by partner (Architect, Builder, etc).",
+               "Contextual Attachments: Files shared here automatically go to the Vault.",
+               "Real-Time Updates: See when your team is online and responding."
+            ]}
+            type="TAB_WELCOME"
+         />
 
          {/* --- Sidebar (Thread List) --- */}
-         <div className={`w-full md:w-[320px] lg:w-[380px] border-r border-white/5 flex flex-col bg-black/50 ${activeThreadId ? 'hidden md:flex' : 'flex'}`}>
+         <div className={`w-full md:w-80 border-r border-white/5 flex flex-col bg-[#0A0A0A] ${activeThreadId ? 'hidden md:flex' : 'flex'}`}>
 
             {/* Header */}
             <div className="h-16 px-6 border-b border-white/5 flex items-center justify-between shrink-0">
@@ -164,8 +196,8 @@ export const MessagesTab: React.FC = () => {
                               <div className={`max-w-[85%] md:max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
                                  <div
                                     className={`px-5 py-3 text-[13px] leading-relaxed shadow-lg backdrop-blur-sm ${isMe
-                                          ? 'bg-white text-black rounded-l-2xl rounded-tr-2xl'
-                                          : 'bg-white/10 text-white border border-white/5 rounded-r-2xl rounded-tl-2xl'
+                                       ? 'bg-white text-black rounded-l-2xl rounded-tr-2xl'
+                                       : 'bg-white/10 text-white border border-white/5 rounded-r-2xl rounded-tl-2xl'
                                        }`}
                                  >
                                     {msg.text}

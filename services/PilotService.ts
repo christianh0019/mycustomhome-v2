@@ -345,103 +345,124 @@ export const PilotService = {
             // 3. Smart Classification Logic (Mocking AI intelligence based on filename)
             let smartName = fileName;
             let category = 'Unsorted';
-            let summary = "Analysis pending...";
-            let tags = ['document'];
+
+            // Default "Safe" State
             let ai_analysis = {
-                summary: "Pending detailed analysis...",
-                breakdown: [] as string[],
-                red_flags: [] as string[]
+                summary: "This file is simple and clean! I read through it and didn't find any scary rules or hidden fees. It looks like a standard document used to keep track of things.",
+                breakdown: [
+                    "Type: General Record",
+                    "Status: Indexed",
+                    "Pages: 1-3 (Estimated)"
+                ],
+                red_flags: [] as any[],
+                safety_score: 98
             };
+            let tags = ['document'];
 
             const lowerName = fileName.toLowerCase();
 
             if (lowerName.includes('contract') || lowerName.includes('agreement') || lowerName.includes('sign')) {
                 category = 'Contracts';
                 smartName = `Executed_Agreement_${new Date().toISOString().split('T')[0]}.pdf`;
-                summary = "This document appears to be a binding legal agreement. The AI has analyzed the liability clauses, payment schedules, and jurisdiction definitions. Overall, it follows standard industry templates but requires attention to specific indemnity caps.";
+
                 ai_analysis = {
-                    summary,
+                    summary: "I read this contract like a hawk! Ideally, we want agreements to be fair for everyone. This one is mostly okay, but there are two tricky rules that could cost you money or freedom later. Think of it like a game where the other team made up some extra rules in their favor.",
                     breakdown: [
-                        "Jurisdiction: State of Colorado (Standard).",
-                        "Payment Terms: Net 30 days upon receipt of invoice.",
-                        "Termination: 30-day written notice required by either party.",
-                        "Liability: Limited to the total value of the contract ($50,000)."
+                        "Value: $50,000 Total",
+                        "Parties: You vs. Contractor",
+                        "Key Date: Net 30 Payment Terms"
                     ],
                     red_flags: [
-                        "Clause 4.2 contains an unusual indemnity limit of $500, which is significantly below the typical $1M coverage for this project type.",
-                        "Page 3 is missing an initial from the 'Client' party, rendering the specific addendum potentially unenforceable."
-                    ]
+                        {
+                            clause: "Indemnity Cap ($500 limit)",
+                            danger_level: 9,
+                            explanation: "This is very dangerous. If they break something expensive (like a pipe flooding your house), they only have to pay $500. You would have to pay the rest!"
+                        },
+                        {
+                            clause: "Missing Initial on Page 3",
+                            danger_level: 4,
+                            explanation: "This isn't a disaster, but it's sloppy. Since a page isn't signed, they could claim later that you never saw it. We should get this fixed."
+                        }
+                    ],
+                    safety_score: 72
                 };
                 tags = ['legal', 'binding', 'priority'];
+
             } else if (lowerName.includes('plan') || lowerName.includes('drawing') || lowerName.includes('blueprint') || lowerName.includes('floor')) {
                 category = 'Plans & Drawings';
                 smartName = `Architectural_Set_${new Date().getFullYear()}_v1.pdf`;
-                summary = "A complete architectural drawing set including 4 floor plans and 2 elevation views. The scale is consistently 1/4\" = 1'0\". AI detected structural wall alignments and electrical rough-in locations.";
+
                 ai_analysis = {
-                    summary,
+                    summary: "These are the map for your future home! I looked at the walls and wires. Everything is drawn clearly, which is great because it means the builders won't get confused. It's a solid, safe set of plans.",
                     breakdown: [
-                        "Sheet A1: First Floor Demolition Plan.",
-                        "Sheet A2: Second Floor Proposed Layout.",
-                        "Total Estimated SqFt: 3,400 (Heated).",
-                        "Electrical: 42 outlets, 18 switches identified."
+                        "Size: 3,400 SqFt (Heated)",
+                        "Layout: 4 Bedrooms, 3.5 Baths",
+                        "Engineering: Structural walls align perfectly"
                     ],
-                    red_flags: []
+                    red_flags: [], // clean
+                    safety_score: 95
                 };
                 tags = ['architecture', 'visual', 'construction'];
+
             } else if (lowerName.includes('budget') || lowerName.includes('invoice') || lowerName.includes('cost') || lowerName.includes('estimate')) {
                 category = 'Financials';
                 smartName = `Project_Budget_Estimate.pdf`;
-                summary = "Financial estimation document detailing line-item costs for Materials and Labor. The totals align with the Phase 1 projection, but lumber costs appear elevated compared to current regional averages.";
+
                 ai_analysis = {
-                    summary,
+                    summary: "This is the shopping list for your house. Most of the prices look normal for our area, but the wood (lumber) is way too expensive right now. It's like paying $20 for a burger that usually costs $10.",
                     breakdown: [
-                        "Total Project Cost: $450,000.",
-                        "Material Allocation: $270,000 (60%).",
-                        "Labor Allocation: $180,000 (40%).",
-                        "Contingency Fund: $22,500 (5%)."
+                        "Total: $450,000",
+                        "Biggest Cost: Materials (60%)",
+                        "Rainy Day Fund: $22,500"
                     ],
                     red_flags: [
-                        "Lumber line item is 15% above current regional market average ($12/board ft vs $10.50).",
-                        "Labor hours for Foundation phase seem underestimated locally (detecting 40hrs vs expected 65hrs)."
-                    ]
+                        {
+                            clause: "Lumber Cost Variance",
+                            danger_level: 7,
+                            explanation: "They are charging 15% more for wood than the hardware store down the street. This adds up to thousands of extra dollars you shouldn't pay."
+                        },
+                        {
+                            clause: "Labor Hours Undercount",
+                            danger_level: 6,
+                            explanation: "They guessed it takes 40 hours to pour the foundation, but it usually takes 65. They might ask for more money later when they realize they were wrong."
+                        }
+                    ],
+                    safety_score: 65
                 };
                 tags = ['finance', 'cost', 'review'];
+
             } else if (lowerName.includes('survey') || lowerName.includes('land') || lowerName.includes('plot')) {
-                category = 'Plans & Drawings'; // Or Land
+                category = 'Plans & Drawings';
                 smartName = `Land_Survey_Topography.pdf`;
-                summary = "Topographical site survey showing property boundaries, elevation changes, and utility access points. The grade is significant, suggesting potential engineering requirements for the foundation.";
+
                 ai_analysis = {
-                    summary,
+                    summary: "This is the shape of your land. The good news is it's big! The bad news is a big hill on the side. Building on a steep hill is like trying to stack blocks on a slide—we need to build a strong wall to hold it up, which costs extra money.",
                     breakdown: [
-                        "Lot Size: 0.45 Acres (19,602 sqft).",
-                        "Elevation Change: 12ft drop from North to South.",
-                        "Utilities: Water main located at street curb; Septic field designated in rear yard."
+                        "Size: 0.45 Acres",
+                        "Shape: Rectangular with slope",
+                        "Utilities: Water is at the street"
                     ],
                     red_flags: [
-                        "Steep 12% slope may trigger requirement for an engineered retaining wall (Cost impact: High).",
-                        "A 5ft utility easement cuts through the proposed garage location on the North boundary."
-                    ]
+                        {
+                            clause: "Steep 12% Grade Slope",
+                            danger_level: 8,
+                            explanation: "The hill is steep enough that the city will force us to hire a special engineer and build a retaining wall. This is a surprise cost of about $15,000."
+                        },
+                        {
+                            clause: "Utility Easement (North)",
+                            danger_level: 5,
+                            explanation: "The power company owns a strip of land right where you wanted the garage. We have to move the garage or they can tear it down properly."
+                        }
+                    ],
+                    safety_score: 55
                 };
                 tags = ['land', 'engineering', 'site'];
-            } else {
-                category = 'General';
-                smartName = fileName.replace(/_/g, ' ').replace(/-/g, ' ');
-                summary = "General project documentation successfully indexed. AI has extracted text content for semantic search and linked it to the project timeline.";
-                ai_analysis = {
-                    summary,
-                    breakdown: [
-                        "Document text fully extracted and indexed.",
-                        "Keywords linked: 'Permit', 'Inspection', 'City Hall'."
-                    ],
-                    red_flags: []
-                };
-                tags = ['general'];
             }
 
             // 4. Update DB
             await supabase.from('vault_items').update({
                 smart_name: smartName,
-                summary: summary,
+                summary: ai_analysis.summary, // Use simple summary for main display too
                 category: category,
                 tags: tags,
                 ai_analysis: ai_analysis,

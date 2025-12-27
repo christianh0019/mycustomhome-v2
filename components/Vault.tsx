@@ -317,20 +317,56 @@ export const Vault: React.FC = () => {
 
             <div className="space-y-6">
 
-              {/* Red Flags Alert */}
+              {/* Safety Score Header */}
+              {selectedFile.ai_analysis?.safety_score !== undefined && (
+                <div className="flex items-center gap-6 p-4 rounded-xl bg-white/5 border border-white/10">
+                  <div className="relative size-16 flex-none">
+                    <svg className="size-full -rotate-90" viewBox="0 0 36 36">
+                      {/* Background Circle */}
+                      <path className="text-white/10" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                      {/* Progress Circle */}
+                      <path
+                        className={`${selectedFile.ai_analysis.safety_score > 80 ? 'text-emerald-500' : selectedFile.ai_analysis.safety_score > 50 ? 'text-yellow-500' : 'text-red-500'} transition-all duration-1000 ease-out`}
+                        strokeDasharray={`${selectedFile.ai_analysis.safety_score}, 100`}
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-lg font-bold text-white">{selectedFile.ai_analysis.safety_score}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-white uppercase tracking-widest">Document Safety Score</h4>
+                    <p className="text-xs text-zinc-400 mt-1">
+                      {selectedFile.ai_analysis.safety_score > 80
+                        ? "This document looks standard and safe."
+                        : "We found specific clauses that require attention."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Red Flags Alert (New Object Structure) */}
               {selectedFile.ai_analysis?.red_flags && selectedFile.ai_analysis.red_flags.length > 0 && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl animate-pulse">
-                  <h4 className="text-[10px] uppercase tracking-widest text-red-400 mb-2 flex items-center gap-2">
+                <div className="space-y-3">
+                  <h4 className="text-[10px] uppercase tracking-widest text-rose-400 flex items-center gap-2">
                     <Shield size={12} /> Critical Attention Required
                   </h4>
-                  <ul className="space-y-1">
-                    {selectedFile.ai_analysis.red_flags.map((flag, idx) => (
-                      <li key={idx} className="text-xs text-red-200 flex items-start gap-2">
-                        <span className="mt-1 w-1 h-1 rounded-full bg-red-500 flex-shrink-0" />
-                        {flag}
-                      </li>
-                    ))}
-                  </ul>
+                  {selectedFile.ai_analysis.red_flags.map((flag: any, idx: number) => (
+                    <div key={idx} className="p-4 bg-rose-500/5 border border-rose-500/20 rounded-xl flex gap-4">
+                      <div className="flex-1">
+                        <span className="text-xs font-bold text-rose-200 block mb-1">{flag.clause}</span>
+                        <p className="text-xs text-rose-200/70 leading-relaxed">{flag.explanation}</p>
+                      </div>
+                      <div className="flex flex-col items-center justify-center px-3 py-2 rounded bg-rose-500/10 border border-rose-500/20 h-fit min-w-[60px]">
+                        <span className="text-[9px] uppercase text-rose-400 font-bold mb-0.5">Danger</span>
+                        <span className="text-lg font-bold text-white">{flag.danger_level}<span className="text-xs text-rose-400/50">/10</span></span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -376,19 +412,35 @@ export const Vault: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex gap-4 pt-4 border-t border-white/5">
+            <div className="p-8 space-y-4 border-t border-white/5 bg-[#0A0A0A]">
               <button
-                onClick={() => handleDownload(selectedFile)}
-                className="flex-1 py-3 bg-white text-black font-bold text-xs uppercase tracking-widest rounded hover:bg-white/90 flex items-center justify-center gap-2"
+                onClick={() => {
+                  PilotService.setContext({
+                    type: 'file_analysis',
+                    file: selectedFile
+                  });
+                  setActiveTab(AppTab.ProjectPilot);
+                }}
+                className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:shadow-lg hover:shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 group"
               >
-                <Download size={14} /> Download
+                <Sparkles size={16} className="text-white group-hover:scale-110 transition-transform" />
+                Ask Project Pilot to Review
               </button>
-              <button
-                onClick={() => handleDelete(selectedFile)}
-                className="px-6 py-3 border border-red-500/20 hover:bg-red-500/10 text-red-400 text-xs uppercase tracking-widest rounded transition-colors flex items-center gap-2"
-              >
-                <Trash2 size={14} />
-              </button>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => handleDownload(selectedFile)}
+                  className="flex-1 py-3 bg-white/5 border border-white/10 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-white/10 flex items-center justify-center gap-2 transition-colors"
+                >
+                  <Download size={14} /> Download
+                </button>
+                <button
+                  onClick={() => handleDelete(selectedFile)}
+                  className="px-6 py-3 border border-red-500/20 hover:bg-red-500/10 text-red-400 text-xs uppercase tracking-widest rounded-xl transition-colors flex items-center gap-2"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
           </div>
         </div>

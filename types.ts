@@ -122,7 +122,12 @@ export interface VaultItem {
   ai_analysis?: {
     summary: string;
     breakdown: string[];
-    red_flags: string[];
+    red_flags: Array<{
+      clause: string;
+      danger_level: number; // 1-10
+      explanation: string;
+    }>;
+    safety_score: number; // 0-100
   };
   created_at: string;
   file_size?: number;

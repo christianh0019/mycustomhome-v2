@@ -27,6 +27,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
         isLocked = !RoadmapService.isFeatureUnlocked(user, 'TheTeam');
         unlockMessage = "Complete Stage 3 to Unlock";
       }
+      if (tab === AppTab.TheLedger) {
+        isLocked = !RoadmapService.isFeatureUnlocked(user, 'TheLedger');
+        unlockMessage = "Complete Stage 1 (Financial Foundation) to Unlock";
+      }
       // Note: AppTab doesn't have Ledger or Jobsite yet, we handle existing ones first.
 
       return { tab, isLocked, unlockMessage };
@@ -50,10 +54,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
             onClick={() => !isLocked && setActiveTab(tab)}
             disabled={isLocked}
             className={`w-full text-left px-10 py-5 text-[11px] tracking-[0.2em] uppercase modern-transition flex items-center justify-between group ${activeTab === tab
-                ? 'text-white bg-white/5 font-medium'
-                : isLocked
-                  ? 'text-white/20 cursor-not-allowed opacity-50'
-                  : 'text-white/50 hover:text-white/90 hover:bg-white/[0.03]'
+              ? 'text-white bg-white/5 font-medium'
+              : isLocked
+                ? 'text-white/20 cursor-not-allowed opacity-50'
+                : 'text-white/50 hover:text-white/90 hover:bg-white/[0.03]'
               }`}
             title={isLocked ? unlockMessage : ''}
           >

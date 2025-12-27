@@ -12,6 +12,7 @@ import { Settings } from './Settings';
 import { SmartOnboarding } from './SmartOnboarding';
 import { KnowledgeBase } from './KnowledgeBase';
 import { VendorDashboard } from './VendorDashboard';
+import { Ledger } from './Ledger';
 import { AppTab } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -57,6 +58,7 @@ export const MainApp: React.FC = () => {
                     {activeTab === AppTab.Partners && <Partners />}
                     {activeTab === AppTab.Messages && <MessagesTab />}
                     {activeTab === AppTab.EquityClub && <EquityClub />}
+                    {activeTab === AppTab.TheLedger && <Ledger />}
                     {activeTab === AppTab.KnowledgeBase && <KnowledgeBase />}
                     {activeTab === AppTab.Settings && <Settings />}
                 </div>

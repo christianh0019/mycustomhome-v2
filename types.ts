@@ -8,6 +8,7 @@ export enum AppTab {
   KnowledgeBase = 'The Library',
   Settings = 'Profile',
   EquityClub = 'The Treasure Chest',
+  TheLedger = 'The Ledger',
 }
 
 export type UserRole = 'homeowner' | 'vendor' | 'admin';
@@ -61,6 +62,34 @@ export interface Recommendation {
   safety_score?: number;
   bbb_rating?: string;
   years_in_business?: string;
+}
+
+// Financial / Ledger Types
+export interface BudgetCategory {
+  id: string;
+  name: string; // e.g., "Framing", "Plumbing"
+  budgeted: number;
+  committed: number;
+  paid: number;
+}
+
+export interface Transaction {
+  id: string;
+  date: string;
+  vendor: string;
+  description: string;
+  amount: number;
+  category_id: string;
+  status: 'pending' | 'cleared';
+  attachment_url?: string; // Link to Vault
+}
+
+export interface LedgerSummary {
+  total_loan: number;
+  total_budgeted: number;
+  total_committed: number;
+  total_paid: number;
+  cash_on_hand: number;
 }
 
 export interface Message {

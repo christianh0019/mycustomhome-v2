@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     BookOpen, DollarSign, PenTool, Gavel, Layout,
     ShieldCheck, AlertTriangle, Compass, ArrowRight, X, Clock
@@ -149,10 +149,37 @@ const ARTICLES: Article[] = [
 
 const CATEGORIES = ['All', 'Strategy', 'Finance', 'Design', 'Legal', 'Construction'];
 
+import { OnboardingModal } from './OnboardingModal';
+import { markFeatureAsSeen } from './NewBadge';
+import { AppTab } from '../types';
+
 export const KnowledgeBase: React.FC = () => {
     const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
     const [activeCategory, setActiveCategory] = useState('All');
 
+    // Tour State
+    const [showTour, setShowTour] = useState(false);
+
+    // Check Local Storage for Tour
+    useEffect(() => {
+        const TOUR_KEY = 'has_seen_kb_tour';
+        const hasSeen = localStorage.getItem(TOUR_KEY);
+
+        if (!hasSeen) {
+            setShowTour(true);
+        }
+    }, []);
+
+    const handleTourClose = () => {
+        const TOUR_KEY = 'has_seen_kb_tour';
+        localStorage.setItem(TOUR_KEY, 'true');
+        setShowTour(false);
+        markFeatureAsSeen(AppTab.KnowledgeBase);
+    };
+
+    const handleRead = (article: Article) => {
+        setSelectedArticle(article);
+    }
     const filteredArticles = activeCategory === 'All'
         ? ARTICLES.filter(a => !a.featured)
         : ARTICLES.filter(a => a.category === activeCategory);
@@ -161,6 +188,18 @@ export const KnowledgeBase: React.FC = () => {
 
     return (
         <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-32">
+            <OnboardingModal
+                isOpen={showTour}
+                onClose={handleTourClose}
+                title="The Knowledge Base"
+                description="Expert wisdom distilled into simple guides to help you avoid costly mistakes."
+                features={[
+                    "Owner-Centric: Written for you, not for contractors.",
+                    "Save Thousands: Learn the secrets builders usually keep to themselves.",
+                    "Process Mastery: Understand permits, lien waivers, and draw schedules."
+                ]}
+                type="TAB_WELCOME"
+            />
 
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
@@ -177,8 +216,8 @@ export const KnowledgeBase: React.FC = () => {
                             key={cat}
                             onClick={() => setActiveCategory(cat)}
                             className={`px-4 py-2 rounded-full text-[10px] uppercase tracking-widest transition-all ${activeCategory === cat
-                                    ? 'bg-white text-black font-bold'
-                                    : 'bg-white/5 text-zinc-500 hover:bg-white/10'
+                                ? 'bg-white text-black font-bold'
+                                : 'bg-white/5 text-zinc-500 hover:bg-white/10'
                                 }`}
                         >
                             {cat}

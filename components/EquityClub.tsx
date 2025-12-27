@@ -1,12 +1,47 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CreditCard, TrendingUp, Lock, CheckCircle, Wallet,
   ArrowUpRight, ShieldCheck, Diamond, Building, ChevronRight
 } from 'lucide-react';
+import { OnboardingModal } from './OnboardingModal';
+import { markFeatureAsSeen } from './NewBadge';
+import { AppTab } from '../types';
 
 export const EquityClub: React.FC = () => {
+  // Tour State
+  const [showTour, setShowTour] = useState(false);
+
+  // Check Local Storage for Tour
+  useEffect(() => {
+    const TOUR_KEY = 'has_seen_equity_tour';
+    const hasSeen = localStorage.getItem(TOUR_KEY);
+
+    if (!hasSeen) {
+      setShowTour(true);
+    }
+  }, []);
+
+  const handleTourClose = () => {
+    const TOUR_KEY = 'has_seen_equity_tour';
+    localStorage.setItem(TOUR_KEY, 'true');
+    setShowTour(false);
+    markFeatureAsSeen(AppTab.EquityClub);
+  };
+
   return (
     <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-32">
+      <OnboardingModal
+        isOpen={showTour}
+        onClose={handleTourClose}
+        title="The Treasure Chest"
+        description="Your home is an asset. We help you maximize its value from day one."
+        features={[
+          "Unfair Equity: Access wholesale pricing not available to the public.",
+          "Builder Rebates: Get cash back on materials and finishes.",
+          "Asset Tracking: Watch your net worth grow as construction progresses."
+        ]}
+        type="TAB_WELCOME"
+      />
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">

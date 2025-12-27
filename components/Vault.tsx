@@ -315,12 +315,12 @@ export const Vault: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="p-10 space-y-8">
 
               {/* Safety Score Header */}
               {selectedFile.ai_analysis?.safety_score !== undefined && (
-                <div className="flex items-center gap-6 p-4 rounded-xl bg-white/5 border border-white/10">
-                  <div className="relative size-16 flex-none">
+                <div className="flex items-center gap-8 p-6 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="relative size-20 flex-none">
                     <svg className="size-full -rotate-90" viewBox="0 0 36 36">
                       {/* Background Circle */}
                       <path className="text-white/10" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
@@ -335,35 +335,35 @@ export const Vault: React.FC = () => {
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-lg font-bold text-white">{selectedFile.ai_analysis.safety_score}</span>
+                      <span className="text-2xl font-bold text-white">{selectedFile.ai_analysis.safety_score}</span>
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-white uppercase tracking-widest">Document Safety Score</h4>
-                    <p className="text-xs text-zinc-400 mt-1">
+                    <h4 className="text-sm font-semibold text-white uppercase tracking-widest mb-1">Document Safety Score</h4>
+                    <p className="text-sm text-zinc-400 leading-relaxed">
                       {selectedFile.ai_analysis.safety_score > 80
-                        ? "This document looks standard and safe."
-                        : "We found specific clauses that require attention."}
+                        ? "This document looks standard and safe to sign."
+                        : "We found specific clauses that require your attention before signing."}
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Red Flags Alert (New Object Structure) */}
+              {/* Red Flags Alert */}
               {selectedFile.ai_analysis?.red_flags && selectedFile.ai_analysis.red_flags.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="text-[10px] uppercase tracking-widest text-rose-400 flex items-center gap-2">
-                    <Shield size={12} /> Critical Attention Required
+                <div className="space-y-4">
+                  <h4 className="text-xs uppercase tracking-widest text-rose-400 flex items-center gap-2 font-semibold">
+                    <Shield size={14} /> Critical Attention Required
                   </h4>
                   {selectedFile.ai_analysis.red_flags.map((flag: any, idx: number) => (
-                    <div key={idx} className="p-4 bg-rose-500/5 border border-rose-500/20 rounded-xl flex gap-4">
-                      <div className="flex-1">
-                        <span className="text-xs font-bold text-rose-200 block mb-1">{flag.clause}</span>
-                        <p className="text-xs text-rose-200/70 leading-relaxed">{flag.explanation}</p>
+                    <div key={idx} className="p-5 bg-rose-500/5 border border-rose-500/20 rounded-2xl flex flex-col md:flex-row gap-6 items-start">
+                      <div className="flex-1 space-y-2">
+                        <span className="text-sm font-bold text-rose-200 block">{flag.clause}</span>
+                        <p className="text-sm text-rose-200/80 leading-relaxed">{flag.explanation}</p>
                       </div>
-                      <div className="flex flex-col items-center justify-center px-3 py-2 rounded bg-rose-500/10 border border-rose-500/20 h-fit min-w-[60px]">
-                        <span className="text-[9px] uppercase text-rose-400 font-bold mb-0.5">Danger</span>
-                        <span className="text-lg font-bold text-white">{flag.danger_level}<span className="text-xs text-rose-400/50">/10</span></span>
+                      <div className="flex flex-row md:flex-col items-center justify-center px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 md:min-w-[80px] self-start md:self-center">
+                        <span className="text-[10px] uppercase text-rose-400 font-bold mb-0.5">Danger</span>
+                        <span className="text-xl font-bold text-white">{flag.danger_level}<span className="text-xs text-rose-400/50">/10</span></span>
                       </div>
                     </div>
                   ))}
@@ -372,11 +372,11 @@ export const Vault: React.FC = () => {
 
               {/* AI Summary */}
               <div>
-                <h4 className="text-[10px] uppercase tracking-widest text-zinc-500 mb-3 flex items-center gap-2">
-                  <Sparkles size={12} className="text-purple-400" /> AI Executive Summary
+                <h4 className="text-xs uppercase tracking-widest text-zinc-500 mb-4 flex items-center gap-2 font-semibold">
+                  <Sparkles size={14} className="text-purple-400" /> AI Executive Summary
                 </h4>
-                <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-                  <p className="text-sm text-zinc-300 leading-relaxed">
+                <div className="p-6 bg-white/5 rounded-2xl border border-white/5">
+                  <p className="text-sm text-zinc-300 leading-7 font-light">
                     {selectedFile.status === 'analyzing'
                       ? <span className="animate-pulse">AI is currently processing this document to extract key insights...</span>
                       : selectedFile.ai_analysis?.summary || selectedFile.summary || "No summary available."}
@@ -387,27 +387,28 @@ export const Vault: React.FC = () => {
               {/* Key Breakdown */}
               {selectedFile.ai_analysis?.breakdown && selectedFile.ai_analysis.breakdown.length > 0 && (
                 <div>
-                  <h4 className="text-[10px] uppercase tracking-widest text-zinc-500 mb-3 flex items-center gap-2">
-                    <BrainCircuit size={12} className="text-emerald-400" /> Key Insights
+                  <h4 className="text-xs uppercase tracking-widest text-zinc-500 mb-4 flex items-center gap-2 font-semibold">
+                    <BrainCircuit size={14} className="text-emerald-400" /> Key Insights
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {selectedFile.ai_analysis.breakdown.map((item, idx) => (
-                      <div key={idx} className="p-3 bg-white/[0.02] border border-white/5 rounded-lg text-xs text-zinc-400 flex items-start gap-2">
-                        <span className="text-emerald-500/50">•</span> {item}
+                      <div key={idx} className="p-4 bg-white/[0.02] border border-white/5 rounded-xl text-xs text-zinc-400 flex items-start gap-3">
+                        <span className="text-emerald-500/50 mt-0.5">•</span>
+                        <span className="leading-relaxed">{item}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+              <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/5">
                 <div>
-                  <p className="text-[9px] uppercase tracking-widest text-zinc-600 mb-1">Category</p>
-                  <p className="text-sm text-white">{selectedFile.category}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-zinc-600 mb-1.5">Category</p>
+                  <p className="text-sm text-white font-medium">{selectedFile.category}</p>
                 </div>
                 <div>
-                  <p className="text-[9px] uppercase tracking-widest text-zinc-600 mb-1">Original Name</p>
-                  <p className="text-sm text-zinc-400 truncate">{selectedFile.original_name}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-zinc-600 mb-1.5">Original Name</p>
+                  <p className="text-sm text-zinc-400 truncate font-medium">{selectedFile.original_name}</p>
                 </div>
               </div>
             </div>
@@ -421,7 +422,7 @@ export const Vault: React.FC = () => {
                   });
                   setActiveTab(AppTab.ProjectPilot);
                 }}
-                className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:shadow-lg hover:shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 group"
+                className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:shadow-lg hover:shadow-emerald-500/20 transition-all flex items-center justify-center gap-3 group"
               >
                 <Sparkles size={16} className="text-white group-hover:scale-110 transition-transform" />
                 Ask Project Pilot to Review

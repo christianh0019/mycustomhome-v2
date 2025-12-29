@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
-import { ProjectPilot } from './ProjectPilot';
+import { ProjectPilotWidget } from './ProjectPilotWidget';
 import { Roadmap } from './Roadmap';
 import { Vault } from './Vault';
 import { Partners } from './Partners';
@@ -54,7 +54,7 @@ export const MainApp: React.FC = () => {
                 </div>
 
                 <div className="flex-1">
-                    {activeTab === AppTab.ProjectPilot && <ProjectPilot />}
+                    {/* {activeTab === AppTab.ProjectPilot && <ProjectPilot />} REMOVED */}
                     {activeTab === AppTab.Roadmap && <Roadmap />}
                     {activeTab === AppTab.TheVault && <Vault />}
                     {activeTab === AppTab.Partners && <Partners />}
@@ -70,6 +70,9 @@ export const MainApp: React.FC = () => {
                     <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
                 </div>
             </main>
+
+            {/* Global AI Assistant */}
+            <ProjectPilotWidget />
         </div>
     );
 };

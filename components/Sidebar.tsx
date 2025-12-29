@@ -24,7 +24,7 @@ const TAB_ICONS: Record<string, React.ElementType> = {
 
 // Explicit order
 const ORDERED_TABS = [
-  AppTab.ProjectPilot,
+  // AppTab.ProjectPilot, // Moved to Global Widget
   AppTab.Roadmap,
   AppTab.BudgetCreator,
   AppTab.TheVault,

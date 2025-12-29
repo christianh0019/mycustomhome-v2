@@ -574,7 +574,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
         setFields(prev => prev.filter(f => f.id !== id));
     };
 
-    const updateFieldPosition = (id: string, deltaX: number, deltaY: number) => {
+    const updateFieldPosition = (id: string, clientX: number, clientY: number) => {
         setFields(prev => prev.map(f => {
             if (f.id !== id) return f;
 
@@ -582,13 +582,14 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
             if (!el) return f;
 
             const rect = el.getBoundingClientRect();
-            const pDeltaX = (deltaX / rect.width) * 100;
-            const pDeltaY = (deltaY / rect.height) * 100;
+            // Calculate absolute position percentage based on the drop center point
+            const x = ((clientX - rect.left) / rect.width) * 100;
+            const y = ((clientY - rect.top) / rect.height) * 100;
 
             return {
                 ...f,
-                x: Math.min(100, Math.max(0, f.x + pDeltaX)),
-                y: Math.min(100, Math.max(0, f.y + pDeltaY))
+                x: Math.min(100, Math.max(0, x)),
+                y: Math.min(100, Math.max(0, y))
             };
         }));
     };
@@ -810,12 +811,13 @@ const DraggableTool: React.FC<{
 const DraggableFieldOnCanvas: React.FC<{
     field: DraggableField,
     onRemove: (id: string) => void,
-    onUpdatePos: (id: string, dx: number, dy: number) => void,
+    onUpdatePos: (id: string, x: number, y: number) => void,
     onUpdateValue?: (id: string, value: string) => void,
     isReadOnly?: boolean
 }> = ({ field, onRemove, onUpdatePos, onUpdateValue, isReadOnly }) => {
-
+    const ref = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0] && onUpdateValue) {
             const url = URL.createObjectURL(e.target.files[0]);
@@ -825,10 +827,16 @@ const DraggableFieldOnCanvas: React.FC<{
 
     return (
         <motion.div
+            ref={ref}
             drag={!isReadOnly}
             dragMomentum={false}
-            onDragEnd={(_, info) => {
-                if (!isReadOnly) onUpdatePos(field.id, info.offset.x, info.offset.y);
+            onDragEnd={() => {
+                if (!isReadOnly && ref.current) {
+                    const rect = ref.current.getBoundingClientRect();
+                    const centerX = rect.left + (rect.width / 2);
+                    const centerY = rect.top + (rect.height / 2);
+                    onUpdatePos(field.id, centerX, centerY);
+                }
             }}
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

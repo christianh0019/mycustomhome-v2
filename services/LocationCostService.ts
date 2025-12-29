@@ -89,7 +89,7 @@ export const LocationCostService = {
                     });
                     if (match) place = match;
                 }
-                const place = data.results[0];
+
                 const stateCode = place.admin1_code || ''; // e.g. "CO", "TX"
                 const country = place.country_code;
                 const isUS = country === 'US';

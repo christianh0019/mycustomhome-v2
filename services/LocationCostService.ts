@@ -56,10 +56,39 @@ export const LocationCostService = {
 
         // 2. Fetch Live Details from OpenMeteo
         try {
-            const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
+            // Intelligent Parsing: "City, State" -> name="City", text match state
+            let searchTerm = city;
+            let expectedState = '';
+
+            if (city.includes(',')) {
+                const parts = city.split(',');
+                searchTerm = parts[0].trim();
+                expectedState = parts[1].trim().toLowerCase();
+            } else {
+                // Handle "Dallas TX" format
+                const words = city.trim().split(' ');
+                const lastWord = words[words.length - 1];
+                if (words.length > 1 && lastWord.length === 2 && /^[a-zA-Z]+$/.test(lastWord)) {
+                    expectedState = lastWord.toLowerCase();
+                    searchTerm = words.slice(0, -1).join(' ');
+                }
+            }
+
+            const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchTerm)}&count=10&language=en&format=json`);
             const data = await response.json();
 
             if (data.results && data.results.length > 0) {
+                // Find best match matching state if provided
+                let place = data.results[0]; // Default to first matches
+
+                if (expectedState) {
+                    const match = data.results.find((p: any) => {
+                        const stateName = (p.admin1 || '').toLowerCase();
+                        const stateCode = (p.admin1_code || '').toLowerCase();
+                        return stateName.includes(expectedState) || stateCode === expectedState;
+                    });
+                    if (match) place = match;
+                }
                 const place = data.results[0];
                 const stateCode = place.admin1_code || ''; // e.g. "CO", "TX"
                 const country = place.country_code;

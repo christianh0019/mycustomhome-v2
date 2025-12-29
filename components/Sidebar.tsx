@@ -4,7 +4,36 @@ import { AppTab } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { RoadmapService } from '../services/RoadmapService';
 import { NewBadge, markFeatureAsSeen } from './NewBadge';
-import { Lock } from 'lucide-react';
+import {
+  Lock, Map, Calculator, Users, MessageSquare,
+  Book, Wallet, UserCircle, Hexagon, Component
+} from 'lucide-react';
+
+const TAB_ICONS: Record<string, React.ElementType> = {
+  [AppTab.ProjectPilot]: Component, // Your Helper
+  [AppTab.Roadmap]: Map, // The Map
+  [AppTab.BudgetCreator]: Calculator, // The Budget
+  [AppTab.TheVault]: Lock, // The Safe Box (Vault usually implies lock/security)
+  [AppTab.Partners]: Users, // The Team
+  [AppTab.Messages]: MessageSquare,
+  [AppTab.KnowledgeBase]: Book,
+  [AppTab.EquityClub]: Hexagon, // Treasure Chest
+  [AppTab.TheLedger]: Wallet,
+  [AppTab.Settings]: UserCircle
+};
+
+// Explicit order
+const ORDERED_TABS = [
+  AppTab.ProjectPilot,
+  AppTab.Roadmap,
+  AppTab.BudgetCreator,
+  AppTab.TheVault,
+  AppTab.Partners,
+  AppTab.Messages,
+  AppTab.KnowledgeBase,
+  AppTab.EquityClub,
+  AppTab.TheLedger,
+];
 
 interface SidebarProps {
   activeTab: AppTab;
@@ -30,9 +59,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     // I can't reorder types.ts easily without breaking other things depending on index? 
     // No, it's string enum.
 
-    const allTabs = Object.values(AppTab).filter(tab => tab !== AppTab.Settings);
-
-    return allTabs.map(tab => {
+    // Use manual order
+    return ORDERED_TABS.map(tab => {
       let isLocked = false;
       let unlockMessage = "";
 
@@ -98,8 +126,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
             {/* The original code did not have an 'icon' variable.
                 Keeping the original 'tab' text for now.
                 If an icon is intended, it would need to be defined or imported. */}
+            {/* Icon */}
             <div className={`transition-transform duration-300 ${activeTab === tab ? 'scale-110' : 'group-hover:scale-110'}`}>
-              {/* {icon} */} {/* Placeholder for icon if needed */}
+              {TAB_ICONS[tab] && React.createElement(TAB_ICONS[tab], { size: 18 })}
             </div>
             <span>{tab}</span>
 

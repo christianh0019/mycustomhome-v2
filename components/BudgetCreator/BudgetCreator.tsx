@@ -27,7 +27,7 @@ export const BudgetCreator: React.FC = () => {
     });
 
     useEffect(() => {
-        const result = calculateBudgetBreakdown(totalBudget, hasLand ? landCost : 0, targetSqFt, includeSoftCosts);
+        const result = calculateBudgetBreakdown(totalBudget, !hasLand ? landCost : 0, targetSqFt, includeSoftCosts);
         setBreakdown(result);
     }, [totalBudget, hasLand, landCost, targetSqFt, includeSoftCosts]);
 

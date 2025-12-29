@@ -30,13 +30,12 @@ interface DocItem {
 
 interface DraggableField {
     id: string;
-    // Added 'image' to type
     type: 'signature' | 'initials' | 'date' | 'text' | 'checkbox' | 'image';
     label: string;
     x: number; // Percentage 0-100
     y: number; // Percentage 0-100
     pageNumber: number; // 1-indexed
-    value?: string; // For image, this is the URL
+    value?: string;
     recipientId?: number; // 1 = Primary
     width?: number; // For resizeable items
     height?: number;
@@ -224,8 +223,6 @@ const StatusBadge: React.FC<{ status: DocumentStatus }> = ({ status }) => {
     }
 };
 
-// --- RICH TEXT EDITOR STRATEGY ---
-// To avoid focus loss, we must use onMouseDown + e.preventDefault() instead of onClick
 const RichTextEditor: React.FC<{
     initialContent?: string;
     onChange?: (html: string) => void;
@@ -240,7 +237,6 @@ const RichTextEditor: React.FC<{
     }, [initialContent]);
 
     const exec = (command: string, value: string | undefined = undefined) => {
-        // Ensure we focus back
         if (editorRef.current) {
             editorRef.current.focus();
         }
@@ -291,7 +287,6 @@ const RichTextEditor: React.FC<{
     );
 };
 
-// FIXED: Use onMouseDown with preventDefault to keep focus on the editor text selection
 const ToolbarBtn: React.FC<{ icon: React.ElementType, onClick: () => void, label?: string }> = ({ icon: Icon, onClick, label }) => (
     <button
         onMouseDown={(e) => {
@@ -305,8 +300,6 @@ const ToolbarBtn: React.FC<{ icon: React.ElementType, onClick: () => void, label
     </button>
 );
 
-
-// --- DOCUMENT CREATOR COMPONENT ---
 
 const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null }> = ({ onBack, initialDoc }) => {
     const { user } = useAuth();
@@ -346,49 +339,114 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     }, [initialDoc]);
 
     const initializeTemplate = (recipName: string) => {
-        // Pre-fill content with PLACEHOLDER for Logo
+        // Pre-fill content
         const page1 = `
             <div style="margin-bottom: 3rem; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e5e7eb; padding-bottom: 2rem;">
                 <div>
                      <div style="font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem;">BuildCorp Inc.</div>
                      <div style="color: #71717a;">123 Construction Ave, Suite 100<br/>New York, NY 10001</div>
                 </div>
-                <!-- Logo Space reserved for Image Field -->
+                <!-- Logo Space -->
             </div>
 
             <div style="text-align: center; margin-bottom: 3rem;">
                 <h1 style="font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Professional Services Agreement</h1>
                 <p style="color: #71717a; font-style: italic;">Effective Date: ${new Date().toLocaleDateString()}</p>
             </div>
-            
-            <!-- Standard Content ... -->
+
             <div style="display: flex; flex-direction: column; gap: 2rem;">
                 <section>
                     <h2>1. The Parties</h2>
                     <p>This Professional Services Agreement ("Agreement") is entered into between <strong>BuildCorp Inc.</strong> ("Service Provider") and <strong>${recipName}</strong> ("Client"). The Service Provider and Client may be referred to individually as a "Party" or collectively as the "Parties".</p>
                 </section>
-                <!-- ... other sections ... -->
+
+                <section>
+                    <h2>2. Scope of Work</h2>
+                    <p style="margin-bottom: 0.5rem;">The Service Provider agrees to perform the following services for the Client:</p>
+                    <ul>
+                        <li>Custom home design and architectural planning.</li>
+                        <li>Permit acquisition and regulatory compliance consultation.</li>
+                        <li>Material selection and vendor coordination.</li>
+                        <li>On-site project management and quality assurance.</li>
+                    </ul>
+                    <p style="margin-top: 0.5rem;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                </section>
+
+                 <section>
+                    <h2>3. Compensation</h2>
+                    <p>Client agrees to pay Service Provider a total fee of <strong>$0.00</strong> (TBD) for the Services.</p>
+                    <p style="margin-top: 0.25rem;">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                </section>
             </div>
         `;
 
-        // Load Page 2 content... (same as before)
-        const page2 = `... <div style="margin-top: 4rem;"> ...Signature Block... </div> ...`; // simplified for brevity in this block, actual code should contain full string
+        const page2 = `
+            <div style="display: flex; flex-direction: column; height: 100%;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 2rem;">
+                    <section>
+                        <h2>4. Term and Termination</h2>
+                        <p>This Agreement shall commence on the Effective Date and shall continue until the completion of the Services, unless earlier terminated as provided herein. Either Party may terminate this Agreement upon written notice if the other Party materially breaches any provision of this Agreement.</p>
+                    </section>
+                    
+                    <section>
+                        <h2>5. Confidentiality</h2>
+                        <p>Each Party agrees to retain in confidence all non-public information and trade secrets of the other Party used or disclosed in connection with this Agreement. The Parties shall take reasonable precautions to prevent unauthorized disclosure of such information.</p>
+                    </section>
+
+                    <section>
+                        <h2>6. Governing Law</h2>
+                        <p>This Agreement shall be governed by and construed in accordance with the laws of the State of New York.</p>
+                    </section>
+                </div>
+
+                <div style="margin-top: 4rem; padding-top: 2rem; border-top: 2px solid #18181b;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;">
+                        <div>
+                            <h4 style="font-weight: 700; margin-bottom: 2rem;">IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date first above written.</h4>
+                            <div style="display: flex; flex-direction: column; gap: 2rem;">
+                                <div>
+                                    <div style="height: 3rem; border-bottom: 1px solid #d4d4d8; margin-bottom: 0.5rem;"></div>
+                                    <p style="font-weight: 700;">BuildCorp Inc.</p>
+                                    <p style="color: #71717a;">Authorized Signature</p>
+                                </div>
+                                <div>
+                                    <div style="height: 3rem; border-bottom: 1px solid #d4d4d8; margin-bottom: 0.5rem;"></div>
+                                    <p style="font-weight: 700;">Date</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 style="font-weight: 700; margin-bottom: 2rem;">Signature Block</h4>
+                            <div style="display: flex; flex-direction: column; gap: 2rem;">
+                                <div>
+                                    <div style="height: 3rem; border-bottom: 1px solid #d4d4d8; margin-bottom: 0.5rem;"></div>
+                                    <p style="font-weight: 700;">${recipName}</p>
+                                    <p style="color: #71717a;">Client Signature</p>
+                                </div>
+                                <div>
+                                    <div style="height: 3rem; border-bottom: 1px solid #d4d4d8; margin-bottom: 0.5rem;"></div>
+                                    <p style="font-weight: 700;">Date</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
 
         setPageContent({
             1: page1,
             2: page2
         });
 
-        // Add DEFAULT FIELDS if they don't exist
         if (fields.length === 0) {
             setFields([
-                // Default Logo Placeholder
                 {
                     id: 'logo-placeholder',
                     type: 'image',
                     label: 'Company Logo',
-                    x: 85, // Right side
-                    y: 5,  // Top
+                    x: 85,
+                    y: 5,
                     pageNumber: 1,
                     recipientId: 1
                 }
@@ -476,7 +534,6 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
         }
     };
 
-    // Accurate Drop Handler
     const handleFieldDrop = (type: DraggableField['type'], label: string, clientX: number, clientY: number) => {
         if (isReadOnly) return;
 
@@ -536,7 +593,6 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
         }));
     };
 
-    // IMAGE UPDATE HANDLER
     const updateFieldValue = (id: string, value: string) => {
         setFields(prev => prev.map(f => f.id === id ? { ...f, value } : f));
     }
@@ -547,7 +603,6 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
 
     return (
         <div className="h-full flex flex-col bg-zinc-100 dark:bg-[#050505]">
-            {/* Top Bar */}
             <div className="h-16 bg-white dark:bg-[#0A0A0A] border-b border-zinc-200 dark:border-white/10 flex items-center justify-between px-6 shrink-0 z-20">
                 <div className="flex items-center gap-4">
                     <button onClick={onBack} className="p-2 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-lg text-zinc-500 dark:text-zinc-400">
@@ -590,7 +645,6 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
             </div>
 
             <div className="flex-1 flex overflow-hidden">
-                {/* Tools Sidebar */}
                 {!isReadOnly && (
                     <div className="w-64 bg-white dark:bg-[#0A0A0A] border-r border-zinc-200 dark:border-white/10 flex flex-col z-10">
                         <div className="p-4 border-b border-zinc-200 dark:border-white/5">
@@ -601,17 +655,14 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                                 <DraggableTool type="date" icon={Calendar} label="Date Signed" onDrop={handleFieldDrop} />
                                 <DraggableTool type="text" icon={Type} label="Text Box" onDrop={handleFieldDrop} />
                                 <DraggableTool type="checkbox" icon={CheckSquare} label="Checkbox" onDrop={handleFieldDrop} />
-                                {/* NEW: Image Tool */}
                                 <DraggableTool type="image" icon={ImageIcon} label="Image / Logo" onDrop={handleFieldDrop} />
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* Main Canvas Area */}
                 <div className="flex-1 bg-zinc-100 dark:bg-[#050505] overflow-auto p-12 flex justify-center relative">
-                    <div className="flex flex-col gap-8 pb-32"> {/* Scrollable column of pages */}
-
+                    <div className="flex flex-col gap-8 pb-32">
                         {!fileType && (
                             <div className="flex flex-col items-center justify-center min-h-[500px]">
                                 <div className="bg-white dark:bg-[#0A0A0A] p-12 rounded-3xl shadow-xl max-w-2xl w-full text-center border border-zinc-200 dark:border-white/5">
@@ -669,7 +720,6 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                                 ref={(el) => pageRefs.current[pageNum] = el}
                                 className="relative w-[8.5in] min-h-[11in] bg-white shadow-xl transition-all duration-300 mx-auto"
                             >
-                                {/* Background Layer */}
                                 {fileType === 'pdf' && previewUrl && (
                                     <Document
                                         file={previewUrl}
@@ -688,7 +738,6 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                                     <img src={previewUrl} alt="Document" className="w-full h-auto select-none pointer-events-none" />
                                 )}
 
-                                {/* Rich Text Editor Layer */}
                                 {(fileType === 'blank' || fileType === 'template') && (
                                     <div className="absolute inset-0 z-0">
                                         <RichTextEditor
@@ -698,19 +747,17 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                                     </div>
                                 )}
 
-                                {/* Fields Overlay */}
                                 {fields.filter(f => (f.pageNumber || 1) === pageNum).map((field) => (
                                     <DraggableFieldOnCanvas
                                         key={field.id}
                                         field={field}
                                         onRemove={removeField}
                                         onUpdatePos={updateFieldPosition}
-                                        onUpdateValue={updateFieldValue} // Pass update func
+                                        onUpdateValue={updateFieldValue}
                                         isReadOnly={isReadOnly}
                                     />
                                 ))}
 
-                                {/* Page Number indicator */}
                                 <div className="absolute -right-12 top-0 text-xs text-zinc-400 font-medium">
                                     Page {pageNum}
                                 </div>
@@ -723,8 +770,6 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     );
 };
 
-// --- HELPER COMPONENTS ---
-
 const DraggableTool: React.FC<{
     type: DraggableField['type'],
     icon: React.ElementType,
@@ -732,14 +777,26 @@ const DraggableTool: React.FC<{
     color?: string,
     onDrop: (type: DraggableField['type'], label: string, x: number, y: number) => void
 }> = ({ type, icon: Icon, label, color, onDrop }) => {
+    const ref = useRef<HTMLDivElement>(null);
+
     return (
         <motion.div
+            ref={ref}
             drag
             dragSnapToOrigin
-            whileDrag={{ scale: 1.1, zIndex: 100, opacity: 0.8 }}
+            whileDrag={{ scale: 1.1, zIndex: 100, opacity: 0.8, cursor: 'grabbing' }}
+            dragMomentum={false}
             onDragEnd={(e) => {
-                // @ts-ignore - clientX/Y exist on drag events
-                onDrop(type, label, e.clientX || e.pageX, e.clientY || e.pageY);
+                const element = ref.current;
+                if (element) {
+                    const rect = element.getBoundingClientRect();
+                    const centerX = rect.left + (rect.width / 2);
+                    const centerY = rect.top + (rect.height / 2);
+                    onDrop(type, label, centerX, centerY);
+                } else {
+                    // @ts-ignore
+                    onDrop(type, label, e.clientX || e.pageX, e.clientY || e.pageY);
+                }
             }}
             className="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-white/5 cursor-grab active:cursor-grabbing transition-colors group relative bg-white dark:bg-[#0A0A0A] border border-transparent hover:border-zinc-200"
         >
@@ -758,7 +815,6 @@ const DraggableFieldOnCanvas: React.FC<{
     isReadOnly?: boolean
 }> = ({ field, onRemove, onUpdatePos, onUpdateValue, isReadOnly }) => {
 
-    // For Image Upload
     const fileInputRef = useRef<HTMLInputElement>(null);
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0] && onUpdateValue) {
@@ -792,7 +848,7 @@ const DraggableFieldOnCanvas: React.FC<{
                         <div className="relative">
                             <img src={field.value} alt="Logo" className="h-16 w-auto object-contain border border-transparent hover:border-blue-500 rounded" />
                             {!isReadOnly && (
-                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/image:opacity-100 flex items-center justify-center transition-opacity rounded cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                                     <Pencil size={12} className="text-white" />
                                 </div>
                             )}
@@ -815,7 +871,6 @@ const DraggableFieldOnCanvas: React.FC<{
                 </div>
             )}
 
-            {/* Remove Button for all types */}
             {!isReadOnly && (
                 <button
                     onClick={(e) => { e.stopPropagation(); onRemove(field.id); }}

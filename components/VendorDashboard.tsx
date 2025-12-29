@@ -118,7 +118,31 @@ const VendorOpportunities: React.FC = () => (
 );
 
 const VendorProjects: React.FC = () => (
-    <div className="flex-1 flex items-center justify-center text-white/30">
-        <p className="uppercase tracking-widest">No active projects yet</p>
+    <div className="p-12 w-full h-full overflow-y-auto">
+        <h2 className="text-4xl font-serif mb-8">Active Jobs</h2>
+        <div className="space-y-6">
+            <div className="p-8 border border-white/10 bg-[#080808] rounded-xl flex items-center justify-between">
+                <div>
+                    <div className="flex items-center gap-3 mb-2">
+                        <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 text-[9px] uppercase tracking-wide rounded border border-emerald-500/20">Active</span>
+                        <span className="text-[10px] text-zinc-500">Started 2 days ago</span>
+                    </div>
+                    <h3 className="text-2xl font-medium mb-1 text-white">Miller Residence - Main House</h3>
+                    <p className="text-sm text-zinc-500">Client: Christian • Stage: Pre-Construction</p>
+                </div>
+
+                <div className="flex gap-4">
+                    <button className="px-6 py-3 border border-white/10 hover:bg-white/5 text-white text-[10px] uppercase tracking-widest rounded-lg transition-colors">
+                        View Files
+                    </button>
+                    <button
+                        onClick={() => alert("Simulated: Contract sent to homeowner's message inbox!")}
+                        className="px-6 py-3 bg-white text-black text-[10px] uppercase tracking-widest font-bold hover:scale-105 transition-transform flex items-center gap-2"
+                    >
+                        Send Contract
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 );

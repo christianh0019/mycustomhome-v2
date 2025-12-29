@@ -3,6 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { AppTab } from '../types';
 import { OnboardingModal } from './OnboardingModal';
 import { markFeatureAsSeen } from './NewBadge';
+import { SignatureModal } from './SignatureModal';
+import { FileText, CheckCircle2 } from 'lucide-react';
+import { useUI } from '../contexts/UIContext';
 
 // --- Types ---
 interface ChatUser {
@@ -18,6 +21,11 @@ interface ChatMessage {
    text: string;
    timestamp: string;
    isRead: boolean;
+   type?: 'text' | 'signature_request';
+   metadata?: {
+      documentTitle?: string;
+      status?: 'pending' | 'signed';
+   };
 }
 
 interface Thread {
@@ -39,6 +47,18 @@ const THREADS: Thread[] = [
          { id: '1', senderId: 'me', text: 'When can we expect the updated bid?', timestamp: '10:00 AM', isRead: true },
          { id: '2', senderId: 'p1', text: 'Just finalizing the lumber package costs.', timestamp: '10:15 AM', isRead: true },
          { id: '3', senderId: 'p1', text: 'I should have it to you by EOD.', timestamp: '10:16 AM', isRead: true },
+         {
+            id: '4',
+            senderId: 'p1',
+            text: 'Please review and sign the preliminary agreement.',
+            timestamp: '10:20 AM',
+            isRead: false,
+            type: 'signature_request',
+            metadata: {
+               documentTitle: 'Preliminary Construction Agreement v2.pdf',
+               status: 'pending'
+            }
+         },
       ]
    },
    {
@@ -62,10 +82,15 @@ const THREADS: Thread[] = [
 ];
 
 export const MessagesTab: React.FC = () => {
+   const { showToast } = useUI();
    const [activeThreadId, setActiveThreadId] = useState<string>(THREADS[0].id);
    const [input, setInput] = useState('');
+   const [localThreads, setLocalThreads] = useState<Thread[]>(THREADS); // Use local state for UI updates
 
-   const activeThread = THREADS.find(t => t.id === activeThreadId);
+   // Signature State
+   const [signingMessageId, setSigningMessageId] = useState<string | null>(null);
+
+   const activeThread = localThreads.find(t => t.id === activeThreadId);
 
    // Tour State
    const [showTour, setShowTour] = useState(false);
@@ -89,10 +114,71 @@ export const MessagesTab: React.FC = () => {
 
    const handleSend = () => {
       if (!input.trim() || !activeThread) return;
-      // In a real app, this would update state/DB
-      console.log('Sending:', input);
+
+      const newMessage: ChatMessage = {
+         id: Date.now().toString(),
+         senderId: ME_ID,
+         text: input,
+         timestamp: 'Just now',
+         isRead: true,
+         type: 'text'
+      };
+
+      const updatedThreads = localThreads.map(t => {
+         if (t.id === activeThreadId) {
+            return {
+               ...t,
+               messages: [...t.messages, newMessage]
+            };
+         }
+         return t;
+      });
+
+      setLocalThreads(updatedThreads);
       setInput('');
    };
+
+   const handleSignClick = (messageId: string) => {
+      setSigningMessageId(messageId);
+   };
+
+   const handleSignatureComplete = (signatureDataUrl: string) => {
+      if (!signingMessageId) return;
+
+      // 1. Update the message status to 'signed'
+      const updatedThreads = localThreads.map(t => {
+         const msgIndex = t.messages.findIndex(m => m.id === signingMessageId);
+         if (msgIndex !== -1) {
+            const newMessages = [...t.messages];
+            newMessages[msgIndex] = {
+               ...newMessages[msgIndex],
+               metadata: {
+                  ...newMessages[msgIndex].metadata,
+                  status: 'signed'
+               }
+            };
+            // Add a system confirmation message
+            newMessages.push({
+               id: Date.now().toString(),
+               senderId: ME_ID,
+               text: `Signed ${newMessages[msgIndex].metadata?.documentTitle}.`,
+               timestamp: 'Just now',
+               isRead: true,
+               type: 'text'
+            });
+            return { ...t, messages: newMessages };
+         }
+         return t;
+      });
+
+      setLocalThreads(updatedThreads);
+      setSigningMessageId(null);
+      showToast("Document signed successfully!", "success");
+
+      // In a real app, this is where we'd upload the signed PDF to the Vault
+   };
+
+   const signingMessage = activeThread?.messages.find(m => m.id === signingMessageId);
 
    return (
       <div className="h-full flex flex-col md:flex-row bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white relative transition-colors duration-300">
@@ -109,6 +195,14 @@ export const MessagesTab: React.FC = () => {
             type="TAB_WELCOME"
          />
 
+         {/* Signature Modal */}
+         <SignatureModal
+            isOpen={!!signingMessageId}
+            onClose={() => setSigningMessageId(null)}
+            onSign={handleSignatureComplete}
+            documentTitle={signingMessage?.metadata?.documentTitle || 'Document'}
+         />
+
          {/* --- Sidebar (Thread List) --- */}
          <div className={`w-full md:w-80 border-r border-zinc-200 dark:border-white/5 flex flex-col bg-white dark:bg-[#0A0A0A] ${activeThreadId ? 'hidden md:flex' : 'flex'}`}>
 
@@ -122,7 +216,7 @@ export const MessagesTab: React.FC = () => {
 
             {/* List */}
             <div className="flex-1 overflow-y-auto">
-               {THREADS.map(thread => {
+               {localThreads.map(thread => {
                   const lastMsg = thread.messages[thread.messages.length - 1];
                   const isActive = activeThreadId === thread.id;
 
@@ -191,6 +285,48 @@ export const MessagesTab: React.FC = () => {
                   <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-6">
                      {activeThread.messages.map((msg, idx) => {
                         const isMe = msg.senderId === ME_ID;
+
+                        // Signature Request Card
+                        if (msg.type === 'signature_request' && msg.metadata) {
+                           return (
+                              <div key={msg.id} className="flex justify-start w-full">
+                                 <div className="max-w-[85%] md:max-w-[400px] bg-white dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-lg">
+                                    {/* Card Header */}
+                                    <div className="p-4 border-b border-zinc-100 dark:border-white/5 bg-zinc-50 dark:bg-white/[0.02] flex items-center gap-3">
+                                       <div className="size-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
+                                          <FileText size={20} />
+                                       </div>
+                                       <div>
+                                          <h4 className="font-bold text-sm text-zinc-900 dark:text-white">Signature Requested</h4>
+                                          <p className="text-xs text-zinc-500 dark:text-zinc-400">{msg.metadata.documentTitle}</p>
+                                       </div>
+                                    </div>
+
+                                    {/* Card Body */}
+                                    <div className="p-5">
+                                       <p className="text-xs text-zinc-600 dark:text-zinc-300 mb-4 leading-relaxed">
+                                          {msg.text}
+                                       </p>
+
+                                       {msg.metadata.status === 'pending' ? (
+                                          <button
+                                             onClick={() => handleSignClick(msg.id)}
+                                             className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+                                          >
+                                             Review & Sign
+                                          </button>
+                                       ) : (
+                                          <div className="w-full py-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                                             <CheckCircle2 size={16} /> Signed
+                                          </div>
+                                       )}
+                                    </div>
+                                 </div>
+                              </div>
+                           )
+                        }
+
+                        // Standard Text Message
                         return (
                            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
                               <div className={`max-w-[85%] md:max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>

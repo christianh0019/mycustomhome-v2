@@ -6,15 +6,22 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function listBuckets() {
-    console.log('Listing Storage Buckets...');
-    const { data, error } = await supabase.storage.listBuckets();
+async function checkBucket() {
+    console.log('Attempting upload to document-files...');
+
+    // Create dummy file
+    const file = new Blob(['hello world'], { type: 'text/plain' });
+
+    const { data, error } = await supabase.storage
+        .from('document-files')
+        .upload('test_check.txt', file, { upsert: true });
 
     if (error) {
-        console.error('Error fetching buckets:', error.message);
+        console.error('Upload failed:', error.message);
+        console.error('Error Details:', error);
     } else {
-        console.log('Buckets found:', data.map(b => b.name));
+        console.log('✅ Upload successful. Bucket exists!');
     }
 }
 
-listBuckets();
+checkBucket();

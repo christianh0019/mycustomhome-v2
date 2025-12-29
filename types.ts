@@ -9,6 +9,7 @@ export enum AppTab {
   Settings = 'Profile',
   EquityClub = 'The Treasure Chest',
   TheLedger = 'The Ledger',
+  BudgetCreator = 'The Budget',
 }
 
 export type UserRole = 'homeowner' | 'vendor' | 'admin';
@@ -34,6 +35,11 @@ export interface User {
   phone?: string;
   lenderName?: string;
   preApprovalInfo?: string;
+
+  // Budget Tool Persistence
+  target_sqft?: number;
+  market_cost_estimate?: number;
+  has_land?: boolean;
 
   // Roadmap Gating
   stage_progress?: Record<number, StageProgress>;

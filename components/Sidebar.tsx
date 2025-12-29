@@ -17,13 +17,34 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
   // Filter out Settings from the main navigation list to put it at the bottom
   // Filter GATE TABS based on progress
   const mainTabs = useMemo(() => {
+    // We want BudgetCreator to appear early, maybe after Roadmap or Project Pilot.
+    // Order in Enum defines order here usually? No, Object.values order.
+    // Let's explicitly order them if needed, or just let 'The Budget' appear where it falls in Enum.
+    // Enum order: Pilot, Roadmap, Vault, Partners, Messages, KB, Settings, Equity, Ledger, BudgetCreator
+    // We might want to reorder the Enum in types.ts if we want to change display order easily, 
+    // OR we can sort here. For now, I'll filter and explicitly place Budget Creator if I can, 
+    // but Object.values is easiest.
+
+    // To position "The Budget" nicely, let's just let it render. 
+    // (Ideally, we would reorder the Enum keys in types.ts for natural ordering).
+    // I can't reorder types.ts easily without breaking other things depending on index? 
+    // No, it's string enum.
+
     const allTabs = Object.values(AppTab).filter(tab => tab !== AppTab.Settings);
 
     return allTabs.map(tab => {
       let isLocked = false;
       let unlockMessage = "";
 
+      // ICONS mapping (inline or imported if preferred, but for now we rely on the implementation below)
+      // Note: original Sidebar didn't render icons but plan suggests it. I'll stick to text for consistency unless I see icons.
+
       // New tabs logic mapping
+      if (tab === AppTab.BudgetCreator) {
+        // Always unlocked? Or unlocked after ProjectPilot?
+        // Let's keep it open as a lead magnet tool.
+        isLocked = false;
+      }
       if (tab === AppTab.Partners) { // The Team
         isLocked = !RoadmapService.isFeatureUnlocked(user, 'TheTeam');
         unlockMessage = "Complete Stage 3 to Unlock";

@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     FileText, Plus, Search, MoreVertical,
     PenTool, Type, Calendar, CheckSquare,
-    Users, Send, ChevronLeft, Save, GripVertical, Settings
+    Users, Send, ChevronLeft, Save, GripVertical, Settings, Upload, X, Trash2
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { motion } from 'framer-motion';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+
+// Initialize PDF Worker
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 type DocumentStatus = 'draft' | 'sent' | 'completed';
 
-interface Document {
+interface DocItem {
     id: string;
     title: string;
     recipient: string;
@@ -16,9 +23,21 @@ interface Document {
     status: DocumentStatus;
 }
 
+interface DraggableField {
+    id: string;
+    type: 'signature' | 'initials' | 'date' | 'text' | 'checkbox';
+    label: string;
+    x: number; // Percentage 0-100
+    y: number; // Percentage 0-100
+    width?: number; // Pixels (optional default)
+    height?: number;
+    value?: string;
+    recipientId?: number; // 1 = Primary
+}
+
 export const VendorDocuments: React.FC = () => {
     const [view, setView] = useState<'list' | 'create'>('list');
-    const [docs, setDocs] = useState<Document[]>([
+    const [docs, setDocs] = useState<DocItem[]>([
         { id: '1', title: 'Miller Residence - Contract', recipient: 'Christian Hostetler', date: '2 days ago', status: 'sent' },
         { id: '2', title: 'Change Order #4', recipient: 'Christian Hostetler', date: '1 week ago', status: 'completed' },
         { id: '3', title: 'Subcontractor Agreement', recipient: '-', date: '2 weeks ago', status: 'draft' },
@@ -118,6 +137,75 @@ const StatusBadge: React.FC<{ status: DocumentStatus }> = ({ status }) => {
 
 const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [docTitle, setDocTitle] = useState('Untitled Document');
+    const [file, setFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [fileType, setFileType] = useState<'image' | 'pdf' | null>(null);
+    const [fields, setFields] = useState<DraggableField[]>([]);
+    const [numPages, setNumPages] = useState<number>(0);
+    const canvasRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const selectedFile = e.target.files[0];
+            setFile(selectedFile);
+            setPreviewUrl(URL.createObjectURL(selectedFile));
+            setFileType(selectedFile.type === 'application/pdf' ? 'pdf' : 'image');
+        }
+    };
+
+    const handleDropField = (type: DraggableField['type'], label: string, clientX: number, clientY: number) => {
+        if (!canvasRef.current) return;
+
+        const rect = canvasRef.current.getBoundingClientRect();
+
+        // Calculate position relative to container
+        const relativeX = clientX - rect.left;
+        const relativeY = clientY - rect.top;
+
+        // Convert to percentage
+        const percentX = (relativeX / rect.width) * 100;
+        const percentY = (relativeY / rect.height) * 100;
+
+        // Ensure within bounds
+        if (percentX >= 0 && percentX <= 100 && percentY >= 0 && percentY <= 100) {
+            setFields(prev => [...prev, {
+                id: Date.now().toString(),
+                type,
+                label,
+                x: percentX,
+                y: percentY,
+                recipientId: 1
+            }]);
+        }
+    };
+
+    const removeField = (id: string) => {
+        setFields(prev => prev.filter(f => f.id !== id));
+    };
+
+    const updateFieldPosition = (id: string, deltaX: number, deltaY: number) => {
+        if (!canvasRef.current) return;
+        const rect = canvasRef.current.getBoundingClientRect();
+
+        setFields(prev => prev.map(f => {
+            if (f.id !== id) return f;
+
+            // Convert pixel delta to percentage
+            const pDeltaX = (deltaX / rect.width) * 100;
+            const pDeltaY = (deltaY / rect.height) * 100;
+
+            return {
+                ...f,
+                x: Math.min(100, Math.max(0, f.x + pDeltaX)),
+                y: Math.min(100, Math.max(0, f.y + pDeltaY))
+            };
+        }));
+    };
+
+    function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+        setNumPages(numPages);
+    }
 
     return (
         <div className="h-full flex flex-col bg-zinc-100 dark:bg-[#050505]">
@@ -140,8 +228,10 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         <Save size={14} /> Save
                     </button>
                     <button
-                        onClick={() => alert("Simulated: Envelope sent to recipients!")}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-colors shadow-lg shadow-blue-500/20"
+                        onClick={() => alert(`Sending document with ${fields.length} fields!`)}
+                        disabled={fields.length === 0}
+                        className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-colors shadow-lg
+                             ${fields.length > 0 ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20' : 'bg-zinc-200 dark:bg-white/10 text-zinc-400 cursor-not-allowed'}`}
                     >
                         <Send size={14} /> Send
                     </button>
@@ -154,46 +244,73 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div className="p-4 border-b border-zinc-200 dark:border-white/5">
                         <h3 className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-4">Standard Fields</h3>
                         <div className="space-y-3">
-                            <ToolButton icon={PenTool} label="Signature" color="text-blue-500" />
-                            <ToolButton icon={Type} label="Initials" />
-                            <ToolButton icon={Calendar} label="Date Signed" />
-                            <ToolButton icon={Type} label="Text Box" />
-                            <ToolButton icon={CheckSquare} label="Checkbox" />
+                            {/* Draggable sources */}
+                            <DraggableTool type="signature" icon={PenTool} label="Signature" color="text-blue-500" onDrop={handleDropField} />
+                            <DraggableTool type="initials" icon={Type} label="Initials" onDrop={handleDropField} />
+                            <DraggableTool type="date" icon={Calendar} label="Date Signed" onDrop={handleDropField} />
+                            <DraggableTool type="text" icon={Type} label="Text Box" onDrop={handleDropField} />
+                            <DraggableTool type="checkbox" icon={CheckSquare} label="Checkbox" onDrop={handleDropField} />
                         </div>
                     </div>
                 </div>
 
-                {/* Main Canvas */}
+                {/* Main Canvas Area */}
                 <div className="flex-1 bg-zinc-100 dark:bg-[#050505] overflow-auto p-12 flex justify-center relative">
-                    {/* Simulated Paper */}
-                    <div className="w-[8.5in] min-h-[11in] bg-white text-black shadow-2xl relative p-12 flex flex-col gap-8">
-                        {/* Placeholder Content */}
-                        <div className="flex justify-between items-start border-b-2 border-black pb-8">
-                            <div>
-                                <h1 className="text-3xl font-serif font-bold mb-2">Construction Agreement</h1>
-                                <p className="font-mono text-sm opacity-60">REF: MCH-2024-001</p>
+                    {/* The "Paper" Container */}
+                    <div
+                        className="relative w-[8.5in] min-h-[11in] bg-white shadow-2xl transition-all duration-300"
+                        ref={canvasRef}
+                    >
+                        {!file ? (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 m-8 rounded-xl bg-zinc-50 dark:bg-zinc-900/50">
+                                <div className="p-6 bg-white dark:bg-black rounded-full shadow-lg mb-6">
+                                    <Upload size={32} className="text-zinc-400" />
+                                </div>
+                                <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-2">Upload Document</h3>
+                                <p className="text-sm text-zinc-500 mb-6 text-center max-w-xs">Upload a PDF or Image (PNG, JPG) to start adding signature fields.</p>
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-xs font-bold uppercase tracking-widest hover:scale-105 transition-transform"
+                                >
+                                    Select File
+                                </button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileSelect}
+                                    accept="image/*,.pdf"
+                                    className="hidden"
+                                />
                             </div>
-                            <div className="text-right">
-                                <h2 className="font-bold text-xl mb-1">CONTRACTOR</h2>
-                                <p className="text-sm">Precision Builders, LLC</p>
-                            </div>
-                        </div>
+                        ) : (
+                            <>
+                                {/* Rendering Layer */}
+                                {fileType === 'image' && previewUrl && (
+                                    <img src={previewUrl} alt="Document" className="w-full h-auto select-none pointer-events-none" />
+                                )}
+                                {fileType === 'pdf' && previewUrl && (
+                                    <Document file={previewUrl} onLoadSuccess={onDocumentLoadSuccess} className="w-full">
+                                        {/* Just showing page 1 for simple prototype */}
+                                        <Page
+                                            pageNumber={1}
+                                            width={canvasRef.current?.getBoundingClientRect().width || 800}
+                                            renderTextLayer={false}
+                                            renderAnnotationLayer={false}
+                                        />
+                                    </Document>
+                                )}
 
-                        <div className="space-y-4 font-serif text-sm leading-relaxed opacity-80">
-                            {[1, 2, 3, 4, 5].map(i => (
-                                <p key={i} className="text-justify">
-                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duic aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-                                </p>
-                            ))}
-                        </div>
-
-                        {/* Drop Zone Simulation */}
-                        <div className="mt-12 border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-xl p-8 flex items-center justify-center text-blue-400">
-                            <div className="text-center">
-                                <p className="font-bold uppercase tracking-widest text-xs mb-2">Signature Zone</p>
-                                <p className="text-xs opacity-70">Drag signature field here</p>
-                            </div>
-                        </div>
+                                {/* Fields Overlay Layer */}
+                                {fields.map((field) => (
+                                    <DraggableFieldOnCanvas
+                                        key={field.id}
+                                        field={field}
+                                        onRemove={removeField}
+                                        onUpdatePos={updateFieldPosition}
+                                    />
+                                ))}
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -227,8 +344,11 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     </div>
 
                     <div className="mt-auto p-6 border-t border-zinc-200 dark:border-white/5">
-                        <button className="w-full flex items-center justify-between text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
-                            <span className="flex items-center gap-2"><Settings size={12} /> Advanced Options</span>
+                        <button
+                            onClick={() => { setFile(null); setFields([]); }}
+                            className="w-full flex items-center justify-center gap-2 text-xs text-red-500 hover:text-red-600 transition-colors py-2"
+                        >
+                            Reset / Clear Document
                         </button>
                     </div>
                 </div>
@@ -237,10 +357,79 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     );
 };
 
-const ToolButton: React.FC<{ icon: React.ElementType, label: string, color?: string }> = ({ icon: Icon, label, color }) => (
-    <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-white/5 cursor-grab active:cursor-grabbing transition-colors group draggable">
-        <Icon size={16} className={color || "text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white"} />
-        <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white">{label}</span>
-        <GripVertical size={12} className="ml-auto text-zinc-300 opacity-0 group-hover:opacity-100" />
-    </div>
-);
+// --- HELPER COMPONENTS ---
+
+const DraggableTool: React.FC<{
+    type: DraggableField['type'],
+    icon: React.ElementType,
+    label: string,
+    color?: string,
+    onDrop: (type: DraggableField['type'], label: string, x: number, y: number) => void
+}> = ({ type, icon: Icon, label, color, onDrop }) => {
+    return (
+        <motion.div
+            drag
+            dragSnapToOrigin
+            whileDrag={{ scale: 1.1, zIndex: 100, opacity: 0.8 }}
+            onDragEnd={(e) => {
+                // @ts-ignore - clientX/Y exist on drag events
+                onDrop(type, label, e.clientX || e.pageX, e.clientY || e.pageY);
+            }}
+            className="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-white/5 cursor-grab active:cursor-grabbing transition-colors group relative bg-white dark:bg-[#0A0A0A]"
+        >
+            <Icon size={16} className={color || "text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white"} />
+            <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white">{label}</span>
+            <GripVertical size={12} className="ml-auto text-zinc-300 opacity-0 group-hover:opacity-100" />
+        </motion.div>
+    );
+};
+
+const DraggableFieldOnCanvas: React.FC<{
+    field: DraggableField,
+    onRemove: (id: string) => void,
+    onUpdatePos: (id: string, dx: number, dy: number) => void
+}> = ({ field, onRemove, onUpdatePos }) => {
+
+    // Convert percentage back to something absolute if needed, but styling with % left/top is standard
+    // However, framer motion drag modifies transform (pixels).
+    // Better to use a simpler drag handler if we want percentage-based state sync, 
+    // but framer motion drag is smooth.
+    // For this prototype, we'll maintain visual position via standard styles first, then use motion for interaction.
+
+    return (
+        <motion.div
+            drag
+            dragMomentum={false}
+            onDragEnd={(_, info) => {
+                onUpdatePos(field.id, info.offset.x, info.offset.y);
+            }}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            style={{
+                position: 'absolute',
+                left: `${field.x}%`,
+                top: `${field.y}%`,
+                // Center the anchor
+                x: '-50%',
+                y: '-50%',
+            }}
+            className="absolute z-10 group"
+        >
+            <div className={`p-2 rounded border-2 shadow-sm flex items-center gap-2 cursor-grab active:cursor-grabbing
+                ${field.type === 'signature' ? 'bg-blue-500/10 border-blue-500 text-blue-600' : 'bg-yellow-500/10 border-yellow-500 text-yellow-600'}
+            `}>
+                <span className="text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">{field.label}</span>
+                <button
+                    onClick={(e) => { e.stopPropagation(); onRemove(field.id); }}
+                    className="p-1 hover:bg-black/10 rounded text-inherit opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                    <X size={10} />
+                </button>
+            </div>
+            {/* Recipient Tag */}
+            <div className="absolute -top-3 left-0 bg-yellow-500 text-black text-[8px] font-bold px-1 rounded shadow-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                Homeowner
+            </div>
+        </motion.div>
+    );
+};

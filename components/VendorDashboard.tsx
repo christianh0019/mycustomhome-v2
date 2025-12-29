@@ -2,16 +2,18 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { MessagesTab } from './MessagesTab';
 import { Settings } from './Settings';
+import { VendorDocuments } from './VendorDocuments';
 import { useTheme } from '../contexts/ThemeContext';
 import {
     LayoutDashboard, MessageSquare, Briefcase, Users, Search,
-    Sun, Moon, BadgeCheck
+    Sun, Moon, BadgeCheck, FileText
 } from 'lucide-react';
 
 enum VendorTab {
     Overview = 'Overview',
     Opportunities = 'Leads',
     Projects = 'Active Jobs',
+    Documents = 'Documents',
     Messages = 'Messages',
     Settings = 'Profile'
 }
@@ -29,6 +31,8 @@ export const VendorDashboard: React.FC = () => {
                 return <VendorOpportunities />;
             case VendorTab.Projects:
                 return <VendorProjects />;
+            case VendorTab.Documents:
+                return <VendorDocuments />;
             case VendorTab.Messages:
                 return <MessagesTab />;
             case VendorTab.Settings:
@@ -43,6 +47,7 @@ export const VendorDashboard: React.FC = () => {
             case VendorTab.Overview: return LayoutDashboard;
             case VendorTab.Opportunities: return Search;
             case VendorTab.Projects: return Briefcase;
+            case VendorTab.Documents: return FileText;
             case VendorTab.Messages: return MessageSquare;
             case VendorTab.Settings: return Users;
             default: return LayoutDashboard;

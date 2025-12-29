@@ -46,7 +46,20 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     // Initialize from LocalStorage if available, else default
     const [projectData, setProjectData] = useState<ProjectData>(() => {
         const saved = localStorage.getItem('mycustomhome_project_data');
-        return saved ? JSON.parse(saved) : defaultProjectData;
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                // Merge parsed data with default to ensure new keys exist
+                return {
+                    budget: { ...defaultProjectData.budget, ...parsed.budget },
+                    roadmap: { ...defaultProjectData.roadmap, ...parsed.roadmap }
+                };
+            } catch (e) {
+                console.error("Failed to parse project data", e);
+                return defaultProjectData;
+            }
+        }
+        return defaultProjectData;
     });
 
     // Persist to LocalStorage whenever data changes

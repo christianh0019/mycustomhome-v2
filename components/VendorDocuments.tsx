@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
     FileText, Plus, Search,
     PenTool, Type, Calendar, CheckSquare,
-    Users, Send, ChevronLeft, Save, GripVertical, Settings, Upload, X, Trash2, Eye, Pencil, File, FileSignature
+    Users, Send, ChevronLeft, Save, GripVertical, Settings, Upload, X, Trash2, Eye, Pencil, File, FileSignature,
+    Bold, Italic, Heading1, Heading2, List, AlignLeft, AlignCenter, AlignRight, Underline
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabase';
@@ -220,6 +221,81 @@ const StatusBadge: React.FC<{ status: DocumentStatus }> = ({ status }) => {
     }
 };
 
+// --- RICH TEXT EDITOR COMPONENT ---
+
+const RichTextEditor: React.FC<{
+    initialContent?: string;
+    onChange?: (html: string) => void;
+    readOnly?: boolean;
+}> = ({ initialContent, onChange, readOnly }) => {
+    const editorRef = useRef<HTMLDivElement>(null);
+
+    // One-time initialization of content
+    useEffect(() => {
+        if (editorRef.current && initialContent && !editorRef.current.innerHTML) {
+            editorRef.current.innerHTML = initialContent;
+        }
+    }, []);
+
+    const exec = (command: string, value: string | undefined = undefined) => {
+        document.execCommand(command, false, value);
+        if (editorRef.current && onChange) {
+            onChange(editorRef.current.innerHTML);
+        }
+    };
+
+    const handleInput = () => {
+        if (editorRef.current && onChange) {
+            onChange(editorRef.current.innerHTML);
+        }
+    };
+
+    // Updated Toolbar styles to match "Google Docs" feel
+    // Floating at top or fixed? Let's make it sit nicely inside the editor area
+
+    return (
+        <div className="h-full flex flex-col relative w-full">
+            {!readOnly && (
+                <div className="flex flex-wrap items-center gap-1 p-2 border-b border-zinc-100 bg-zinc-50/50 sticky top-0 z-20">
+                    <ToolbarBtn icon={Bold} onClick={() => exec('bold')} />
+                    <ToolbarBtn icon={Italic} onClick={() => exec('italic')} />
+                    <ToolbarBtn icon={Underline} onClick={() => exec('underline')} />
+                    <div className="w-[1px] h-4 bg-zinc-300 mx-1" />
+                    <ToolbarBtn icon={AlignLeft} onClick={() => exec('users')} /> {/* Placeholder for alignment since icons vary */}
+                    <div className="w-[1px] h-4 bg-zinc-300 mx-1" />
+                    <ToolbarBtn icon={Heading1} onClick={() => exec('formatBlock', 'H2')} />
+                    <ToolbarBtn icon={Heading2} onClick={() => exec('formatBlock', 'H3')} />
+                    <ToolbarBtn icon={List} onClick={() => exec('insertUnorderedList')} />
+                </div>
+            )}
+
+            <div
+                ref={editorRef}
+                contentEditable={!readOnly}
+                onInput={handleInput}
+                className={`
+                    flex-1 p-16 outline-none font-serif text-[11px] leading-relaxed relative
+                    prose prose-sm max-w-none
+                    prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wide prose-headings:mb-2 prose-headings:border-b prose-headings:border-zinc-200 prose-headings:pb-1
+                    prose-p:mb-4 prose-p:text-zinc-900
+                    prose-ul:list-disc prose-ul:pl-5 prose-ul:space-y-1 prose-ul:text-zinc-600
+                `}
+                style={{ minHeight: '100%' }}
+            />
+        </div>
+    );
+};
+
+const ToolbarBtn: React.FC<{ icon: React.ElementType, onClick: () => void }> = ({ icon: Icon, onClick }) => (
+    <button
+        onClick={(e) => { e.preventDefault(); onClick(); }}
+        className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 rounded transition-colors"
+    >
+        <Icon size={14} />
+    </button>
+);
+
+
 // --- DOCUMENT CREATOR COMPONENT ---
 
 const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null }> = ({ onBack, initialDoc }) => {
@@ -230,9 +306,17 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     const [file, setFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-    // 'blank' means user chose to write from scratch, 'template' uses the predefined contract
     const [fileType, setFileType] = useState<'image' | 'pdf' | 'blank' | 'template' | null>(null);
     const [numPages, setNumPages] = useState<number>(1);
+
+    // Store HTML content for blank/templates
+    // We'll store page 1 content, page 2 content etc. in a map? 
+    // For simplicity, let's just store HTML content per page in the same way we might store fields.
+    // Or just one big HTML blob if generic. 
+    // Since implementing multi-page HTML editor is complex (pagination logic), we will implemented
+    // fixed pages for Template, and single infinite page for Blank for now OR just multiple editors.
+    // Let's go with: `pageContent: { [page: number]: string }`
+    const [pageContent, setPageContent] = useState<{ [page: number]: string }>({});
 
     const [fields, setFields] = useState<DraggableField[]>(initialDoc?.metadata || []);
     const [saving, setSaving] = useState(false);
@@ -240,26 +324,126 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     const [recipientName, setRecipientName] = useState(initialDoc?.recipient || 'Christian Hostetler');
     const [recipientEmail, setRecipientEmail] = useState(initialDoc?.recipient_email || 'client@example.com');
 
-    // Key fix: Use refs for each page to calculate accurate drop positions
     const pageRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Initialize document data
     useEffect(() => {
         if (initialDoc) {
-            if (initialDoc.file_url) {
-                if (initialDoc.file_url === 'TEMPLATE') { // Sentinel for template
-                    setFileType('template');
-                    setNumPages(2);
-                } else if (initialDoc.file_url === 'BLANK') { // Sentinel for blank
-                    setFileType('blank');
-                    setNumPages(1); // Or stored count? For now reset to 1
-                } else {
-                    loadFileFromStorage(initialDoc.file_url);
-                }
+            if (initialDoc.file_url === 'TEMPLATE') {
+                setFileType('template');
+                setNumPages(2);
+                initializeTemplate(recipientName);
+            } else if (initialDoc.file_url === 'BLANK') {
+                setFileType('blank');
+                setNumPages(1);
+            } else if (initialDoc.file_url) {
+                loadFileFromStorage(initialDoc.file_url);
             }
         }
     }, [initialDoc]);
+
+    const initializeTemplate = (recipName: string) => {
+        // Pre-fill content
+        const page1 = `
+            <div style="margin-bottom: 3rem; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e5e7eb; padding-bottom: 2rem;">
+                <div>
+                     <div style="font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem;">BuildCorp Inc.</div>
+                     <div style="color: #71717a;">123 Construction Ave, Suite 100<br/>New York, NY 10001</div>
+                </div>
+                <div style="width: 4rem; height: 4rem; background-color: #18181b; color: white; border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.25rem;">BC</div>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 3rem;">
+                <h1 style="font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Professional Services Agreement</h1>
+                <p style="color: #71717a; font-style: italic;">Effective Date: ${new Date().toLocaleDateString()}</p>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 2rem;">
+                <section>
+                    <h2>1. The Parties</h2>
+                    <p>This Professional Services Agreement ("Agreement") is entered into between <strong>BuildCorp Inc.</strong> ("Service Provider") and <strong>${recipName}</strong> ("Client"). The Service Provider and Client may be referred to individually as a "Party" or collectively as the "Parties".</p>
+                </section>
+
+                <section>
+                    <h2>2. Scope of Work</h2>
+                    <p style="margin-bottom: 0.5rem;">The Service Provider agrees to perform the following services for the Client:</p>
+                    <ul>
+                        <li>Custom home design and architectural planning.</li>
+                        <li>Permit acquisition and regulatory compliance consultation.</li>
+                        <li>Material selection and vendor coordination.</li>
+                        <li>On-site project management and quality assurance.</li>
+                    </ul>
+                    <p style="margin-top: 0.5rem;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                </section>
+
+                 <section>
+                    <h2>3. Compensation</h2>
+                    <p>Client agrees to pay Service Provider a total fee of <strong>$0.00</strong> (TBD) for the Services.</p>
+                    <p style="margin-top: 0.25rem;">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                </section>
+            </div>
+        `;
+
+        const page2 = `
+            <div style="display: flex; flex-direction: column; height: 100%;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 2rem;">
+                    <section>
+                        <h2>4. Term and Termination</h2>
+                        <p>This Agreement shall commence on the Effective Date and shall continue until the completion of the Services, unless earlier terminated as provided herein. Either Party may terminate this Agreement upon written notice if the other Party materially breaches any provision of this Agreement.</p>
+                    </section>
+                    
+                    <section>
+                        <h2>5. Confidentiality</h2>
+                        <p>Each Party agrees to retain in confidence all non-public information and trade secrets of the other Party used or disclosed in connection with this Agreement. The Parties shall take reasonable precautions to prevent unauthorized disclosure of such information.</p>
+                    </section>
+
+                    <section>
+                        <h2>6. Governing Law</h2>
+                        <p>This Agreement shall be governed by and construed in accordance with the laws of the State of New York.</p>
+                    </section>
+                </div>
+
+                <div style="margin-top: 4rem; padding-top: 2rem; border-top: 2px solid #18181b;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;">
+                        <div>
+                            <h4 style="font-weight: 700; margin-bottom: 2rem;">IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date first above written.</h4>
+                            <div style="display: flex; flex-direction: column; gap: 2rem;">
+                                <div>
+                                    <div style="height: 3rem; border-bottom: 1px solid #d4d4d8; margin-bottom: 0.5rem;"></div>
+                                    <p style="font-weight: 700;">BuildCorp Inc.</p>
+                                    <p style="color: #71717a;">Authorized Signature</p>
+                                </div>
+                                <div>
+                                    <div style="height: 3rem; border-bottom: 1px solid #d4d4d8; margin-bottom: 0.5rem;"></div>
+                                    <p style="font-weight: 700;">Date</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 style="font-weight: 700; margin-bottom: 2rem; opacity: 0;">Signature Block</h4>
+                            <div style="display: flex; flex-direction: column; gap: 2rem;">
+                                <div>
+                                    <div style="height: 3rem; border-bottom: 1px solid #d4d4d8; margin-bottom: 0.5rem;"></div>
+                                    <p style="font-weight: 700;">${recipName}</p>
+                                    <p style="color: #71717a;">Client Signature</p>
+                                </div>
+                                <div>
+                                    <div style="height: 3rem; border-bottom: 1px solid #d4d4d8; margin-bottom: 0.5rem;"></div>
+                                    <p style="font-weight: 700;">Date</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        setPageContent({
+            1: page1,
+            2: page2
+        });
+    };
 
     const loadFileFromStorage = async (path: string) => {
         try {
@@ -291,8 +475,9 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
 
     const handleStartTemplate = () => {
         setFileType('template');
-        setNumPages(2); // Template has 2 pages
+        setNumPages(2);
         setDocTitle('Professional Services Agreement');
+        initializeTemplate(recipientName);
     };
 
     const handleSave = async () => {
@@ -314,6 +499,10 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                 if (uploadError) throw uploadError;
                 fileUrl = fileName;
             }
+
+            // NOTE: We are NOT persisting custom HTML yet (requires schema change).
+            // For now, if you edit the template, it won't reload with edits.
+            // This would be next step: Add `content` JSON column to documents table.
 
             const docData = {
                 title: docTitle,
@@ -403,109 +592,6 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         setNumPages(numPages);
     }
-
-    // --- TEMPLATE CONTENT ---
-    const TemplateContent = ({ page }: { page: number }) => {
-        if (page === 1) {
-            return (
-                <div className="p-16 h-full text-zinc-900 font-serif text-[11px] leading-relaxed">
-                    <div className="mb-12 flex justify-between items-start border-b border-zinc-200 pb-8">
-                        <div>
-                            <div className="text-3xl font-bold mb-2">BuildCorp Inc.</div>
-                            <div className="text-zinc-500">123 Construction Ave, Suite 100<br />New York, NY 10001</div>
-                        </div>
-                        <div className="w-16 h-16 bg-zinc-900 text-white rounded flex items-center justify-center font-bold text-xl">BC</div>
-                    </div>
-
-                    <div className="text-center mb-12">
-                        <h1 className="text-2xl font-bold uppercase tracking-widest mb-4">Professional Services Agreement</h1>
-                        <p className="text-zinc-500 italic">Effective Date: {new Date().toLocaleDateString()}</p>
-                    </div>
-
-                    <div className="space-y-8">
-                        <section>
-                            <h3 className="font-bold uppercase tracking-wide border-b border-zinc-200 pb-1 mb-2">1. The Parties</h3>
-                            <p>This Professional Services Agreement ("Agreement") is entered into between <strong>BuildCorp Inc.</strong> ("Service Provider") and <strong>{recipientName}</strong> ("Client"). The Service Provider and Client may be referred to individually as a "Party" or collectively as the "Parties".</p>
-                        </section>
-
-                        <section>
-                            <h3 className="font-bold uppercase tracking-wide border-b border-zinc-200 pb-1 mb-2">2. Scope of Work</h3>
-                            <p className="mb-2">The Service Provider agrees to perform the following services for the Client:</p>
-                            <ul className="list-disc pl-5 space-y-1 text-zinc-600">
-                                <li>Custom home design and architectural planning.</li>
-                                <li>Permit acquisition and regulatory compliance consultation.</li>
-                                <li>Material selection and vendor coordination.</li>
-                                <li>On-site project management and quality assurance.</li>
-                            </ul>
-                            <p className="mt-2">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-                        </section>
-
-                        <section>
-                            <h3 className="font-bold uppercase tracking-wide border-b border-zinc-200 pb-1 mb-2">3. Compensation</h3>
-                            <p>Client agrees to pay Service Provider a total fee of <strong>$0.00</strong> (TBD) for the Services.</p>
-                            <p className="mt-1">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-                        </section>
-                    </div>
-                </div>
-            );
-        }
-        if (page === 2) {
-            return (
-                <div className="p-16 h-full text-zinc-900 font-serif text-[11px] leading-relaxed flex flex-col">
-                    <div className="space-y-8 flex-1">
-                        <section>
-                            <h3 className="font-bold uppercase tracking-wide border-b border-zinc-200 pb-1 mb-2">4. Term and Termination</h3>
-                            <p>This Agreement shall commence on the Effective Date and shall continue until the completion of the Services, unless earlier terminated as provided herein. Either Party may terminate this Agreement upon written notice if the other Party materially breaches any provision of this Agreement.</p>
-                        </section>
-
-                        <section>
-                            <h3 className="font-bold uppercase tracking-wide border-b border-zinc-200 pb-1 mb-2">5. Confidentiality</h3>
-                            <p>Each Party agrees to retain in confidence all non-public information and trade secrets of the other Party used or disclosed in connection with this Agreement. The Parties shall take reasonable precautions to prevent unauthorized disclosure of such information.</p>
-                        </section>
-
-                        <section>
-                            <h3 className="font-bold uppercase tracking-wide border-b border-zinc-200 pb-1 mb-2">6. Governing Law</h3>
-                            <p>This Agreement shall be governed by and construed in accordance with the laws of the State of New York.</p>
-                        </section>
-                    </div>
-
-                    <div className="mt-16 pt-8 border-t-2 border-zinc-900">
-                        <div className="grid grid-cols-2 gap-16">
-                            <div>
-                                <h4 className="font-bold mb-8">IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date first above written.</h4>
-                                <div className="space-y-8">
-                                    <div>
-                                        <div className="h-12 border-b border-zinc-300 mb-2"></div>
-                                        <p className="font-bold">BuildCorp Inc.</p>
-                                        <p className="text-zinc-500">Authorized Signature</p>
-                                    </div>
-                                    <div>
-                                        <div className="h-12 border-b border-zinc-300 mb-2"></div>
-                                        <p className="font-bold">Date</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <h4 className="font-bold mb-8 opacity-0">Signature Block</h4>
-                                <div className="space-y-8">
-                                    <div>
-                                        <div className="h-12 border-b border-zinc-300 mb-2"></div>
-                                        <p className="font-bold">{recipientName}</p>
-                                        <p className="text-zinc-500">Client Signature</p>
-                                    </div>
-                                    <div>
-                                        <div className="h-12 border-b border-zinc-300 mb-2"></div>
-                                        <p className="font-bold">Date</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-        return null;
-    };
 
     return (
         <div className="h-full flex flex-col bg-zinc-100 dark:bg-[#050505]">
@@ -627,7 +713,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                             <div
                                 key={pageNum}
                                 ref={(el) => pageRefs.current[pageNum] = el}
-                                className="relative w-[8.5in] min-h-[11in] bg-white shadow-2xl transition-all duration-300 mx-auto"
+                                className="relative w-[8.5in] min-h-[11in] bg-white shadow-xl transition-all duration-300 mx-auto"
                             >
                                 {/* Background Layer */}
                                 {fileType === 'pdf' && previewUrl && (
@@ -647,15 +733,16 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                                 {fileType === 'image' && previewUrl && pageNum === 1 && (
                                     <img src={previewUrl} alt="Document" className="w-full h-auto select-none pointer-events-none" />
                                 )}
-                                {fileType === 'blank' && (
-                                    <div className="p-12 h-full">
-                                        <div className="h-full border border-dashed border-zinc-100 rounded-lg flex items-center justify-center text-zinc-200 text-6xl font-serif opacity-30 select-none">
-                                            Page {pageNum}
-                                        </div>
+
+                                {/* Rich Text Editor Layer (Blank or Template) */}
+                                {(fileType === 'blank' || fileType === 'template') && (
+                                    <div className="absolute inset-0 z-0">
+                                        <RichTextEditor
+                                            initialContent={pageContent[pageNum] || ''}
+                                            readOnly={isReadOnly}
+                                        // TODO: Update pageContent onChange for persistence
+                                        />
                                     </div>
-                                )}
-                                {fileType === 'template' && (
-                                    <TemplateContent page={pageNum} />
                                 )}
 
                                 {/* Fields Overlay - Filtered by Page */}

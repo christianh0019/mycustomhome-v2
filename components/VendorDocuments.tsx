@@ -874,16 +874,13 @@ const DraggableFieldOnCanvas: React.FC<{
             const finalPixelX = dragStart.current.initialLeft + deltaX;
             const finalPixelY = dragStart.current.initialTop + deltaY;
 
-            // Convert to Percentage
-            const finalPercentX = (finalPixelX / parentRect.width) * 100;
-            const finalPercentY = (finalPixelY / parentRect.height) * 100;
-
             // Reset style transform and update state
             el.style.transform = 'translate(-50%, -50%)';
             setIsDragging(false);
             dragStart.current = null;
 
-            onUpdatePos(field.id, finalPercentX, finalPercentY);
+            // Pass Absolute Screen Coordinates (Center) to match updateFieldPosition expectation
+            onUpdatePos(field.id, parentRect.left + finalPixelX, parentRect.top + finalPixelY);
         };
 
         document.addEventListener('pointermove', handlePointerMove);

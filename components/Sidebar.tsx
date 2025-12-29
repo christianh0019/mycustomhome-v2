@@ -37,6 +37,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const mainTabs = useMemo(() => {
     return ORDERED_TABS.map((tabConfig) => {

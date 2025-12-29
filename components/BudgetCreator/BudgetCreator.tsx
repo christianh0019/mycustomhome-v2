@@ -194,8 +194,8 @@ export const BudgetCreator: React.FC = () => {
                                 <div className="flex items-center gap-2">
                                     <Layers size={14} className="text-zinc-400" />
                                     <span className="text-xs uppercase tracking-widest text-zinc-300">Land Status</span>
-                                    <button onClick={() => setViewingArticle(ARTICLES.find(a => a.id === 10) || null)} className="text-zinc-500 hover:text-white transition-colors">
-                                        <HelpCircle size={12} />
+                                    <button onClick={() => setViewingArticle(ARTICLES.find(a => a.id === 10) || null)} className="text-blue-400/80 hover:text-blue-400 transition-colors p-1 hover:bg-white/5 rounded-full">
+                                        <HelpCircle size={18} />
                                     </button>
                                 </div>
                                 <div className="flex gap-2 bg-black/20 p-1 rounded-lg">
@@ -252,9 +252,9 @@ export const BudgetCreator: React.FC = () => {
                                         <span className="text-[10px] text-zinc-500">Permits, Design, Engineering (~20%)</span>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setViewingArticle(ARTICLES.find(a => a.id === 9) || null); }}
-                                            className="text-zinc-600 hover:text-zinc-300 transition-colors"
+                                            className="text-blue-400/80 hover:text-blue-400 transition-colors p-1 hover:bg-white/5 rounded-full"
                                         >
-                                            <HelpCircle size={10} />
+                                            <HelpCircle size={18} />
                                         </button>
                                     </div>
                                 </div>
@@ -266,8 +266,8 @@ export const BudgetCreator: React.FC = () => {
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
                                     <label className="text-xs uppercase tracking-widest text-zinc-400">Target Home Size</label>
-                                    <button onClick={() => setViewingArticle(ARTICLES.find(a => a.id === 12) || null)} className="text-zinc-600 hover:text-zinc-300 transition-colors">
-                                        <HelpCircle size={12} />
+                                    <button onClick={() => setViewingArticle(ARTICLES.find(a => a.id === 12) || null)} className="text-blue-400/80 hover:text-blue-400 transition-colors p-1 hover:bg-white/5 rounded-full">
+                                        <HelpCircle size={18} />
                                     </button>
                                 </div>
                                 <span className="text-xl font-serif text-white">{targetSqFt.toLocaleString()} sq ft</span>
@@ -354,8 +354,8 @@ export const BudgetCreator: React.FC = () => {
                                 <div className="mb-6 relative pointer-events-auto">
                                     <div className="flex items-center justify-center gap-2 mb-2">
                                         <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">Construction Power</span>
-                                        <button onClick={() => setViewingArticle(ARTICLES.find(a => a.id === 11) || null)} className="text-zinc-600 hover:text-zinc-300 transition-colors">
-                                            <HelpCircle size={10} />
+                                        <button onClick={() => setViewingArticle(ARTICLES.find(a => a.id === 11) || null)} className="text-blue-400/80 hover:text-blue-400 transition-colors p-1 hover:bg-white/5 rounded-full">
+                                            <HelpCircle size={18} />
                                         </button>
                                     </div>
                                     <h2 className={`text-6xl font-bold mt-2 ${feasibility.color} transition-colors duration-500`}>

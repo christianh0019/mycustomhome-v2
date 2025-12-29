@@ -147,102 +147,218 @@ export const ARTICLES: Article[] = [
     // NEW EDUCATIONAL CONTENT FOR BUDGET CREATOR
     {
         id: 9,
-        title: "What are 'Soft Costs'?",
-        subtitle: "The 20% of your budget you can't see but definitely pay for.",
-        readTime: "4 min read",
+        title: "The Invisible 20%: Understanding Soft Costs",
+        subtitle: "Why a $1M budget only buys you an $800k house.",
+        readTime: "8 min read",
         category: "Budgeting",
         gradient: "from-orange-800 to-amber-950",
         icon: HelpCircle,
         content: (
-            <div className="space-y-4 text-zinc-300 leading-relaxed">
+            <div className="space-y-6 text-zinc-300 leading-relaxed font-light">
                 <p>
-                    Novice home builders think a $1M budget means they get a $1M house. In reality, they get an $800k house and $200k of paperwork.
-                    These are <strong>Soft Costs</strong>.
+                    Imagine you walk into a store to buy a $100 pair of sneakers, but at the register, they ring up as $125. You ask why, and the clerk says,
+                    "Oh, the extra $25 is for the box, the receipt paper, and the electricity to run the lights in here."
                 </p>
-                <h3 className="text-white font-serif text-lg mt-4">The Breakdown</h3>
-                <ul className="list-disc pl-5 space-y-2">
-                    <li><strong>Architecture & Engineering (5-10%):</strong> Blueprints, structural stamps, civil engineering for drainage.</li>
-                    <li><strong>Permits & Impact Fees (2-5%):</strong> Checks written to the city/county just for permission to build.</li>
-                    <li><strong>Site Prep & Testing:</strong> Soil reports, surveys, and utility tap fees.</li>
-                </ul>
-                <div className="bg-white/5 p-4 rounded-xl border border-white/10 mt-4">
-                    <strong className="text-white block mb-1">The Golden Rule</strong>
-                    Always reserve 20% of your total budget for soft costs. If you don't use it all, you get nicer finishes. If you don't budget for it, you run out of money before drywall.
+                <p>
+                    That is exactly how <strong>Soft Costs</strong> work in home building.
+                </p>
+                <p>
+                    Novice builders often make the mistake of thinking every dollar they spend goes into lumber, windows, and countertops (Hard Costs).
+                    But before you can pour a single drop of concrete, you have to pay for the "permission" and "planning" to build.
+                </p>
+
+                <h3 className="text-2xl text-white font-serif mt-8 mb-4">The Breakdown: Where does the money go?</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                        <strong className="text-white block mb-2 text-lg">1. Architecture & Engineering (8-12%)</strong>
+                        <p className="text-sm">You aren't just paying for pretty drawings. You are paying for structural stamps, civil engineering (drainage), and energy calculations.</p>
+                    </div>
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                        <strong className="text-white block mb-2 text-lg">2. Government Fees (3-5%)</strong>
+                        <p className="text-sm">Permits, impact fees, tap fees. This is literally the cost of writing a check to the city just to be allowed to start.</p>
+                    </div>
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                        <strong className="text-white block mb-2 text-lg">3. Site Prep (Variable)</strong>
+                        <p className="text-sm">Soil tests, surveys, hauling away debris. The land doesn't come ready-to-build by default.</p>
+                    </div>
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                        <strong className="text-white block mb-2 text-lg">4. Financial Costs (2-5%)</strong>
+                        <p className="text-sm">Loan origination fees and "interest during construction." Yes, you pay interest on the money while you use it.</p>
+                    </div>
+                </div>
+
+                <div className="bg-blue-500/10 p-6 rounded-2xl border border-blue-500/20 my-8">
+                    <h4 className="text-blue-400 font-bold uppercase tracking-widest text-xs mb-2">Pro Tip</h4>
+                    <p className="text-white font-medium">
+                        Always reserve <span className="text-blue-300">20-25%</span> of your total budget for soft costs.
+                    </p>
+                    <p className="text-sm mt-2 text-zinc-400">
+                        If you have $1,000,000 total, you have ~$750,000 to actually build the structure. If you budget $1M for construction, you will run out of money before the drywall goes up.
+                    </p>
                 </div>
             </div>
         )
     },
     {
         id: 10,
-        title: "Budgeting for Land",
-        subtitle: "Why 'Free Land' is a myth and dirt is expensive.",
-        readTime: "5 min read",
+        title: "The Dirt is Deceiving: Budgeting for Land",
+        subtitle: "Why 'Free Land' is a myth and what lies beneath.",
+        readTime: "10 min read",
         category: "Budgeting",
         gradient: "from-green-800 to-emerald-950",
         icon: Compass,
         content: (
-            <div className="space-y-4 text-zinc-300 leading-relaxed">
+            <div className="space-y-6 text-zinc-300 leading-relaxed font-light">
                 <p>
-                    Land is the most volatile variable in home building. A "cheap" lot often requires expensive improvements.
+                    There is an old saying in development: <strong>"You make your money when you buy."</strong>
                 </p>
-                <h3 className="text-white font-serif text-lg mt-4">The "Finished Lot" Concept</h3>
                 <p>
-                    You aren't just buying dirt; you are looking for a "build-ready" status.
+                    But for a custom home builder, the saying should be: "You lose your shirt if you don't know what's underground."
+                    Buying raw land is the most risky part of the entire process because dirt is rarely just dirt.
                 </p>
-                <ul className="list-disc pl-5 space-y-2">
-                    <li><strong>Utilities:</strong> Is water/sewer at the street? Or do you need a $40k well and septic system?</li>
-                    <li><strong>Slope:</strong> A gorgeous hillside view might cost $50k in retaining walls and extra concrete.</li>
-                    <li><strong>Clearing:</strong> Trees are beautiful, but removing them to pour a foundation costs thousands.</li>
+
+                <h3 className="text-2xl text-white font-serif mt-8 mb-4">The "Hidden" Price Tag</h3>
+                <p>
+                    Let's say you see a beautiful lot listed for $100,000. It looks like a steal. But here is the math you need to do before you sign:
+                </p>
+
+                <ul className="space-y-4 mt-6 mb-8">
+                    <li className="flex gap-4 items-start">
+                        <div className="min-w-8 h-8 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center font-bold">1</div>
+                        <div>
+                            <strong className="text-white block">Utility Connections ($10k - $50k+)</strong>
+                            <p className="text-sm mt-1">Is there a sewer line? Or do you need a septic system ($30k)? Is water at the street? Or do you need a well ($20k)? Power poles can cost $5,000 each to install if they aren't close.</p>
+                        </div>
+                    </li>
+                    <li className="flex gap-4 items-start">
+                        <div className="min-w-8 h-8 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center font-bold">2</div>
+                        <div>
+                            <strong className="text-white block">Topography & Slope ($10k - $100k)</strong>
+                            <p className="text-sm mt-1">That view is amazing, but a steep slope requires retaining walls, engineered foundations, and extra concrete pumping. Flat lots are boring, but cheap to build. Sloped lots are sexy, but expensive.</p>
+                        </div>
+                    </li>
+                    <li className="flex gap-4 items-start">
+                        <div className="min-w-8 h-8 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center font-bold">3</div>
+                        <div>
+                            <strong className="text-white block">Soil Quality ($5k - $50k)</strong>
+                            <p className="text-sm mt-1">If your soil is "expansive clay," it moves when it gets wet. You'll need expensive piers (caissons) drilled deep into the ground to keep your house from cracking in half.</p>
+                        </div>
+                    </li>
                 </ul>
+
+                <h3 className="text-2xl text-white font-serif mt-8 mb-4">The Meaning of "Need Land"</h3>
+                <p>
+                    In our Budget Creator, selecting "Need Land" subtracts these costs from your budget. If you have $1.5M and need to buy a $300k lot, you are now a $1.2M home builder.
+                </p>
                 <p className="mt-4">
-                    <strong>Budget Tip:</strong> Never buy land without a "Feasibility Study" period (usually 30-60 days) to get real quotes on site prep.
+                    <strong>The Golden Rule:</strong> Never buy land without a "Feasibility Study" period (usually 30-60 days) to get real quotes on site prep.
                 </p>
             </div>
         )
     },
     {
         id: 11,
-        title: "The Myth of Price Per Sq Ft",
-        subtitle: "Why asking 'How much per foot?' is the wrong question.",
-        readTime: "6 min read",
+        title: "The Myth of Cost Per Square Foot",
+        subtitle: "Why asking 'How much per foot?' is like asking 'How much per pound?'",
+        readTime: "7 min read",
         category: "Budgeting",
         gradient: "from-blue-900 to-indigo-950",
         icon: DollarSign,
         content: (
-            <div className="space-y-4 text-zinc-300 leading-relaxed">
+            <div className="space-y-6 text-zinc-300 leading-relaxed font-light">
                 <p>
-                    Asking a builder "How much per square foot?" is like asking a car dealer "How much per pound is this car?"
+                    Asking a builder "How much do you charge per square foot?" is the single most common question in our industry.
+                    It is also the most dangerous one to rely on.
                 </p>
-                <p>
-                    A Honda and a Ferrari weigh roughly the same. The cost per pound is wildly different.
-                </p>
-                <h3 className="text-white font-serif text-lg mt-4">What drives the number?</h3>
-                <ul className="list-disc pl-5 space-y-2">
-                    <li><strong>Complexity:</strong> Corners cost money. A box is cheap. A complex house with 20 corners and 4 rooflines is expensive.</li>
-                    <li><strong>Finishes:</strong> Marble vs. Tile. Wolf vs. GE. These don't change the square footage, but they double the cost.</li>
-                    <li><strong>Volume:</strong> High ceilings and big windows increase the "volume" of the house, which increases cost, even if the "floor area" stays the same.</li>
+
+                <div className="bg-white/5 p-8 rounded-2xl border border-white/10 my-8 text-center">
+                    <h3 className="text-xl md:text-2xl font-serif text-white mb-4">The Car Analogy</h3>
+                    <div className="flex flex-col md:flex-row justify-center gap-8 md:gap-16 items-center">
+                        <div className="space-y-2">
+                            <div className="text-4xl">🚙</div>
+                            <div className="font-bold text-white">Toyota Camry</div>
+                            <div className="text-sm opacity-50">3,500 lbs</div>
+                            <div className="text-emerald-400 font-mono">$8.50 / lb</div>
+                        </div>
+                        <div className="text-2xl opacity-30">VS</div>
+                        <div className="space-y-2">
+                            <div className="text-4xl">🏎️</div>
+                            <div className="font-bold text-white">Ferrari 488</div>
+                            <div className="text-sm opacity-50">3,300 lbs</div>
+                            <div className="text-emerald-400 font-mono">$90.00 / lb</div>
+                        </div>
+                    </div>
+                    <p className="mt-6 text-sm md:text-base max-w-lg mx-auto">
+                        They weigh the same. They both have 4 wheels. But one is a commodity, and one is a high-performance machine.
+                        <strong>Square footage is just the "weight" of the house.</strong> It tells you nothing about the quality.
+                    </p>
+                </div>
+
+                <h3 className="text-2xl text-white font-serif mt-8 mb-4">What actually drives the cost?</h3>
+                <ul className="list-disc pl-6 space-y-4 marker:text-blue-500">
+                    <li className="pl-2">
+                        <strong className="text-white">Complexity:</strong> A simple box with 4 corners is the cheapest shape to build. Every time you add a corner, a roof valley, or a vault, the price goes up, even if the square footage stays the same.
+                    </li>
+                    <li className="pl-2">
+                        <strong className="text-white">Volume vs. Area:</strong> A room with 20ft ceilings costs twice as much to frame, drywall, paint, and heat as a room with 10ft ceilings, yet on paper, they are the same "100 sq ft" room.
+                    </li>
+                    <li className="pl-2">
+                        <strong className="text-white">Finishes (The Ferrari Factor):</strong> Marble vs. Laminate. Wolf Range vs. GE Stove. Custom Cabinets vs. IKEA. These choices can swing the budget by $200k without changing the size of the house by one inch.
+                    </li>
                 </ul>
+
+                <p className="mt-8 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-200 text-sm">
+                    <strong>Warning:</strong> If a builder gives you a low price per square foot over the phone without seeing your plans, run. They are quoting you a Camry, and you are likely designing a Ferrari.
+                </p>
             </div>
         )
     },
     {
         id: 12,
-        title: "How Big Should It Be?",
-        subtitle: "Balancing 'Resale Value' with 'Actually Living in It'.",
-        readTime: "5 min read",
+        title: "Quality Over Quantity: Right-Sizing",
+        subtitle: "How to design a better home, not just a bigger one.",
+        readTime: "6 min read",
         category: "Design",
         gradient: "from-purple-900 to-fuchsia-950",
         icon: Layout,
         content: (
-            <div className="space-y-4 text-zinc-300 leading-relaxed">
+            <div className="space-y-6 text-zinc-300 leading-relaxed font-light">
                 <p>
-                    The average American home is 2,400 sq ft. Custom homes often bloat to 4,000+ sq ft, but bigger isn't always better.
+                    The average American home has ballooned to over 2,500 sq ft, yet families have gotten smaller.
+                    We are building "storage units for people" rather than homes designed for living.
                 </p>
-                <h3 className="text-white font-serif text-lg mt-4">Rules of Thumb</h3>
-                <ul className="list-disc pl-5 space-y-2">
-                    <li><strong>The 80% Rule:</strong> You will spend 80% of your time in 20% of your house (Kitchen, Living, Primary Bed). Spend your money there.</li>
-                    <li><strong>Guest Rooms:</strong> Do you really need a dedicated room for someone who visits 4 days a year? Consider a flex office/bed.</li>
-                    <li><strong>Resale Sweet Spot:</strong> In most markets, 2,800 - 3,500 sq ft is the "Goldilocks" zone for high-end resale fluidity.</li>
+                <p>
+                    The single best way to maximize your budget is to <strong className="text-white">build less house, but build it better.</strong>
+                </p>
+
+                <h3 className="text-2xl text-white font-serif mt-8 mb-4">The 80/20 Rule of Living</h3>
+                <div className="relative pl-6 border-l-2 border-purple-500/50 my-6">
+                    <p className="italic text-lg">
+                        "You will spend 80% of your time in 20% of your house."
+                    </p>
+                </div>
+                <p>
+                    Think about it. You wake up (Bedroom), go to the Kitchen (Coffee), sit in the Living Room (Relax).
+                    That Dining Room? Used twice a year. That Guest Room? Used for 10 days by in-laws.
+                </p>
+                <p>
+                    Instead of building a mediocre 4,000 sq ft house, consider a spectacular 2,800 sq ft house.
+                </p>
+
+                <h3 className="text-2xl text-white font-serif mt-8 mb-4">Unlocking Value</h3>
+                <ul className="space-y-3">
+                    <li className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-purple-500" />
+                        <span><strong>Eliminate Hallways:</strong> Hallways are "dead space" that costs $300/sqft to build but adds zero value to your life. Open plans remove this waste.</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-purple-500" />
+                        <span><strong>Flex Rooms:</strong> Don't build a Guest Room AND an Office. Build a fantastic Office with a Murphy bed. Now you have one room that works 365 days a year.</span>
+                    </li>
+                    <li className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-purple-500" />
+                        <span><strong>Outdoor Living:</strong> A covered patio costs 50% less than an indoor room but makes the house feel twice as big.</span>
+                    </li>
                 </ul>
             </div>
         )

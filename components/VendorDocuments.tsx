@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
     FileText, Plus, Search,
     PenTool, Type, Calendar, CheckSquare,
-    Users, Send, ChevronLeft, Save, GripVertical, Settings, Upload, X, Trash2, Eye, Pencil, File
+    Users, Send, ChevronLeft, Save, GripVertical, Settings, Upload, X, Trash2, Eye, Pencil, File, FileSignature
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabase';
@@ -230,8 +230,8 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     const [file, setFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-    // 'blank' means user chose to write from scratch
-    const [fileType, setFileType] = useState<'image' | 'pdf' | 'blank' | null>(null);
+    // 'blank' means user chose to write from scratch, 'template' uses the predefined contract
+    const [fileType, setFileType] = useState<'image' | 'pdf' | 'blank' | 'template' | null>(null);
     const [numPages, setNumPages] = useState<number>(1);
 
     const [fields, setFields] = useState<DraggableField[]>(initialDoc?.metadata || []);
@@ -248,10 +248,15 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     useEffect(() => {
         if (initialDoc) {
             if (initialDoc.file_url) {
-                loadFileFromStorage(initialDoc.file_url);
-            } else {
-                // If no file but has ID, assume blank or legacy?
-                // For now, if no url, default null unless marked as blank type (future compat)
+                if (initialDoc.file_url === 'TEMPLATE') { // Sentinel for template
+                    setFileType('template');
+                    setNumPages(2);
+                } else if (initialDoc.file_url === 'BLANK') { // Sentinel for blank
+                    setFileType('blank');
+                    setNumPages(1); // Or stored count? For now reset to 1
+                } else {
+                    loadFileFromStorage(initialDoc.file_url);
+                }
             }
         }
     }, [initialDoc]);
@@ -276,13 +281,18 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
             setFile(selectedFile);
             setPreviewUrl(URL.createObjectURL(selectedFile));
             setFileType(selectedFile.type === 'application/pdf' ? 'pdf' : 'image');
-            // If image/pdf, numPages will be set by onLoadSuccess or default to 1
         }
     };
 
     const handleStartBlank = () => {
         setFileType('blank');
         setNumPages(1);
+    };
+
+    const handleStartTemplate = () => {
+        setFileType('template');
+        setNumPages(2); // Template has 2 pages
+        setDocTitle('Professional Services Agreement');
     };
 
     const handleSave = async () => {
@@ -295,7 +305,9 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
         try {
             let fileUrl = initialDoc?.file_url;
 
-            if (file) {
+            if (fileType === 'template') fileUrl = 'TEMPLATE';
+            else if (fileType === 'blank') fileUrl = 'BLANK';
+            else if (file) {
                 const fileExt = file.name.split('.').pop();
                 const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
                 const { error: uploadError } = await supabase.storage.from('document-files').upload(fileName, file);
@@ -328,16 +340,10 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
         }
     };
 
-    const handleDropField = (type: DraggableField['type'], label: string) => {
-        // This is called by the tool palette, but actual placement happens via dragEnd on the tool itself
-        // or we can allow "click to add" to center of page 1
-    };
-
-    // NEW: Accurate Drop Handler calculates which page the field was dropped on
+    // Accurate Drop Handler
     const handleFieldDrop = (type: DraggableField['type'], label: string, clientX: number, clientY: number) => {
         if (isReadOnly) return;
 
-        // Find which page container encompasses these coordinates
         let targetPage = 1;
         let relativeX = 0;
         let relativeY = 0;
@@ -376,11 +382,6 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     };
 
     const updateFieldPosition = (id: string, deltaX: number, deltaY: number) => {
-        // NOTE: React-motion drag gives deltaX/Y in pixels. We need to convert to % of CURRENT page.
-        // But detecting "page switching" during drag is hard with simple framer-motion drag.
-        // For now, we enforce staying on the same page OR we need a more complex drag handler.
-        // For this iteration, we'll keep it simple: update position relative to its current page.
-
         setFields(prev => prev.map(f => {
             if (f.id !== id) return f;
 
@@ -402,6 +403,109 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         setNumPages(numPages);
     }
+
+    // --- TEMPLATE CONTENT ---
+    const TemplateContent = ({ page }: { page: number }) => {
+        if (page === 1) {
+            return (
+                <div className="p-16 h-full text-zinc-900 font-serif text-[11px] leading-relaxed">
+                    <div className="mb-12 flex justify-between items-start border-b border-zinc-200 pb-8">
+                        <div>
+                            <div className="text-3xl font-bold mb-2">BuildCorp Inc.</div>
+                            <div className="text-zinc-500">123 Construction Ave, Suite 100<br />New York, NY 10001</div>
+                        </div>
+                        <div className="w-16 h-16 bg-zinc-900 text-white rounded flex items-center justify-center font-bold text-xl">BC</div>
+                    </div>
+
+                    <div className="text-center mb-12">
+                        <h1 className="text-2xl font-bold uppercase tracking-widest mb-4">Professional Services Agreement</h1>
+                        <p className="text-zinc-500 italic">Effective Date: {new Date().toLocaleDateString()}</p>
+                    </div>
+
+                    <div className="space-y-8">
+                        <section>
+                            <h3 className="font-bold uppercase tracking-wide border-b border-zinc-200 pb-1 mb-2">1. The Parties</h3>
+                            <p>This Professional Services Agreement ("Agreement") is entered into between <strong>BuildCorp Inc.</strong> ("Service Provider") and <strong>{recipientName}</strong> ("Client"). The Service Provider and Client may be referred to individually as a "Party" or collectively as the "Parties".</p>
+                        </section>
+
+                        <section>
+                            <h3 className="font-bold uppercase tracking-wide border-b border-zinc-200 pb-1 mb-2">2. Scope of Work</h3>
+                            <p className="mb-2">The Service Provider agrees to perform the following services for the Client:</p>
+                            <ul className="list-disc pl-5 space-y-1 text-zinc-600">
+                                <li>Custom home design and architectural planning.</li>
+                                <li>Permit acquisition and regulatory compliance consultation.</li>
+                                <li>Material selection and vendor coordination.</li>
+                                <li>On-site project management and quality assurance.</li>
+                            </ul>
+                            <p className="mt-2">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                        </section>
+
+                        <section>
+                            <h3 className="font-bold uppercase tracking-wide border-b border-zinc-200 pb-1 mb-2">3. Compensation</h3>
+                            <p>Client agrees to pay Service Provider a total fee of <strong>$0.00</strong> (TBD) for the Services.</p>
+                            <p className="mt-1">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                        </section>
+                    </div>
+                </div>
+            );
+        }
+        if (page === 2) {
+            return (
+                <div className="p-16 h-full text-zinc-900 font-serif text-[11px] leading-relaxed flex flex-col">
+                    <div className="space-y-8 flex-1">
+                        <section>
+                            <h3 className="font-bold uppercase tracking-wide border-b border-zinc-200 pb-1 mb-2">4. Term and Termination</h3>
+                            <p>This Agreement shall commence on the Effective Date and shall continue until the completion of the Services, unless earlier terminated as provided herein. Either Party may terminate this Agreement upon written notice if the other Party materially breaches any provision of this Agreement.</p>
+                        </section>
+
+                        <section>
+                            <h3 className="font-bold uppercase tracking-wide border-b border-zinc-200 pb-1 mb-2">5. Confidentiality</h3>
+                            <p>Each Party agrees to retain in confidence all non-public information and trade secrets of the other Party used or disclosed in connection with this Agreement. The Parties shall take reasonable precautions to prevent unauthorized disclosure of such information.</p>
+                        </section>
+
+                        <section>
+                            <h3 className="font-bold uppercase tracking-wide border-b border-zinc-200 pb-1 mb-2">6. Governing Law</h3>
+                            <p>This Agreement shall be governed by and construed in accordance with the laws of the State of New York.</p>
+                        </section>
+                    </div>
+
+                    <div className="mt-16 pt-8 border-t-2 border-zinc-900">
+                        <div className="grid grid-cols-2 gap-16">
+                            <div>
+                                <h4 className="font-bold mb-8">IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date first above written.</h4>
+                                <div className="space-y-8">
+                                    <div>
+                                        <div className="h-12 border-b border-zinc-300 mb-2"></div>
+                                        <p className="font-bold">BuildCorp Inc.</p>
+                                        <p className="text-zinc-500">Authorized Signature</p>
+                                    </div>
+                                    <div>
+                                        <div className="h-12 border-b border-zinc-300 mb-2"></div>
+                                        <p className="font-bold">Date</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 className="font-bold mb-8 opacity-0">Signature Block</h4>
+                                <div className="space-y-8">
+                                    <div>
+                                        <div className="h-12 border-b border-zinc-300 mb-2"></div>
+                                        <p className="font-bold">{recipientName}</p>
+                                        <p className="text-zinc-500">Client Signature</p>
+                                    </div>
+                                    <div>
+                                        <div className="h-12 border-b border-zinc-300 mb-2"></div>
+                                        <p className="font-bold">Date</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
 
     return (
         <div className="h-full flex flex-col bg-zinc-100 dark:bg-[#050505]">
@@ -470,27 +574,42 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
 
                         {!fileType && (
                             <div className="flex flex-col items-center justify-center min-h-[500px]">
-                                <div className="bg-white dark:bg-[#0A0A0A] p-12 rounded-3xl shadow-xl max-w-lg w-full text-center border border-zinc-200 dark:border-white/5">
-                                    <div className="w-16 h-16 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                                        <FileText size={32} />
-                                    </div>
-                                    <h2 className="text-2xl font-serif text-zinc-900 dark:text-white mb-2">Create Document</h2>
-                                    <p className="text-zinc-500 mb-8">Upload a contract or start from a blank page.</p>
+                                <div className="bg-white dark:bg-[#0A0A0A] p-12 rounded-3xl shadow-xl max-w-2xl w-full text-center border border-zinc-200 dark:border-white/5">
+                                    <h2 className="text-3xl font-serif text-zinc-900 dark:text-white mb-2">Create Document</h2>
+                                    <p className="text-zinc-500 mb-12">Select how you would like to start.</p>
 
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-3 gap-6">
+                                        <button
+                                            onClick={handleStartTemplate}
+                                            className="flex flex-col items-center gap-4 p-8 rounded-2xl border border-zinc-200 dark:border-white/10 hover:border-blue-500 hover:bg-blue-500/5 transition-all group bg-zinc-50 dark:bg-zinc-900/50"
+                                        >
+                                            <div className="p-4 bg-white dark:bg-black rounded-full shadow-sm text-blue-500">
+                                                <FileSignature size={24} />
+                                            </div>
+                                            <span className="font-bold text-sm text-zinc-900 dark:text-white">Use Template</span>
+                                            <p className="text-xs text-zinc-500">Standard Professional Agreement</p>
+                                        </button>
+
                                         <button
                                             onClick={() => fileInputRef.current?.click()}
-                                            className="flex flex-col items-center gap-3 p-6 rounded-2xl border border-zinc-200 dark:border-white/10 hover:border-blue-500 hover:bg-blue-500/5 transition-all group"
+                                            className="flex flex-col items-center gap-4 p-8 rounded-2xl border border-zinc-200 dark:border-white/10 hover:border-blue-500 hover:bg-blue-500/5 transition-all group bg-zinc-50 dark:bg-zinc-900/50"
                                         >
-                                            <Upload className="text-zinc-400 group-hover:text-blue-500" />
-                                            <span className="font-bold text-sm text-zinc-700 dark:text-zinc-200">Upload PDF/Image</span>
+                                            <div className="p-4 bg-white dark:bg-black rounded-full shadow-sm text-zinc-500 group-hover:text-blue-500">
+                                                <Upload size={24} />
+                                            </div>
+                                            <span className="font-bold text-sm text-zinc-900 dark:text-white">Upload File</span>
+                                            <p className="text-xs text-zinc-500">PDF or Image</p>
                                         </button>
+
                                         <button
                                             onClick={handleStartBlank}
-                                            className="flex flex-col items-center gap-3 p-6 rounded-2xl border border-zinc-200 dark:border-white/10 hover:border-blue-500 hover:bg-blue-500/5 transition-all group"
+                                            className="flex flex-col items-center gap-4 p-8 rounded-2xl border border-zinc-200 dark:border-white/10 hover:border-blue-500 hover:bg-blue-500/5 transition-all group bg-zinc-50 dark:bg-zinc-900/50"
                                         >
-                                            <File className="text-zinc-400 group-hover:text-blue-500" />
-                                            <span className="font-bold text-sm text-zinc-700 dark:text-zinc-200">Start Blank</span>
+                                            <div className="p-4 bg-white dark:bg-black rounded-full shadow-sm text-zinc-500 group-hover:text-blue-500">
+                                                <File size={24} />
+                                            </div>
+                                            <span className="font-bold text-sm text-zinc-900 dark:text-white">Start Blank</span>
+                                            <p className="text-xs text-zinc-500">Empty Canvas</p>
                                         </button>
                                     </div>
                                     <input
@@ -530,11 +649,13 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                                 )}
                                 {fileType === 'blank' && (
                                     <div className="p-12 h-full">
-                                        {/* Blank writeable area - could be contenteditable or just a container for text fields */}
                                         <div className="h-full border border-dashed border-zinc-100 rounded-lg flex items-center justify-center text-zinc-200 text-6xl font-serif opacity-30 select-none">
                                             Page {pageNum}
                                         </div>
                                     </div>
+                                )}
+                                {fileType === 'template' && (
+                                    <TemplateContent page={pageNum} />
                                 )}
 
                                 {/* Fields Overlay - Filtered by Page */}

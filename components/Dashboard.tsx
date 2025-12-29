@@ -50,17 +50,17 @@ export const Dashboard: React.FC = () => {
     ];
 
     return (
-        <div className="flex-1 h-screen overflow-y-auto bg-black p-8 relative">
+        <div className="flex-1 h-screen overflow-y-auto bg-zinc-50 dark:bg-black p-8 relative transition-colors duration-300">
             {/* Background Gradients */}
-            <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-zinc-900 to-transparent pointer-events-none" />
+            <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-white to-transparent dark:from-zinc-900 dark:to-transparent pointer-events-none transition-colors duration-300" />
 
             <div className="max-w-6xl mx-auto relative z-10">
                 {/* Header */}
                 <div className="mb-12">
-                    <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-500 mb-2">
+                    <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-zinc-900 to-zinc-500 dark:from-white dark:to-zinc-500 mb-2">
                         Good Morning{user?.email ? `, ${user.email.split('@')[0]}` : ''}
                     </h1>
-                    <p className="text-zinc-400">Here's what's happening with your project today.</p>
+                    <p className="text-zinc-500 dark:text-zinc-400">Here's what's happening with your project today.</p>
                 </div>
 
                 {/* Hero Grid */}
@@ -71,19 +71,19 @@ export const Dashboard: React.FC = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.1 }}
-                            className="bg-[#0A0A0A] border border-white/5 rounded-3xl p-6 hover:border-white/10 transition-colors group relative overflow-hidden"
+                            className="bg-white dark:bg-[#0A0A0A] border border-zinc-200 dark:border-white/5 rounded-3xl p-6 hover:border-zinc-300 dark:hover:border-white/10 transition-colors group relative overflow-hidden shadow-sm dark:shadow-none"
                         >
                             <div className={`size-12 rounded-2xl flex items-center justify-center mb-4 ${card.color}`}>
                                 <card.icon size={24} />
                             </div>
-                            <h3 className="text-zinc-400 text-sm font-medium mb-1">{card.title}</h3>
-                            <div className="text-2xl font-bold text-white mb-1">{card.value}</div>
+                            <h3 className="text-zinc-500 dark:text-zinc-400 text-sm font-medium mb-1">{card.title}</h3>
+                            <div className="text-2xl font-bold text-zinc-900 dark:text-white mb-1">{card.value}</div>
                             <div className="text-xs text-zinc-500 font-mono mb-6">{card.subtitle}</div>
 
                             {card.action && (
                                 <button
                                     onClick={card.action}
-                                    className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors group-hover:translate-x-1 duration-300"
+                                    className="flex items-center gap-2 text-sm text-zinc-600 dark:text-white/70 hover:text-zinc-900 dark:hover:text-white transition-colors group-hover:translate-x-1 duration-300"
                                 >
                                     {card.actionText} <ArrowRight size={14} />
                                 </button>

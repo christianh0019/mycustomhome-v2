@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NavigationProvider } from './contexts/NavigationContext';
 import { UIProvider } from './contexts/UIContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // Marketing Pages
 import { PublicLayout } from './components/marketing/PublicLayout';
@@ -47,9 +48,11 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <UIProvider>
             <NavigationProvider>
-              <ErrorBoundary>
-                <MainApp />
-              </ErrorBoundary>
+              <ThemeProvider>
+                <ErrorBoundary>
+                  <MainApp />
+                </ErrorBoundary>
+              </ThemeProvider>
             </NavigationProvider>
           </UIProvider>
         </ProtectedRoute>

@@ -114,7 +114,7 @@ export const BudgetCreator: React.FC = () => {
     };
 
     return (
-        <div className="p-6 md:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-32 relative">
+        <div className="p-6 md:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-900 dark:text-zinc-100 pb-32 relative transition-colors duration-300">
 
             {/* Article Modal Overlay */}
             <AnimatePresence>
@@ -168,9 +168,9 @@ export const BudgetCreator: React.FC = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
                 <div className="space-y-3">
-                    <h2 className="text-4xl md:text-5xl font-serif tracking-tighter text-white">The Budget</h2>
-                    <div className="h-[1px] w-12 bg-white/30"></div>
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">Align your dream with market reality</p>
+                    <h2 className="text-4xl md:text-5xl font-serif tracking-tighter text-zinc-900 dark:text-white">The Budget</h2>
+                    <div className="h-[1px] w-12 bg-zinc-300 dark:bg-white/30"></div>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 dark:text-white/40">Align your dream with market reality</p>
                 </div>
             </div>
 
@@ -180,7 +180,7 @@ export const BudgetCreator: React.FC = () => {
                 <div className="lg:col-span-5 space-y-8">
 
                     {/* 1. Market Research (AI Context) */}
-                    <div className="bg-[#111] border border-white/5 rounded-2xl p-6 relative">
+                    <div className="bg-white dark:bg-[#111] border border-zinc-200 dark:border-white/5 rounded-2xl p-6 relative transition-colors duration-300 shadow-sm dark:shadow-none">
                         <div className="absolute top-0 right-0 p-20 bg-blue-500/5 blur-3xl rounded-full pointer-events-none overflow-hidden" />
 
                         <div className="flex items-center gap-3 mb-4">
@@ -197,15 +197,15 @@ export const BudgetCreator: React.FC = () => {
                                     value={city}
                                     onChange={handleCityChange}
                                     onKeyPress={(e) => e.key === 'Enter' && handleRunMarketResearch()}
-                                    className="bg-transparent border-none text-white focus:ring-0 placeholder:text-zinc-600 w-full"
+                                    className="bg-transparent border-none text-zinc-900 dark:text-white focus:ring-0 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 w-full"
                                 />
                                 {showSuggestions && (
-                                    <div className="absolute top-full left-0 right-0 mt-2 bg-[#111] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
                                         {suggestions.map((s) => (
                                             <button
                                                 key={s}
                                                 onClick={() => selectCity(s)}
-                                                className="w-full text-left px-4 py-3 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/5 last:border-0"
+                                                className="w-full text-left px-4 py-3 text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-colors border-b border-zinc-100 dark:border-white/5 last:border-0"
                                             >
                                                 {s}
                                             </button>
@@ -216,9 +216,9 @@ export const BudgetCreator: React.FC = () => {
                             <button
                                 onClick={handleRunMarketResearch}
                                 disabled={isLoadingMarket}
-                                className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-4 flex items-center justify-center transition-colors shrink-0"
+                                className="bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 rounded-lg px-4 flex items-center justify-center transition-colors shrink-0 text-zinc-900 dark:text-white"
                             >
-                                {isLoadingMarket ? <div className="size-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <ArrowRight size={16} />}
+                                {isLoadingMarket ? <div className="size-4 border-2 border-zinc-300 dark:border-white/20 border-t-zinc-600 dark:border-t-white rounded-full animate-spin" /> : <ArrowRight size={16} />}
                             </button>
                         </div>
 
@@ -248,33 +248,33 @@ export const BudgetCreator: React.FC = () => {
                         {/* Total Budget */}
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
-                                <label className="text-xs uppercase tracking-widest text-zinc-400">Total Investment Cap</label>
-                                <span className="text-xl font-serif text-white">{formatCurrency(totalBudget)}</span>
+                                <label className="text-xs uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Total Investment Cap</label>
+                                <span className="text-xl font-serif text-zinc-900 dark:text-white">{formatCurrency(totalBudget)}</span>
                             </div>
                             <input
                                 type="range"
                                 min={300000} max={5000000} step={10000}
                                 value={totalBudget}
                                 onChange={(e) => updateBudget({ totalBudget: Number(e.target.value) })}
-                                className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
+                                className="w-full h-2 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 dark:accent-white"
                             />
                         </div>
 
                         {/* Land Logic */}
-                        <div className="bg-white/5 rounded-xl p-4 space-y-4">
+                        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-transparent rounded-xl p-4 space-y-4 shadow-sm dark:shadow-none transition-colors duration-300">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <Layers size={14} className="text-zinc-400" />
-                                    <span className="text-xs uppercase tracking-widest text-zinc-300">Land Status</span>
+                                    <Layers size={14} className="text-zinc-500 dark:text-zinc-400" />
+                                    <span className="text-xs uppercase tracking-widest text-zinc-900 dark:text-zinc-300">Land Status</span>
                                     <button onClick={() => setViewingArticle(ARTICLES.find(a => a.id === 10) || null)} className="text-blue-400/80 hover:text-blue-400 transition-colors p-1 hover:bg-white/5 rounded-full">
                                         <HelpCircle size={18} />
                                     </button>
                                 </div>
-                                <div className="flex gap-2 mb-4 bg-zinc-900 p-1 rounded-lg w-fit">
-                                    <button onClick={() => updateBudget({ hasLand: true })} className={`px-3 py-1.5 text-xs rounded-md transition-all ${hasLand ? 'bg-white text-black font-medium' : 'text-zinc-500 hover:text-white'}`}>
+                                <div className="flex gap-2 mb-4 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg w-fit">
+                                    <button onClick={() => updateBudget({ hasLand: true })} className={`px-3 py-1.5 text-xs rounded-md transition-all ${hasLand ? 'bg-white text-zinc-900 shadow-sm font-medium' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`}>
                                         I have land
                                     </button>
-                                    <button onClick={() => updateBudget({ hasLand: false })} className={`px-3 py-1.5 text-xs rounded-md transition-all ${!hasLand ? 'bg-white text-black font-medium' : 'text-zinc-500 hover:text-white'}`}>
+                                    <button onClick={() => updateBudget({ hasLand: false })} className={`px-3 py-1.5 text-xs rounded-md transition-all ${!hasLand ? 'bg-white text-zinc-900 shadow-sm font-medium' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`}>
                                         I need land
                                     </button>
                                 </div>
@@ -307,13 +307,13 @@ export const BudgetCreator: React.FC = () => {
                         </div>
 
                         {/* Soft Cost Toggle */}
-                        <div className="flex items-center justify-between p-4 border border-white/5 rounded-xl hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={() => updateBudget({ includeSoftCosts: !includeSoftCosts })}>
+                        <div className="flex items-center justify-between p-4 border border-zinc-200 dark:border-white/5 bg-white dark:bg-transparent rounded-xl hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer shadow-sm dark:shadow-none" onClick={() => updateBudget({ includeSoftCosts: !includeSoftCosts })}>
                             <div className="flex items-center gap-3">
                                 <div className={`size-4 border rounded flex items-center justify-center transition-colors ${includeSoftCosts ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-600'} `}>
                                     {includeSoftCosts && <CheckCircle size={10} className="text-black" />}
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-xs font-medium text-zinc-300">Include Soft Costs?</span>
+                                    <span className="text-xs font-medium text-zinc-900 dark:text-zinc-300">Include Soft Costs?</span>
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] text-zinc-500">Permits, Design, Engineering (~20%)</span>
                                         <button
@@ -331,19 +331,19 @@ export const BudgetCreator: React.FC = () => {
                         <div className="space-y-4 pt-6 border-t border-white/10">
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
-                                    <label className="text-xs uppercase tracking-widest text-zinc-400">Target Home Size</label>
-                                    <button onClick={() => setViewingArticle(ARTICLES.find(a => a.id === 12) || null)} className="text-blue-400/80 hover:text-blue-400 transition-colors p-1 hover:bg-white/5 rounded-full">
+                                    <label className="text-xs uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Target Home Size</label>
+                                    <button onClick={() => setViewingArticle(ARTICLES.find(a => a.id === 12) || null)} className="text-blue-400/80 hover:text-blue-400 transition-colors p-1 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-full">
                                         <HelpCircle size={18} />
                                     </button>
                                 </div>
-                                <span className="text-xl font-serif text-white">{targetSqFt.toLocaleString()} sq ft</span>
+                                <span className="text-xl font-serif text-zinc-900 dark:text-white">{targetSqFt.toLocaleString()} sq ft</span>
                             </div>
                             <input
                                 type="range"
                                 min={1000} max={10000} step={50}
                                 value={targetSqFt}
                                 onChange={(e) => updateBudget({ targetSqFt: Number(e.target.value) })}
-                                className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
+                                className="w-full h-2 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 dark:accent-white"
                             />
                             {/* Visualizer Helper */}
                             <div className="text-xs text-center text-zinc-500 bg-white/5 py-2 rounded-lg">
@@ -361,21 +361,21 @@ export const BudgetCreator: React.FC = () => {
                 <div className="lg:col-span-7 space-y-6">
 
                     {/* The Waterfall Waterfall */}
-                    <div className="bg-zinc-900/50 rounded-3xl p-8 border border-white/5">
-                        <h3 className="text-lg font-serif text-white mb-6">Where the money goes</h3>
+                    <div className="bg-white dark:bg-zinc-900/50 rounded-3xl p-8 border border-zinc-200 dark:border-white/5 shadow-sm dark:shadow-none transition-colors duration-300">
+                        <h3 className="text-lg font-serif text-zinc-900 dark:text-white mb-6">Where the money goes</h3>
 
                         <div className="space-y-1 relative">
                             {/* Total Bar */}
-                            <div className="h-16 bg-[#111] rounded-xl flex items-center px-6 border border-white/10 justify-between relative z-30">
+                            <div className="h-16 bg-zinc-50 dark:bg-[#111] rounded-xl flex items-center px-6 border border-zinc-200 dark:border-white/10 justify-between relative z-30 transition-colors duration-300">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-white/10 rounded-lg"><DollarSign size={16} /></div>
-                                    <span className="text-sm font-medium">Total Budget</span>
+                                    <div className="p-2 bg-zinc-200 dark:bg-white/10 rounded-lg"><DollarSign size={16} className="text-zinc-600 dark:text-white" /></div>
+                                    <span className="text-sm font-medium text-zinc-900 dark:text-white">Total Budget</span>
                                 </div>
                                 <span className="text-lg font-bold">{formatCurrency(breakdown.totalBudget)}</span>
                             </div>
 
                             {/* Deductions Connector */}
-                            <div className="pl-10 ml-6 border-l-2 border-dashed border-white/10 space-y-4 py-4">
+                            <div className="pl-10 ml-6 border-l-2 border-dashed border-zinc-300 dark:border-white/10 space-y-4 py-4">
                                 {includeSoftCosts && (
                                     <div className="flex justify-between items-center text-orange-400 px-4">
                                         <div className="flex items-center gap-2">
@@ -397,7 +397,7 @@ export const BudgetCreator: React.FC = () => {
                             {/* Result: Hard Cost */}
                             <motion.div
                                 layout
-                                className="h-24 bg-white text-black rounded-xl flex flex-col justify-center px-6 relative z-30 shadow-[0_0_30px_rgba(255,255,255,0.1)]"
+                                className="h-24 bg-indigo-600 dark:bg-white text-white dark:text-black rounded-xl flex flex-col justify-center px-6 relative z-30 shadow-lg dark:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-colors duration-300"
                             >
                                 <span className="text-[10px] uppercase tracking-widest opacity-60 mb-1">Available for Construction (Hard Cost)</span>
                                 <div className="flex justify-between items-end">
@@ -411,7 +411,7 @@ export const BudgetCreator: React.FC = () => {
                     </div>
 
                     {/* The Reality Check Gauge */}
-                    <div className="bg-[#0A0A0A] rounded-3xl p-8 border border-white/10 text-center relative overflow-hidden">
+                    <div className="bg-white dark:bg-[#0A0A0A] rounded-3xl p-8 border border-zinc-200 dark:border-white/10 text-center relative overflow-hidden shadow-sm dark:shadow-none transition-colors duration-300">
                         {feasibility && (
                             <>
                                 <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 opacity-30`} />

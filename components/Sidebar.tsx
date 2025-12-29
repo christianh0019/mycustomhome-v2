@@ -5,8 +5,10 @@ import { RoadmapService } from '../services/RoadmapService';
 import { NewBadge, markFeatureAsSeen } from './NewBadge';
 import {
   Lock, Map, Calculator, Users, MessageSquare,
-  Book, Wallet, Hexagon, Component, LayoutDashboard, Settings
+  Book, Wallet, Hexagon, Component, LayoutDashboard, Settings,
+  Sun, Moon
 } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 // Standardized Tab Structure
 interface TabConfig {
@@ -109,13 +111,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
         ))}
       </nav>
 
-      <div className="p-0 border-t border-white/5 bg-black/40">
+      <div className="p-0 border-t border-white/5 bg-black/40 dark:bg-black/40 bg-zinc-100 flex flex-col">
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="w-full text-left px-10 py-4 text-[11px] tracking-[0.2em] uppercase modern-transition flex items-center justify-between group text-zinc-500 dark:text-white/50 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/[0.03]"
+        >
+          <div className="flex items-center gap-3">
+            {theme === 'dark' ? <Moon size={14} /> : <Sun size={14} />}
+            <span>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+          </div>
+        </button>
+
         {/* Settings Tab */}
         <button
           onClick={() => setActiveTab(AppTab.Settings)}
           className={`w-full text-left px-10 py-6 text-[11px] tracking-[0.2em] uppercase modern-transition flex items-center justify-between group ${activeTab === AppTab.Settings
-            ? 'text-white bg-white/5 font-medium'
-            : 'text-white/50 hover:text-white/90 hover:bg-white/[0.03]'
+            ? 'text-zinc-900 dark:text-white bg-black/5 dark:bg-white/5 font-medium'
+            : 'text-zinc-500 dark:text-white/50 hover:text-zinc-900 dark:hover:text-white/90 hover:bg-black/5 dark:hover:bg-white/[0.03]'
             }`}
         >
           <div className="flex items-center gap-3">

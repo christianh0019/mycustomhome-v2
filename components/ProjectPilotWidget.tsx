@@ -227,7 +227,7 @@ export const ProjectPilotWidget: React.FC = () => {
 
                 <button
                     onClick={() => { setIsOpen(!isOpen); setShowIntro(false); }}
-                    className={`group flex items-center justify-center size-14 rounded-full shadow-2xl transition-all duration-300 ${isOpen ? 'bg-zinc-900 dark:bg-zinc-800 text-white' : 'bg-white text-black hover:scale-110'}`}
+                    className={`group flex items-center justify-center size-14 rounded-full shadow-2xl transition-all duration-300 ${isOpen ? 'bg-zinc-900 dark:bg-zinc-800 text-white' : 'bg-[#6366f1] text-white hover:scale-110 hover:bg-[#5558e6]'}`}
                 >
                     {isOpen ? <X size={24} /> : <Sparkles size={24} className={(notification || showIntro) ? 'animate-pulse' : ''} />}
                 </button>

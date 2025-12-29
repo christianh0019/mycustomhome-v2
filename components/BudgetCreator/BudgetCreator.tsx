@@ -180,8 +180,8 @@ export const BudgetCreator: React.FC = () => {
                 <div className="lg:col-span-5 space-y-8">
 
                     {/* 1. Market Research (AI Context) */}
-                    <div className="bg-[#111] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-20 bg-blue-500/5 blur-3xl rounded-full pointer-events-none" />
+                    <div className="bg-[#111] border border-white/5 rounded-2xl p-6 relative">
+                        <div className="absolute top-0 right-0 p-20 bg-blue-500/5 blur-3xl rounded-full pointer-events-none overflow-hidden" />
 
                         <div className="flex items-center gap-3 mb-4">
                             <div className="size-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">

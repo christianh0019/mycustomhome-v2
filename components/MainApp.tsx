@@ -51,10 +51,10 @@ export const MainApp: React.FC = () => {
 
                     <main className="flex-1 flex flex-col relative overflow-y-auto bg-zinc-50 dark:bg-black pb-24 md:pb-0 transition-colors duration-300">
                         {/* Progress Navigation */}
-                        <div className="sticky top-0 z-20 bg-black/80 backdrop-blur-md px-6 md:px-10 py-3 border-b border-white/5 flex items-center justify-between pt-safe">
+                        <div className="sticky top-0 z-20 bg-white/80 dark:bg-black/80 backdrop-blur-md px-6 md:px-10 py-3 border-b border-zinc-200 dark:border-white/5 flex items-center justify-between pt-safe transition-colors duration-300">
                             <div className="flex items-center space-x-3 md:space-x-4">
-                                <span className="text-[8px] md:text-[9px] tracking-[0.4em] uppercase text-white/40">Step 1:</span>
-                                <span className="text-[9px] md:text-[10px] tracking-[0.2em] uppercase font-bold truncate max-w-[100px] md:max-w-none">Dreaming</span>
+                                <span className="text-[8px] md:text-[9px] tracking-[0.4em] uppercase text-zinc-500 dark:text-white/40">Step 1:</span>
+                                <span className="text-[9px] md:text-[10px] tracking-[0.2em] uppercase font-bold truncate max-w-[100px] md:max-w-none text-zinc-900 dark:text-white">Dreaming</span>
                             </div>
                             <div className="flex items-center space-x-4 md:space-x-6">
                                 <div className="w-20 md:w-32 h-[1px] bg-zinc-200 dark:bg-white/10 relative">

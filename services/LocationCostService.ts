@@ -68,14 +68,33 @@ export const LocationCostService = {
     },
 
     /**
-     * Returns a list of matching city names for autocomplete.
+     * Returns a list of matching city names via OpenMeteo Geocoding API.
      */
-    searchCities: (query: string): string[] => {
+    searchCities: async (query: string): Promise<string[]> => {
         if (!query || query.length < 2) return [];
-        const normalized = query.toLowerCase();
 
-        return Object.values(MOCK_DB)
-            .filter(data => data.city.toLowerCase().includes(normalized))
-            .map(data => data.city);
+        try {
+            const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`);
+            const data = await response.json();
+
+            if (!data.results) return [];
+
+            return data.results.map((place: any) => {
+                const state = place.admin1 || '';
+                const country = place.country_code || '';
+                // Format: "City, State" (US) or "City, Country" (International)
+                if (country === 'US' && state) {
+                    return `${place.name}, ${place.admin1_code || state}`;
+                }
+                return `${place.name}, ${country}`;
+            });
+        } catch (error) {
+            console.error("City search failed", error);
+            // Fallback to mock DB if offline
+            const normalized = query.toLowerCase();
+            return Object.values(MOCK_DB)
+                .filter(data => data.city.toLowerCase().includes(normalized))
+                .map(data => data.city);
+        }
     }
 };

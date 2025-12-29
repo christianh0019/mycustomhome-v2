@@ -48,18 +48,26 @@ export const BudgetCreator: React.FC = () => {
     };
 
     const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value;
-        updateBudget({ city: val });
-
-        if (val.length >= 2) {
-            const matches = LocationCostService.searchCities(val);
-            setSuggestions(matches);
-            setShowSuggestions(matches.length > 0);
-        } else {
-            setSuggestions([]);
-            setShowSuggestions(false);
-        }
+        updateBudget({ city: e.target.value });
     };
+
+    // Debounced Autocomplete
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            if (city && city.length >= 2) {
+                // Only search if not currently selecting (optional optimization, but simple check is enough)
+                const matches = await LocationCostService.searchCities(city);
+                setSuggestions(matches);
+                // Only show if we have matches and the user hasn't exactly matched one yet (optional)
+                setShowSuggestions(matches.length > 0);
+            } else {
+                setSuggestions([]);
+                setShowSuggestions(false);
+            }
+        }, 400); // 400ms debounce
+
+        return () => clearTimeout(timer);
+    }, [city]);
 
     const selectCity = (selectedCity: string) => {
         updateBudget({ city: selectedCity });

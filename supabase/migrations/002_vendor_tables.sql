@@ -1,8 +1,12 @@
 -- 1. LEADS TABLE (The Project)
 -- This stores the project details derived from the homeowner's profile, but as a distinct "deal" object.
-create type lead_status as enum ('draft', 'vetting', 'active', 'matched', 'closed');
+DO $$ BEGIN
+    CREATE TYPE lead_status AS ENUM ('draft', 'vetting', 'active', 'matched', 'closed');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
-create table public.leads (
+create table if not exists public.leads (
     id uuid default gen_random_uuid() primary key,
     homeowner_id uuid references public.profiles(id) not null,
     created_at timestamp with time zone default timezone('utc'::text, now()) not null,
@@ -17,9 +21,13 @@ create table public.leads (
 
 -- 2. VENDOR INVITES (The Connection)
 -- This tracks individual invites sent to vendors for a specific lead.
-create type invite_status as enum ('sent', 'viewed', 'accepted', 'declined', 'expired');
+DO $$ BEGIN
+    CREATE TYPE invite_status AS ENUM ('sent', 'viewed', 'accepted', 'declined', 'expired');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
-create table public.vendor_invites (
+create table if not exists public.vendor_invites (
     id uuid default gen_random_uuid() primary key,
     lead_id uuid references public.leads(id) not null,
     vendor_email text not null,
@@ -36,6 +44,8 @@ create table public.vendor_invites (
 -- Leads: Homeowners can see their own leads. Admins see all.
 alter table public.leads enable row level security;
 
+-- Policy creation can error if exists, drop first or check
+drop policy if exists "Homeowners can view own leads" on public.leads;
 create policy "Homeowners can view own leads"
 on public.leads for select
 using (auth.uid() = homeowner_id);
@@ -46,6 +56,7 @@ using (auth.uid() = homeowner_id);
 alter table public.vendor_invites enable row level security;
 
 -- Allow anonymous read if they have the token (Simulated via helper function or open read for now with filter)
+drop policy if exists "Public view with token" on public.vendor_invites;
 create policy "Public view with token"
 on public.vendor_invites for select
 using (true); 

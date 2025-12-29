@@ -5,6 +5,8 @@ import {
     Users, Send, ChevronLeft, Save, GripVertical, Settings, Upload, X, Trash2
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../services/supabase';
 import { motion } from 'framer-motion';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -36,12 +38,35 @@ interface DraggableField {
 }
 
 export const VendorDocuments: React.FC = () => {
+    const { user } = useAuth();
     const [view, setView] = useState<'list' | 'create'>('list');
-    const [docs, setDocs] = useState<DocItem[]>([
-        { id: '1', title: 'Miller Residence - Contract', recipient: 'Christian Hostetler', date: '2 days ago', status: 'sent' },
-        { id: '2', title: 'Change Order #4', recipient: 'Christian Hostetler', date: '1 week ago', status: 'completed' },
-        { id: '3', title: 'Subcontractor Agreement', recipient: '-', date: '2 weeks ago', status: 'draft' },
-    ]);
+    const [docs, setDocs] = useState<DocItem[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (view === 'list') {
+            fetchDocuments();
+        }
+    }, [view]);
+
+    const fetchDocuments = async () => {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('documents')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (data) {
+            setDocs(data.map(d => ({
+                id: d.id,
+                title: d.title,
+                recipient: d.recipient_name || '-',
+                date: new Date(d.created_at).toLocaleDateString(),
+                status: d.status as DocumentStatus
+            })));
+        }
+        setLoading(false);
+    };
 
     if (view === 'create') {
         return <DocumentCreator onBack={() => setView('list')} />;
@@ -82,41 +107,47 @@ export const VendorDocuments: React.FC = () => {
 
             {/* Document List */}
             <div className="bg-white dark:bg-[#080808] border border-zinc-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm dark:shadow-none flex-1">
-                <table className="w-full text-left">
-                    <thead className="bg-zinc-50 dark:bg-white/5 border-b border-zinc-200 dark:border-white/5">
-                        <tr>
-                            <th className="px-8 py-4 text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-bold">Document Name</th>
-                            <th className="px-8 py-4 text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-bold">Recipient</th>
-                            <th className="px-8 py-4 text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-bold">Status</th>
-                            <th className="px-8 py-4 text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-bold">Date</th>
-                            <th className="px-8 py-4"></th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-100 dark:divide-white/5">
-                        {docs.map(doc => (
-                            <tr key={doc.id} className="group hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
-                                <td className="px-8 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
-                                            <FileText size={18} />
-                                        </div>
-                                        <span className="font-medium text-zinc-900 dark:text-white">{doc.title}</span>
-                                    </div>
-                                </td>
-                                <td className="px-8 py-4 text-zinc-600 dark:text-zinc-400 text-sm">{doc.recipient}</td>
-                                <td className="px-8 py-4">
-                                    <StatusBadge status={doc.status} />
-                                </td>
-                                <td className="px-8 py-4 text-zinc-500 text-sm">{doc.date}</td>
-                                <td className="px-8 py-4 text-right">
-                                    <button className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
-                                        <MoreVertical size={16} />
-                                    </button>
-                                </td>
+                {loading ? (
+                    <div className="p-12 text-center text-zinc-500">Loading documents...</div>
+                ) : docs.length === 0 ? (
+                    <div className="p-12 text-center text-zinc-500">No documents found. Create one to get started.</div>
+                ) : (
+                    <table className="w-full text-left">
+                        <thead className="bg-zinc-50 dark:bg-white/5 border-b border-zinc-200 dark:border-white/5">
+                            <tr>
+                                <th className="px-8 py-4 text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-bold">Document Name</th>
+                                <th className="px-8 py-4 text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-bold">Recipient</th>
+                                <th className="px-8 py-4 text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-bold">Status</th>
+                                <th className="px-8 py-4 text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-bold">Date</th>
+                                <th className="px-8 py-4"></th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-100 dark:divide-white/5">
+                            {docs.map(doc => (
+                                <tr key={doc.id} className="group hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
+                                    <td className="px-8 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
+                                                <FileText size={18} />
+                                            </div>
+                                            <span className="font-medium text-zinc-900 dark:text-white">{doc.title}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-8 py-4 text-zinc-600 dark:text-zinc-400 text-sm">{doc.recipient}</td>
+                                    <td className="px-8 py-4">
+                                        <StatusBadge status={doc.status} />
+                                    </td>
+                                    <td className="px-8 py-4 text-zinc-500 text-sm">{doc.date}</td>
+                                    <td className="px-8 py-4 text-right">
+                                        <button className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
+                                            <MoreVertical size={16} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
             </div>
         </div>
     );
@@ -136,12 +167,18 @@ const StatusBadge: React.FC<{ status: DocumentStatus }> = ({ status }) => {
 // --- DOCUMENT CREATOR COMPONENT ---
 
 const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+    const { user } = useAuth();
     const [docTitle, setDocTitle] = useState('Untitled Document');
     const [file, setFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [fileType, setFileType] = useState<'image' | 'pdf' | null>(null);
     const [fields, setFields] = useState<DraggableField[]>([]);
-    const [numPages, setNumPages] = useState<number>(0);
+    const [saving, setSaving] = useState(false);
+
+    // Recipient State
+    const [recipientName, setRecipientName] = useState('Christian Hostetler');
+    const [recipientEmail, setRecipientEmail] = useState('client@example.com');
+
     const canvasRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -151,6 +188,65 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             setFile(selectedFile);
             setPreviewUrl(URL.createObjectURL(selectedFile));
             setFileType(selectedFile.type === 'application/pdf' ? 'pdf' : 'image');
+        }
+    };
+
+    const handleSave = async () => {
+        if (!user) {
+            alert('You must be logged in to save.');
+            return;
+        }
+        if (!docTitle) {
+            alert('Please enter a document title.');
+            return;
+        }
+
+        setSaving(true);
+        try {
+            let fileUrl = null;
+
+            // 1. Upload File (if exists)
+            if (file) {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('document-files')
+                    .upload(fileName, file);
+
+                if (uploadError) throw uploadError;
+
+                // Get Public URL (assuming bucket is private, we might need signed URL, 
+                // but for simplicity let's assume we store the path and generate signed urls on read,
+                // OR just use creating a signed URL now to store? 
+                // Best practice: store path. But for prototype, let's try to get a URL.)
+                // Actually, if we just store the path, we can download it later.
+                fileUrl = fileName;
+            }
+
+            // 2. Insert Record
+            const { error: dbError } = await supabase
+                .from('documents')
+                .insert({
+                    vendor_id: user.id,
+                    title: docTitle,
+                    status: 'draft',
+                    recipient_name: recipientName,
+                    recipient_email: recipientEmail,
+                    metadata: fields, // JSONB of fields
+                    file_url: fileUrl
+                });
+
+            if (dbError) throw dbError;
+
+            alert('Document Saved Successfully!');
+            onBack(); // Return to list
+
+        } catch (error: any) {
+            console.error('Error saving document:', error);
+            alert(`Error saving document: ${error.message}`);
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -203,10 +299,6 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }));
     };
 
-    function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
-        setNumPages(numPages);
-    }
-
     return (
         <div className="h-full flex flex-col bg-zinc-100 dark:bg-[#050505]">
             {/* Top Bar */}
@@ -224,8 +316,12 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <span className="px-2 py-0.5 bg-zinc-100 dark:bg-white/10 text-zinc-500 text-[10px] rounded uppercase tracking-wider">Draft</span>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                        <Save size={14} /> Save
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                    >
+                        {saving ? 'Saving...' : <><Save size={14} /> Save</>}
                     </button>
                     <button
                         onClick={() => alert(`Sending document with ${fields.length} fields!`)}
@@ -289,7 +385,7 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     <img src={previewUrl} alt="Document" className="w-full h-auto select-none pointer-events-none" />
                                 )}
                                 {fileType === 'pdf' && previewUrl && (
-                                    <Document file={previewUrl} onLoadSuccess={onDocumentLoadSuccess} className="w-full">
+                                    <Document file={previewUrl} className="w-full">
                                         {/* Just showing page 1 for simple prototype */}
                                         <Page
                                             pageNumber={1}
@@ -333,8 +429,16 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         <p className="text-[10px] text-zinc-500">Signer</p>
                                     </div>
                                 </div>
-                                <input className="w-full bg-white dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded px-2 py-1 text-xs mb-2" value="Christian Hostetler" readOnly />
-                                <input className="w-full bg-white dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded px-2 py-1 text-xs" value="client@example.com" readOnly />
+                                <input
+                                    className="w-full bg-white dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded px-2 py-1 text-xs mb-2"
+                                    value={recipientName}
+                                    onChange={(e) => setRecipientName(e.target.value)}
+                                />
+                                <input
+                                    className="w-full bg-white dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded px-2 py-1 text-xs"
+                                    value={recipientEmail}
+                                    onChange={(e) => setRecipientEmail(e.target.value)}
+                                />
                             </div>
 
                             <button className="w-full py-3 border border-dashed border-zinc-300 dark:border-white/20 rounded-xl text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-400 dark:hover:border-white/40 transition-colors uppercase tracking-widest font-bold">

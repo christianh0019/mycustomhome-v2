@@ -817,6 +817,7 @@ const DraggableFieldOnCanvas: React.FC<{
 }> = ({ field, onRemove, onUpdatePos, onUpdateValue, isReadOnly }) => {
     const ref = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const grabOffset = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0] && onUpdateValue) {
@@ -830,12 +831,32 @@ const DraggableFieldOnCanvas: React.FC<{
             ref={ref}
             drag={!isReadOnly}
             dragMomentum={false}
-            onDragEnd={() => {
-                if (!isReadOnly && ref.current) {
+            onDragStart={(e) => {
+                if (ref.current) {
                     const rect = ref.current.getBoundingClientRect();
                     const centerX = rect.left + (rect.width / 2);
                     const centerY = rect.top + (rect.height / 2);
-                    onUpdatePos(field.id, centerX, centerY);
+                    // @ts-ignore
+                    const clientX = e.clientX || e.pageX;
+                    // @ts-ignore
+                    const clientY = e.clientY || e.pageY;
+                    grabOffset.current = {
+                        x: clientX - centerX,
+                        y: clientY - centerY
+                    };
+                }
+            }}
+            onDragEnd={(e) => {
+                if (!isReadOnly) {
+                    // @ts-ignore
+                    const clientX = e.clientX || e.pageX;
+                    // @ts-ignore
+                    const clientY = e.clientY || e.pageY;
+
+                    const finalCenterX = clientX - grabOffset.current.x;
+                    const finalCenterY = clientY - grabOffset.current.y;
+
+                    onUpdatePos(field.id, finalCenterX, finalCenterY);
                 }
             }}
             initial={{ scale: 0.8, opacity: 0 }}

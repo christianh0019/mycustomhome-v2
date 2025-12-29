@@ -240,20 +240,20 @@ export const BudgetCreator: React.FC = () => {
 
                             {/* Deductions Connector */}
                             <div className="pl-10 ml-6 border-l-2 border-dashed border-white/10 space-y-4 py-4">
-                                {hasLand && (
-                                    <div className="flex justify-between items-center text-red-400 px-4">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs uppercase tracking-widest">- Land Cost</span>
-                                        </div>
-                                        <span className="font-mono text-sm">({formatCurrency(breakdown.landCost)})</span>
-                                    </div>
-                                )}
                                 {includeSoftCosts && (
                                     <div className="flex justify-between items-center text-orange-400 px-4">
                                         <div className="flex items-center gap-2">
                                             <span className="text-xs uppercase tracking-widest">- Soft Costs (~20%)</span>
                                         </div>
                                         <span className="font-mono text-sm">({formatCurrency(breakdown.softCostEstimate)})</span>
+                                    </div>
+                                )}
+                                {!hasLand && (
+                                    <div className="flex justify-between items-center text-red-400 px-4">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs uppercase tracking-widest">- Land Cost</span>
+                                        </div>
+                                        <span className="font-mono text-sm">({formatCurrency(breakdown.landCost)})</span>
                                     </div>
                                 )}
                             </div>

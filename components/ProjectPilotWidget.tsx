@@ -29,6 +29,7 @@ export const ProjectPilotWidget: React.FC = () => {
 
     // Notifications
     const [notification, setNotification] = useState<string | null>(null);
+    const [showIntro, setShowIntro] = useState(true); // Persist this to local storage ideally
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -137,9 +138,32 @@ export const ProjectPilotWidget: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
             >
-                {/* Notification Bubble */}
+                {/* Intro Notification Bubble */}
                 <AnimatePresence>
-                    {!isOpen && notification && (
+                    {!isOpen && showIntro && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="bg-white text-black text-xs font-medium pl-4 pr-8 py-2 rounded-xl shadow-xl mb-2 relative group cursor-pointer"
+                        >
+                            I can answer or analyze anything!
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setShowIntro(false); }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-black/50 hover:text-black"
+                            >
+                                <X size={12} />
+                            </button>
+                            <div className="absolute bottom-[-4px] right-6 w-2 h-2 bg-white rotate-45" />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Standard Notification Bubble (Reply) - Only show if Intro is gone or strict priority? 
+                    Let's stack them or prioritize reply. If reply exists, show reply. 
+                */}
+                <AnimatePresence>
+                    {!isOpen && notification && !showIntro && (
                         <motion.div
                             initial={{ opacity: 0, y: 10, scale: 0.9 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -153,10 +177,10 @@ export const ProjectPilotWidget: React.FC = () => {
                 </AnimatePresence>
 
                 <button
-                    onClick={() => setIsOpen(!isOpen)}
+                    onClick={() => { setIsOpen(!isOpen); setShowIntro(false); }}
                     className={`group flex items-center justify-center size-14 rounded-full shadow-2xl transition-all duration-300 ${isOpen ? 'bg-zinc-800 text-white' : 'bg-white text-black hover:scale-110'}`}
                 >
-                    {isOpen ? <X size={24} /> : <Sparkles size={24} className={notification ? 'animate-pulse' : ''} />}
+                    {isOpen ? <X size={24} /> : <Sparkles size={24} className={(notification || showIntro) ? 'animate-pulse' : ''} />}
                 </button>
             </motion.div>
 
@@ -204,8 +228,8 @@ export const ProjectPilotWidget: React.FC = () => {
                                             </div>
                                         )}
                                         <div className={`max-w-[85%] rounded-2xl p-3 text-sm leading-relaxed ${isPilot
-                                                ? 'bg-white/5 text-zinc-300 border border-white/5 rounded-tl-none'
-                                                : 'bg-white text-black font-medium rounded-tr-none'
+                                            ? 'bg-white/5 text-zinc-300 border border-white/5 rounded-tl-none'
+                                            : 'bg-white text-black font-medium rounded-tr-none'
                                             }`}>
                                             {m.text}
                                         </div>

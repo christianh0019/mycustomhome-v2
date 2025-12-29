@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LocationCostService, MarketData } from '../../services/LocationCostService';
-import { calculateBudgetBreakdown, getFeasibilityStatus, BudgetBreakdown } from '../../services/BudgetLogic';
+import { calculateBudgetBreakdown, getFeasibilityStatus as checkFeasibility, BudgetBreakdown } from '../../services/BudgetLogic';
 import { Calculator, MapPin, CheckCircle, AlertTriangle, ArrowRight, Info, Home, Layers, DollarSign } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { usePageContext } from '../../contexts/PageContext';
 import { ARTICLES, Article } from '../../data/knowledgeBaseData';
 import { HelpCircle, X, Clock } from 'lucide-react';
 
@@ -26,15 +26,16 @@ export const BudgetCreator: React.FC = () => {
     const [landCost, setLandCost] = useState(0);
     const [includeSoftCosts, setIncludeSoftCosts] = useState(true);
 
-    // Derived State
-    const [breakdown, setBreakdown] = useState<BudgetBreakdown>({
-        totalBudget: 0, landCost: 0, softCostEstimate: 0, hardConstructionBudget: 0, hardCostPerSqFt: 0
-    });
+    // Context Sharing
+    const { setPageData } = usePageContext();
 
-    useEffect(() => {
-        const result = calculateBudgetBreakdown(totalBudget, !hasLand ? landCost : 0, targetSqFt, includeSoftCosts);
-        setBreakdown(result);
-    }, [totalBudget, hasLand, landCost, targetSqFt, includeSoftCosts]);
+    // Calculate Breakdown
+    const breakdown = calculateBudgetBreakdown(totalBudget, !hasLand ? landCost : 0, targetSqFt, includeSoftCosts);
+
+    // Calculate Feasibility
+    const feasibility = breakdown.hardCostPerSqFt > 0 && marketData
+        ? checkFeasibility(breakdown.hardCostPerSqFt, marketData.low, marketData.high)
+        : null;
 
     const handleRunMarketResearch = async () => {
         setIsLoadingMarket(true);
@@ -50,7 +51,28 @@ export const BudgetCreator: React.FC = () => {
         }
     }, []);
 
-    const feasibility = marketData ? getFeasibilityStatus(breakdown.hardCostPerSqFt, marketData.low, marketData.high) : null;
+    // Sync to PageContext for AI
+    useEffect(() => {
+        setPageData({
+            currentApp: "Budget Creator",
+            inputs: {
+                totalBudget,
+                landCost,
+                targetSqFt,
+                includeSoftCosts,
+                hasLand
+            },
+            results: {
+                hardConstructionBudget: breakdown.hardConstructionBudget,
+                hardCostPerSqFt: breakdown.hardCostPerSqFt,
+                feasibilityStatus: feasibility?.status || "Unknown",
+                marketCity: city || "None"
+            }
+        });
+
+        // Cleanup on unmount
+        return () => setPageData({});
+    }, [totalBudget, landCost, targetSqFt, includeSoftCosts, hasLand, feasibility, breakdown, city, setPageData]);
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
@@ -74,7 +96,7 @@ export const BudgetCreator: React.FC = () => {
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             className="bg-[#111] border border-white/10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl relative z-60 shadow-2xl flex flex-col"
                         >
-                            <div className={`h-32 bg-gradient-to-r ${viewingArticle.gradient} shrink-0 relative flex items-center px-8`}>
+                            <div className={`h - 32 bg - gradient - to - r ${viewingArticle.gradient} shrink - 0 relative flex items - center px - 8`}>
                                 <button
                                     onClick={() => setViewingArticle(null)}
                                     className="absolute top-4 right-4 p-2 bg-black/20 rounded-full hover:bg-black/40 text-white transition-colors"
@@ -201,13 +223,13 @@ export const BudgetCreator: React.FC = () => {
                                 <div className="flex gap-2 bg-black/20 p-1 rounded-lg">
                                     <button
                                         onClick={() => setHasLand(false)}
-                                        className={`text-[10px] px-3 py-1 rounded-md transition-all ${!hasLand ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                        className={`text - [10px] px - 3 py - 1 rounded - md transition - all ${!hasLand ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'} `}
                                     >
                                         Need Land
                                     </button>
                                     <button
                                         onClick={() => setHasLand(true)}
-                                        className={`text-[10px] px-3 py-1 rounded-md transition-all ${hasLand ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                        className={`text - [10px] px - 3 py - 1 rounded - md transition - all ${hasLand ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'} `}
                                     >
                                         Own Land
                                     </button>
@@ -243,7 +265,7 @@ export const BudgetCreator: React.FC = () => {
                         {/* Soft Cost Toggle */}
                         <div className="flex items-center justify-between p-4 border border-white/5 rounded-xl hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={() => setIncludeSoftCosts(!includeSoftCosts)}>
                             <div className="flex items-center gap-3">
-                                <div className={`size-4 border rounded flex items-center justify-center transition-colors ${includeSoftCosts ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-600'}`}>
+                                <div className={`size - 4 border rounded flex items - center justify - center transition - colors ${includeSoftCosts ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-600'} `}>
                                     {includeSoftCosts && <CheckCircle size={10} className="text-black" />}
                                 </div>
                                 <div className="flex flex-col">

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
     FileText, Plus, Search, MoreVertical,
     PenTool, Type, Calendar, CheckSquare,
-    Users, Send, ChevronLeft, Save, GripVertical, Settings, Upload, X, Trash2
+    Users, Send, ChevronLeft, Save, GripVertical, Settings, Upload, X, Trash2, Eye, Pencil
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,8 +21,11 @@ interface DocItem {
     id: string;
     title: string;
     recipient: string;
+    recipient_email: string;
     date: string;
     status: DocumentStatus;
+    file_url?: string;
+    metadata?: any[];
 }
 
 interface DraggableField {
@@ -42,10 +45,12 @@ export const VendorDocuments: React.FC = () => {
     const [view, setView] = useState<'list' | 'create'>('list');
     const [docs, setDocs] = useState<DocItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedDoc, setSelectedDoc] = useState<DocItem | null>(null);
 
     useEffect(() => {
         if (view === 'list') {
             fetchDocuments();
+            setSelectedDoc(null);
         }
     }, [view]);
 
@@ -61,15 +66,41 @@ export const VendorDocuments: React.FC = () => {
                 id: d.id,
                 title: d.title,
                 recipient: d.recipient_name || '-',
+                recipient_email: d.recipient_email,
                 date: new Date(d.created_at).toLocaleDateString(),
-                status: d.status as DocumentStatus
+                status: d.status as DocumentStatus,
+                file_url: d.file_url,
+                metadata: d.metadata || []
             })));
         }
         setLoading(false);
     };
 
+    const handleCreateNew = () => {
+        setSelectedDoc(null);
+        setView('create');
+    };
+
+    const handleOpenDoc = (doc: DocItem) => {
+        console.log("Opening document:", doc);
+        setSelectedDoc(doc);
+        setView('create');
+    };
+
+    const handleDeleteDoc = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent opening the doc
+        if (!confirm('Are you sure you want to delete this document?')) return;
+
+        const { error } = await supabase.from('documents').delete().eq('id', id);
+        if (error) {
+            alert('Error deleting document');
+        } else {
+            fetchDocuments();
+        }
+    };
+
     if (view === 'create') {
-        return <DocumentCreator onBack={() => setView('list')} />;
+        return <DocumentCreator onBack={() => setView('list')} initialDoc={selectedDoc} />;
     }
 
     return (
@@ -80,7 +111,7 @@ export const VendorDocuments: React.FC = () => {
                     <p className="text-zinc-500 dark:text-zinc-400 text-sm">Manage contracts, proposals, and e-signatures.</p>
                 </div>
                 <button
-                    onClick={() => setView('create')}
+                    onClick={handleCreateNew}
                     className="bg-zinc-900 dark:bg-white text-white dark:text-black px-6 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center gap-2 hover:scale-105 transition-transform shadow-lg"
                 >
                     <Plus size={16} /> New Document
@@ -124,13 +155,17 @@ export const VendorDocuments: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-zinc-100 dark:divide-white/5">
                             {docs.map(doc => (
-                                <tr key={doc.id} className="group hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
+                                <tr
+                                    key={doc.id}
+                                    onClick={() => handleOpenDoc(doc)}
+                                    className="group hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
+                                >
                                     <td className="px-8 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
                                                 <FileText size={18} />
                                             </div>
-                                            <span className="font-medium text-zinc-900 dark:text-white">{doc.title}</span>
+                                            <span className="font-medium text-zinc-900 dark:text-white group-hover:underline decoration-zinc-400/50 underline-offset-4">{doc.title}</span>
                                         </div>
                                     </td>
                                     <td className="px-8 py-4 text-zinc-600 dark:text-zinc-400 text-sm">{doc.recipient}</td>
@@ -139,9 +174,34 @@ export const VendorDocuments: React.FC = () => {
                                     </td>
                                     <td className="px-8 py-4 text-zinc-500 text-sm">{doc.date}</td>
                                     <td className="px-8 py-4 text-right">
-                                        <button className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
-                                            <MoreVertical size={16} />
-                                        </button>
+                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            {doc.status === 'draft' ? (
+                                                <>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleOpenDoc(doc); }}
+                                                        className="p-2 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                                        title="Edit Draft"
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => handleDeleteDoc(doc.id, e)}
+                                                        className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                        title="Delete Draft"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleOpenDoc(doc); }}
+                                                    className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                                                    title="View Document"
+                                                >
+                                                    <Eye size={16} />
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -166,21 +226,50 @@ const StatusBadge: React.FC<{ status: DocumentStatus }> = ({ status }) => {
 
 // --- DOCUMENT CREATOR COMPONENT ---
 
-const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null }> = ({ onBack, initialDoc }) => {
     const { user } = useAuth();
-    const [docTitle, setDocTitle] = useState('Untitled Document');
+    const isReadOnly = initialDoc ? initialDoc.status !== 'draft' : false;
+
+    const [docTitle, setDocTitle] = useState(initialDoc?.title || 'Untitled Document');
     const [file, setFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [fileType, setFileType] = useState<'image' | 'pdf' | null>(null);
-    const [fields, setFields] = useState<DraggableField[]>([]);
+    const [fields, setFields] = useState<DraggableField[]>(initialDoc?.metadata || []);
     const [saving, setSaving] = useState(false);
 
     // Recipient State
-    const [recipientName, setRecipientName] = useState('Christian Hostetler');
-    const [recipientEmail, setRecipientEmail] = useState('client@example.com');
+    const [recipientName, setRecipientName] = useState(initialDoc?.recipient || 'Christian Hostetler');
+    const [recipientEmail, setRecipientEmail] = useState(initialDoc?.recipient_email || 'client@example.com');
 
     const canvasRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Initialize document data if provided
+    useEffect(() => {
+        if (initialDoc && initialDoc.file_url) {
+            loadFileFromStorage(initialDoc.file_url);
+        }
+    }, [initialDoc]);
+
+    const loadFileFromStorage = async (path: string) => {
+        try {
+            const { data, error } = await supabase.storage
+                .from('document-files')
+                .download(path);
+
+            if (error) throw error;
+            if (data) {
+                // Determine type from metadata or extension
+                const type = path.endsWith('.pdf') ? 'pdf' : 'image';
+                setFileType(type);
+                setPreviewUrl(URL.createObjectURL(data));
+                // We don't set 'file' object because we don't want to re-upload it unless changed
+            }
+        } catch (err: any) {
+            console.error("Error loading document:", err);
+            alert("Could not load document file. It may have been deleted.");
+        }
+    };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -203,9 +292,9 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         setSaving(true);
         try {
-            let fileUrl = null;
+            let fileUrl = initialDoc?.file_url; // Default to existing URL
 
-            // 1. Upload File (if exists)
+            // 1. Upload NEW File (only if changed)
             if (file) {
                 const fileExt = file.name.split('.').pop();
                 const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -215,32 +304,42 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     .upload(fileName, file);
 
                 if (uploadError) throw uploadError;
-
-                // Get Public URL (assuming bucket is private, we might need signed URL, 
-                // but for simplicity let's assume we store the path and generate signed urls on read,
-                // OR just use creating a signed URL now to store? 
-                // Best practice: store path. But for prototype, let's try to get a URL.)
-                // Actually, if we just store the path, we can download it later.
                 fileUrl = fileName;
             }
 
-            // 2. Insert Record
-            const { error: dbError } = await supabase
-                .from('documents')
-                .insert({
-                    vendor_id: user.id,
-                    title: docTitle,
-                    status: 'draft',
-                    recipient_name: recipientName,
-                    recipient_email: recipientEmail,
-                    metadata: fields, // JSONB of fields
-                    file_url: fileUrl
-                });
+            const docData = {
+                title: docTitle,
+                recipient_name: recipientName,
+                recipient_email: recipientEmail,
+                metadata: fields,
+                file_url: fileUrl,
+                status: 'draft' // ensure keeps as draft when saving
+            };
 
-            if (dbError) throw dbError;
+            let error;
+
+            if (initialDoc?.id) {
+                // Update existing
+                const { error: updateError } = await supabase
+                    .from('documents')
+                    .update(docData)
+                    .eq('id', initialDoc.id);
+                error = updateError;
+            } else {
+                // Insert new
+                const { error: insertError } = await supabase
+                    .from('documents')
+                    .insert({
+                        ...docData,
+                        vendor_id: user.id
+                    });
+                error = insertError;
+            }
+
+            if (error) throw error;
 
             alert('Document Saved Successfully!');
-            onBack(); // Return to list
+            onBack();
 
         } catch (error: any) {
             console.error('Error saving document:', error);
@@ -251,7 +350,7 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     };
 
     const handleDropField = (type: DraggableField['type'], label: string, clientX: number, clientY: number) => {
-        if (!canvasRef.current) return;
+        if (isReadOnly || !canvasRef.current) return;
 
         const rect = canvasRef.current.getBoundingClientRect();
 
@@ -277,11 +376,12 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     };
 
     const removeField = (id: string) => {
+        if (isReadOnly) return;
         setFields(prev => prev.filter(f => f.id !== id));
     };
 
     const updateFieldPosition = (id: string, deltaX: number, deltaY: number) => {
-        if (!canvasRef.current) return;
+        if (isReadOnly || !canvasRef.current) return;
         const rect = canvasRef.current.getBoundingClientRect();
 
         setFields(prev => prev.map(f => {
@@ -311,44 +411,55 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <input
                         value={docTitle}
                         onChange={(e) => setDocTitle(e.target.value)}
+                        readOnly={isReadOnly}
                         className="bg-transparent text-zinc-900 dark:text-white font-serif text-lg focus:outline-none"
                     />
-                    <span className="px-2 py-0.5 bg-zinc-100 dark:bg-white/10 text-zinc-500 text-[10px] rounded uppercase tracking-wider">Draft</span>
+                    <StatusBadge status={isReadOnly ? (initialDoc?.status || 'sent') : 'draft'} />
                 </div>
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2"
-                    >
-                        {saving ? 'Saving...' : <><Save size={14} /> Save</>}
-                    </button>
-                    <button
-                        onClick={() => alert(`Sending document with ${fields.length} fields!`)}
-                        disabled={fields.length === 0}
-                        className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-colors shadow-lg
-                             ${fields.length > 0 ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20' : 'bg-zinc-200 dark:bg-white/10 text-zinc-400 cursor-not-allowed'}`}
-                    >
-                        <Send size={14} /> Send
-                    </button>
-                </div>
+                {!isReadOnly ? (
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                        >
+                            {saving ? 'Saving...' : <><Save size={14} /> Save</>}
+                        </button>
+                        <button
+                            onClick={() => alert(`Sending document with ${fields.length} fields!`)}
+                            disabled={fields.length === 0}
+                            className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-colors shadow-lg
+                                 ${fields.length > 0 ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20' : 'bg-zinc-200 dark:bg-white/10 text-zinc-400 cursor-not-allowed'}`}
+                        >
+                            <Send size={14} /> Send
+                        </button>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-3">
+                        <span className="text-zinc-400 text-xs uppercase tracking-widest font-bold flex items-center gap-2">
+                            <Eye size={14} /> Read Only Mode
+                        </span>
+                    </div>
+                )}
             </div>
 
             <div className="flex-1 flex overflow-hidden">
-                {/* Tools Sidebar */}
-                <div className="w-64 bg-white dark:bg-[#0A0A0A] border-r border-zinc-200 dark:border-white/10 flex flex-col">
-                    <div className="p-4 border-b border-zinc-200 dark:border-white/5">
-                        <h3 className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-4">Standard Fields</h3>
-                        <div className="space-y-3">
-                            {/* Draggable sources */}
-                            <DraggableTool type="signature" icon={PenTool} label="Signature" color="text-blue-500" onDrop={handleDropField} />
-                            <DraggableTool type="initials" icon={Type} label="Initials" onDrop={handleDropField} />
-                            <DraggableTool type="date" icon={Calendar} label="Date Signed" onDrop={handleDropField} />
-                            <DraggableTool type="text" icon={Type} label="Text Box" onDrop={handleDropField} />
-                            <DraggableTool type="checkbox" icon={CheckSquare} label="Checkbox" onDrop={handleDropField} />
+                {/* Tools Sidebar (Hidden if Read Only) */}
+                {!isReadOnly && (
+                    <div className="w-64 bg-white dark:bg-[#0A0A0A] border-r border-zinc-200 dark:border-white/10 flex flex-col">
+                        <div className="p-4 border-b border-zinc-200 dark:border-white/5">
+                            <h3 className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-4">Standard Fields</h3>
+                            <div className="space-y-3">
+                                {/* Draggable sources */}
+                                <DraggableTool type="signature" icon={PenTool} label="Signature" color="text-blue-500" onDrop={handleDropField} />
+                                <DraggableTool type="initials" icon={Type} label="Initials" onDrop={handleDropField} />
+                                <DraggableTool type="date" icon={Calendar} label="Date Signed" onDrop={handleDropField} />
+                                <DraggableTool type="text" icon={Type} label="Text Box" onDrop={handleDropField} />
+                                <DraggableTool type="checkbox" icon={CheckSquare} label="Checkbox" onDrop={handleDropField} />
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 {/* Main Canvas Area */}
                 <div className="flex-1 bg-zinc-100 dark:bg-[#050505] overflow-auto p-12 flex justify-center relative">
@@ -357,26 +468,30 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         className="relative w-[8.5in] min-h-[11in] bg-white shadow-2xl transition-all duration-300"
                         ref={canvasRef}
                     >
-                        {!file ? (
+                        {!previewUrl ? (
                             <div className="absolute inset-0 flex flex-col items-center justify-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 m-8 rounded-xl bg-zinc-50 dark:bg-zinc-900/50">
                                 <div className="p-6 bg-white dark:bg-black rounded-full shadow-lg mb-6">
                                     <Upload size={32} className="text-zinc-400" />
                                 </div>
                                 <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-2">Upload Document</h3>
                                 <p className="text-sm text-zinc-500 mb-6 text-center max-w-xs">Upload a PDF or Image (PNG, JPG) to start adding signature fields.</p>
-                                <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-xs font-bold uppercase tracking-widest hover:scale-105 transition-transform"
-                                >
-                                    Select File
-                                </button>
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    onChange={handleFileSelect}
-                                    accept="image/*,.pdf"
-                                    className="hidden"
-                                />
+                                {!isReadOnly && (
+                                    <>
+                                        <button
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-xs font-bold uppercase tracking-widest hover:scale-105 transition-transform"
+                                        >
+                                            Select File
+                                        </button>
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            onChange={handleFileSelect}
+                                            accept="image/*,.pdf"
+                                            className="hidden"
+                                        />
+                                    </>
+                                )}
                             </div>
                         ) : (
                             <>
@@ -403,6 +518,7 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                         field={field}
                                         onRemove={removeField}
                                         onUpdatePos={updateFieldPosition}
+                                        isReadOnly={isReadOnly}
                                     />
                                 ))}
                             </>
@@ -419,9 +535,11 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                         <div className="space-y-4">
                             <div className="p-4 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/5 relative group">
-                                <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-zinc-400 hover:text-red-500">
-                                    ×
-                                </div>
+                                {!isReadOnly && (
+                                    <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-zinc-400 hover:text-red-500">
+                                        ×
+                                    </div>
+                                )}
                                 <div className="flex items-center gap-3 mb-2">
                                     <div className="w-8 h-8 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-bold text-xs">1</div>
                                     <div>
@@ -433,27 +551,36 @@ const DocumentCreator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     className="w-full bg-white dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded px-2 py-1 text-xs mb-2"
                                     value={recipientName}
                                     onChange={(e) => setRecipientName(e.target.value)}
+                                    readOnly={isReadOnly}
                                 />
                                 <input
                                     className="w-full bg-white dark:bg-black/20 border border-zinc-200 dark:border-white/10 rounded px-2 py-1 text-xs"
                                     value={recipientEmail}
                                     onChange={(e) => setRecipientEmail(e.target.value)}
+                                    readOnly={isReadOnly}
                                 />
                             </div>
 
-                            <button className="w-full py-3 border border-dashed border-zinc-300 dark:border-white/20 rounded-xl text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-400 dark:hover:border-white/40 transition-colors uppercase tracking-widest font-bold">
-                                + Add Recipient
-                            </button>
+                            {!isReadOnly && (
+                                <button className="w-full py-3 border border-dashed border-zinc-300 dark:border-white/20 rounded-xl text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-400 dark:hover:border-white/40 transition-colors uppercase tracking-widest font-bold">
+                                    + Add Recipient
+                                </button>
+                            )}
                         </div>
                     </div>
 
                     <div className="mt-auto p-6 border-t border-zinc-200 dark:border-white/5">
-                        <button
-                            onClick={() => { setFile(null); setFields([]); }}
-                            className="w-full flex items-center justify-center gap-2 text-xs text-red-500 hover:text-red-600 transition-colors py-2"
-                        >
-                            Reset / Clear Document
-                        </button>
+                        {!isReadOnly && (
+                            <button
+                                onClick={() => { setFile(null); setFields([]); }}
+                                className="w-full flex items-center justify-center gap-2 text-xs text-red-500 hover:text-red-600 transition-colors py-2"
+                            >
+                                Reset / Clear Document
+                            </button>
+                        )}
+                        {isReadOnly && (
+                            <p className="text-center text-xs text-zinc-500">This document is {initialDoc?.status} and cannot be edited.</p>
+                        )}
                     </div>
                 </div>
             </div>
@@ -491,21 +618,16 @@ const DraggableTool: React.FC<{
 const DraggableFieldOnCanvas: React.FC<{
     field: DraggableField,
     onRemove: (id: string) => void,
-    onUpdatePos: (id: string, dx: number, dy: number) => void
-}> = ({ field, onRemove, onUpdatePos }) => {
-
-    // Convert percentage back to something absolute if needed, but styling with % left/top is standard
-    // However, framer motion drag modifies transform (pixels).
-    // Better to use a simpler drag handler if we want percentage-based state sync, 
-    // but framer motion drag is smooth.
-    // For this prototype, we'll maintain visual position via standard styles first, then use motion for interaction.
+    onUpdatePos: (id: string, dx: number, dy: number) => void,
+    isReadOnly?: boolean
+}> = ({ field, onRemove, onUpdatePos, isReadOnly }) => {
 
     return (
         <motion.div
-            drag
+            drag={!isReadOnly}
             dragMomentum={false}
             onDragEnd={(_, info) => {
-                onUpdatePos(field.id, info.offset.x, info.offset.y);
+                if (!isReadOnly) onUpdatePos(field.id, info.offset.x, info.offset.y);
             }}
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -516,22 +638,25 @@ const DraggableFieldOnCanvas: React.FC<{
                 // Center the anchor
                 x: '-50%',
                 y: '-50%',
+                cursor: isReadOnly ? 'default' : 'grab'
             }}
             className="absolute z-10 group"
         >
-            <div className={`p-2 rounded border-2 shadow-sm flex items-center gap-2 cursor-grab active:cursor-grabbing
+            <div className={`p-2 rounded border-2 shadow-sm flex items-center gap-2 ${!isReadOnly && 'active:cursor-grabbing'}
                 ${field.type === 'signature' ? 'bg-blue-500/10 border-blue-500 text-blue-600' : 'bg-yellow-500/10 border-yellow-500 text-yellow-600'}
             `}>
                 <span className="text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">{field.label}</span>
-                <button
-                    onClick={(e) => { e.stopPropagation(); onRemove(field.id); }}
-                    className="p-1 hover:bg-black/10 rounded text-inherit opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                    <X size={10} />
-                </button>
+                {!isReadOnly && (
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onRemove(field.id); }}
+                        className="p-1 hover:bg-black/10 rounded text-inherit opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                        <X size={10} />
+                    </button>
+                )}
             </div>
             {/* Recipient Tag */}
-            <div className="absolute -top-3 left-0 bg-yellow-500 text-black text-[8px] font-bold px-1 rounded shadow-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className={`absolute -top-3 left-0 bg-yellow-500 text-black text-[8px] font-bold px-1 rounded shadow-sm whitespace-nowrap transition-opacity ${isReadOnly ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                 Homeowner
             </div>
         </motion.div>

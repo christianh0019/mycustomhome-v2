@@ -6,10 +6,11 @@ import { RoadmapService } from '../services/RoadmapService';
 import { NewBadge, markFeatureAsSeen } from './NewBadge';
 import {
   Lock, Map, Calculator, Users, MessageSquare,
-  Book, Wallet, UserCircle, Hexagon, Component
+  Book, Wallet, Hexagon, Component, LayoutDashboard, Settings
 } from 'lucide-react';
 
 const TAB_ICONS: Record<string, React.ElementType> = {
+  [AppTab.Dashboard]: LayoutDashboard, // New Dashboard
   [AppTab.ProjectPilot]: Component, // Your Helper
   [AppTab.Roadmap]: Map, // The Map
   [AppTab.BudgetCreator]: Calculator, // The Budget
@@ -19,11 +20,12 @@ const TAB_ICONS: Record<string, React.ElementType> = {
   [AppTab.KnowledgeBase]: Book,
   [AppTab.EquityClub]: Hexagon, // Treasure Chest
   [AppTab.TheLedger]: Wallet,
-  [AppTab.Settings]: UserCircle
+  [AppTab.Settings]: Settings
 };
 
 // Explicit order
 const ORDERED_TABS = [
+  { id: AppTab.Dashboard, icon: LayoutDashboard, label: 'Dashboard' }, // New Dashboard
   // AppTab.ProjectPilot, // Moved to Global Widget
   AppTab.Roadmap,
   AppTab.BudgetCreator,
@@ -120,14 +122,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                   ? 'opacity-50 cursor-not-allowed hover:bg-transparent text-zinc-500'
                   : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5'
               }
-                `}
+`}
             title={isLocked ? unlockMessage : ''}
           >
             {/* The original code did not have an 'icon' variable.
                 Keeping the original 'tab' text for now.
                 If an icon is intended, it would need to be defined or imported. */}
             {/* Icon */}
-            <div className={`transition-transform duration-300 ${activeTab === tab ? 'scale-110' : 'group-hover:scale-110'}`}>
+            <div className={`transition - transform duration - 300 ${activeTab === tab ? 'scale-110' : 'group-hover:scale-110'} `}>
               {TAB_ICONS[tab] && React.createElement(TAB_ICONS[tab], { size: 18 })}
             </div>
             <span>{tab}</span>
@@ -153,15 +155,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
         {/* Settings Tab */}
         <button
           onClick={() => setActiveTab(AppTab.Settings)}
-          className={`w-full text-left px-10 py-6 text-[11px] tracking-[0.2em] uppercase modern-transition flex items-center justify-between group ${activeTab === AppTab.Settings
+          className={`w - full text - left px - 10 py - 6 text - [11px] tracking - [0.2em] uppercase modern - transition flex items - center justify - between group ${activeTab === AppTab.Settings
             ? 'text-white bg-white/5 font-medium'
             : 'text-white/50 hover:text-white/90 hover:bg-white/[0.03]'
-            }`}
+            } `}
         >
           <div className="flex items-center space-x-3">
             <span>{AppTab.Settings}</span>
           </div>
-          <div className={`w-1 h-1 rounded-full modern-transition ${activeTab === AppTab.Settings ? 'bg-white scale-100' : 'bg-white/0 scale-0 group-hover:bg-white/20 group-hover:scale-100'}`}></div>
+          <div className={`w - 1 h - 1 rounded - full modern - transition ${activeTab === AppTab.Settings ? 'bg-white scale-100' : 'bg-white/0 scale-0 group-hover:bg-white/20 group-hover:scale-100'} `}></div>
         </button>
 
         {/* User Profile Summary */}
@@ -169,14 +171,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
           <div className="flex items-center space-x-4 group cursor-pointer" onClick={() => setActiveTab(AppTab.Settings)}>
             <div className="w-10 h-10 border border-white/20 flex items-center justify-center text-[11px] font-medium group-hover:border-white/60 modern-transition overflow-hidden rounded-full">
               <img src={user?.avatarUrl || `https://ui-avatars.com/api/?name=${user?.name || "User"}&background=random`} alt="CH" className="w-full h-full object-cover opacity-80" />
-            </div>
+            </div >
             <div className="flex flex-col">
               <span className="text-[11px] font-semibold uppercase tracking-widest text-white/90">{user?.name?.split(' ')[0] || 'User'}</span>
               <span className="text-[9px] uppercase tracking-widest text-white/50">Member</span>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
+          </div >
+        </div >
+      </div >
+    </div >
   );
 };

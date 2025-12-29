@@ -5,6 +5,7 @@ import { calculateBudgetBreakdown, getFeasibilityStatus as checkFeasibility, Bud
 import { Calculator, MapPin, CheckCircle, AlertTriangle, ArrowRight, Info, Home, Layers, DollarSign } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePageContext } from '../../contexts/PageContext';
+import { useProjectContext } from '../../contexts/ProjectContext';
 import { ARTICLES, Article } from '../../data/knowledgeBaseData';
 import { HelpCircle, X, Clock } from 'lucide-react';
 
@@ -12,19 +13,14 @@ export const BudgetCreator: React.FC = () => {
     const { user, updateProfile } = useAuth();
 
     // Inputs
-    const [city, setCity] = useState(user?.city || 'Loveland');
-    const [marketData, setMarketData] = useState<MarketData | null>(null);
-    const [isLoadingMarket, setIsLoadingMarket] = useState(false);
 
+    const [isLoadingMarket, setIsLoadingMarket] = useState(false);
     // Educational Modal State
     const [viewingArticle, setViewingArticle] = useState<Article | null>(null);
 
-    const [totalBudget, setTotalBudget] = useState(user?.budgetRange ? parseInt(user.budgetRange.replace(/\D/g, '')) || 1000000 : 1000000);
-    const [targetSqFt, setTargetSqFt] = useState(user?.target_sqft || 2500);
-
-    const [hasLand, setHasLand] = useState(user?.has_land || false);
-    const [landCost, setLandCost] = useState(0);
-    const [includeSoftCosts, setIncludeSoftCosts] = useState(true);
+    // Global Project State
+    const { projectData, updateBudget } = useProjectContext();
+    const { totalBudget, landCost, targetSqFt, includeSoftCosts, hasLand, city, marketData } = projectData.budget;
 
     // Context Sharing
     const { setPageData } = usePageContext();
@@ -39,8 +35,12 @@ export const BudgetCreator: React.FC = () => {
 
     const handleRunMarketResearch = async () => {
         setIsLoadingMarket(true);
-        const data = await LocationCostService.getCostRange(city);
-        setMarketData(data);
+        if (city) {
+            const data = await LocationCostService.getMarketData(city);
+            if (data) {
+                updateBudget({ marketData: data });
+            }
+        }
         setIsLoadingMarket(false);
     };
 
@@ -49,7 +49,7 @@ export const BudgetCreator: React.FC = () => {
         if (city && !marketData) {
             handleRunMarketResearch();
         }
-    }, []);
+    }, [city, marketData]); // Added marketData to dependencies
 
     // Sync to PageContext for AI
     useEffect(() => {
@@ -157,11 +157,11 @@ export const BudgetCreator: React.FC = () => {
 
                         <div className="flex gap-2 mb-4">
                             <input
-                                type="text"
+                                placeholder="Enter City, State..."
                                 value={city}
-                                onChange={(e) => setCity(e.target.value)}
-                                className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-blue-500/50"
-                                placeholder="Enter City (e.g. Loveland)"
+                                onChange={(e) => updateBudget({ city: e.target.value })}
+                                onKeyPress={(e) => e.key === 'Enter' && handleRunMarketResearch()}
+                                className="bg-transparent border-none text-white focus:ring-0 placeholder:text-zinc-600 w-full"
                             />
                             <button
                                 onClick={handleRunMarketResearch}
@@ -203,10 +203,10 @@ export const BudgetCreator: React.FC = () => {
                             </div>
                             <input
                                 type="range"
-                                min="500000" max="5000000" step="10000"
+                                min={300000} max={5000000} step={10000}
                                 value={totalBudget}
-                                onChange={(e) => setTotalBudget(parseInt(e.target.value))}
-                                className="w-full accent-white h-1 bg-white/10 rounded-full appearance-none cursor-pointer"
+                                onChange={(e) => updateBudget({ totalBudget: Number(e.target.value) })}
+                                className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
                             />
                         </div>
 
@@ -220,18 +220,12 @@ export const BudgetCreator: React.FC = () => {
                                         <HelpCircle size={18} />
                                     </button>
                                 </div>
-                                <div className="flex gap-2 bg-black/20 p-1 rounded-lg">
-                                    <button
-                                        onClick={() => setHasLand(false)}
-                                        className={`text - [10px] px - 3 py - 1 rounded - md transition - all ${!hasLand ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'} `}
-                                    >
-                                        Need Land
+                                <div className="flex gap-2 mb-4 bg-zinc-900 p-1 rounded-lg w-fit">
+                                    <button onClick={() => updateBudget({ hasLand: true })} className={`px-3 py-1.5 text-xs rounded-md transition-all ${hasLand ? 'bg-white text-black font-medium' : 'text-zinc-500 hover:text-white'}`}>
+                                        I have land
                                     </button>
-                                    <button
-                                        onClick={() => setHasLand(true)}
-                                        className={`text - [10px] px - 3 py - 1 rounded - md transition - all ${hasLand ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'} `}
-                                    >
-                                        Own Land
+                                    <button onClick={() => updateBudget({ hasLand: false })} className={`px-3 py-1.5 text-xs rounded-md transition-all ${!hasLand ? 'bg-white text-black font-medium' : 'text-zinc-500 hover:text-white'}`}>
+                                        I need land
                                     </button>
                                 </div>
                             </div>
@@ -244,17 +238,17 @@ export const BudgetCreator: React.FC = () => {
                                         exit={{ height: 0, opacity: 0 }}
                                         className="overflow-hidden"
                                     >
-                                        <div className="pt-2">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <label className="text-xs text-zinc-500">Estimated Land Value/Cost</label>
-                                                <span className="text-sm font-mono text-zinc-300">{formatCurrency(landCost)}</span>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-zinc-400">Estimated Land Cost</span>
+                                                <span className="font-mono text-white">{formatCurrency(landCost)}</span>
                                             </div>
                                             <input
                                                 type="range"
-                                                min="0" max="1000000" step="5000"
+                                                min={0} max={1000000} step={5000}
                                                 value={landCost}
-                                                onChange={(e) => setLandCost(parseInt(e.target.value))}
-                                                className="w-full accent-zinc-500 h-1 bg-white/10 rounded-full appearance-none cursor-pointer"
+                                                onChange={(e) => updateBudget({ landCost: Number(e.target.value) })}
+                                                className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
                                             />
                                         </div>
                                     </motion.div>
@@ -263,9 +257,9 @@ export const BudgetCreator: React.FC = () => {
                         </div>
 
                         {/* Soft Cost Toggle */}
-                        <div className="flex items-center justify-between p-4 border border-white/5 rounded-xl hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={() => setIncludeSoftCosts(!includeSoftCosts)}>
+                        <div className="flex items-center justify-between p-4 border border-white/5 rounded-xl hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={() => updateBudget({ includeSoftCosts: !includeSoftCosts })}>
                             <div className="flex items-center gap-3">
-                                <div className={`size - 4 border rounded flex items - center justify - center transition - colors ${includeSoftCosts ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-600'} `}>
+                                <div className={`size-4 border rounded flex items-center justify-center transition-colors ${includeSoftCosts ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-600'} `}>
                                     {includeSoftCosts && <CheckCircle size={10} className="text-black" />}
                                 </div>
                                 <div className="flex flex-col">
@@ -296,10 +290,10 @@ export const BudgetCreator: React.FC = () => {
                             </div>
                             <input
                                 type="range"
-                                min="1000" max="8000" step="100"
+                                min={1000} max={10000} step={50}
                                 value={targetSqFt}
-                                onChange={(e) => setTargetSqFt(parseInt(e.target.value))}
-                                className="w-full accent-white h-1 bg-white/10 rounded-full appearance-none cursor-pointer"
+                                onChange={(e) => updateBudget({ targetSqFt: Number(e.target.value) })}
+                                className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
                             />
                             {/* Visualizer Helper */}
                             <div className="text-xs text-center text-zinc-500 bg-white/5 py-2 rounded-lg">

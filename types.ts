@@ -1,5 +1,6 @@
 
 export enum AppTab {
+  Dashboard = 'Dashboard',
   ProjectPilot = 'Your Helper',
   Roadmap = 'The Map',
   TheVault = 'The Safe Box',

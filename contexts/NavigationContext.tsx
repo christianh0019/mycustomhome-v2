@@ -10,7 +10,7 @@ interface NavigationContextType {
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
 
 export const NavigationProvider = ({ children }: { children: ReactNode }) => {
-    const [activeTab, setActiveTab] = useState<AppTab>(AppTab.ProjectPilot); // Default
+    const [activeTab, setActiveTab] = useState<AppTab>(AppTab.Dashboard); // Default
 
     return (
         <NavigationContext.Provider value={{ activeTab, setActiveTab }}>

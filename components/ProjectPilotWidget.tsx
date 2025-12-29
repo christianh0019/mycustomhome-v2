@@ -7,7 +7,7 @@ import { useAIContext } from '../hooks/useAIContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     Send, Paperclip, X, Image as ImageIcon, FileText,
-    Sparkles, ArrowUp, Bot, User, Maximize2, Minimize2, MessageSquare
+    Sparkles, ArrowUp, Bot, User, Maximize2, Minimize2, MessageSquare, RefreshCw, ZoomIn
 } from 'lucide-react';
 
 interface Attachment {
@@ -30,6 +30,8 @@ export const ProjectPilotWidget: React.FC = () => {
     // Notifications
     const [notification, setNotification] = useState<string | null>(null);
     const [showIntro, setShowIntro] = useState(true); // Persist this to local storage ideally
+    const [isFullScreen, setIsFullScreen] = useState(false);
+    const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,6 +65,52 @@ export const ProjectPilotWidget: React.FC = () => {
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const handleReset = () => {
+        if (window.confirm("Start a new conversation? This will clear current context.")) {
+            setMessages([{
+                id: 'init-' + Date.now(), role: 'pilot', text: "I'm ready for a new topic. What's on your mind?", timestamp: 'Now'
+            }]);
+
+            // Clear history in backend if needed, or just specific session
+            // PilotService.clearHistory(user.id); 
+            // For now, client-side reset is enough for "Context Window" management
+        }
+    };
+
+    const renderMessageContent = (text: string) => {
+        const attachMatch = text.match(/\[Attachment: (.*?)\]\((.*?)\)/);
+        if (attachMatch) {
+            const [fullStr, name, url] = attachMatch;
+            const pureText = text.replace(fullStr, '').trim();
+            const isImage = /\.(jpg|jpeg|png|webp|gif)$/i.test(url);
+
+            return (
+                <div className="space-y-4">
+                    {pureText && <p>{pureText}</p>}
+                    {isImage ? (
+                        <div onClick={() => setLightboxUrl(url)} className="group relative cursor-zoom-in w-full max-w-sm rounded-2xl overflow-hidden border border-white/10 bg-black/50 hover:border-white/30 transition-all shadow-lg mt-2">
+                            <img src={url} alt="attachment" className="w-full h-auto object-cover max-h-48" />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <ZoomIn className="text-white drop-shadow-md" />
+                            </div>
+                        </div>
+                    ) : (
+                        <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-white/[0.05] border border-white/10 rounded-xl hover:bg-white/[0.1] transition-all group mt-2 max-w-xs">
+                            <div className="size-10 flex items-center justify-center bg-white/10 rounded-lg text-white group-hover:scale-110 transition-transform">
+                                <FileText size={20} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-white/90 truncate">{name}</p>
+                                <p className="text-[10px] text-white/40 uppercase tracking-widest">Document</p>
+                            </div>
+                        </a>
+                    )}
+                </div>
+            );
+        }
+        return text;
     };
 
     const handleSend = async (overrideText?: string) => {
@@ -184,110 +232,158 @@ export const ProjectPilotWidget: React.FC = () => {
                 </button>
             </motion.div>
 
+            {/* LIGHTBOX */}
+            <AnimatePresence>
+                {
+                    lightboxUrl && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setLightboxUrl(null)}
+                            className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm"
+                        >
+                            <motion.img
+                                initial={{ scale: 0.9 }}
+                                animate={{ scale: 1 }}
+                                src={lightboxUrl}
+                                className="max-w-full max-h-screen object-contain rounded-lg shadow-2xl"
+                            />
+                            <button className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full">
+                                <X size={32} />
+                            </button>
+                        </motion.div>
+                    )
+                }
+            </AnimatePresence >
+
             {/* CHAT WINDOW */}
             <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
-                        className="fixed bottom-24 right-6 w-[400px] h-[600px] max-h-[80vh] bg-[#0A0A0A]/95 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl z-50 flex flex-col overflow-hidden"
-                    >
-                        {/* Header */}
-                        <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                            <div className="flex items-center gap-3">
-                                <div className="size-8 rounded-full bg-gradient-to-br from-emerald-500/20 to-emerald-900/20 flex items-center justify-center border border-emerald-500/30">
-                                    <Sparkles size={14} className="text-emerald-400" />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-bold text-white">Project Pilot</h3>
-                                    <div className="flex items-center gap-1.5 opacity-50">
-                                        <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                        <span className="text-[10px] uppercase tracking-wider">Online</span>
+                {
+                    isOpen && (
+                        <motion.div
+                            initial={isFullScreen ? { opacity: 0, scale: 0.95 } : { opacity: 0, y: 20, scale: 0.95 }}
+                            animate={isFullScreen ? { opacity: 1, scale: 1, y: 0 } : { opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                            className={`fixed bg-[#0A0A0A]/95 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl z-50 flex flex-col overflow-hidden transition-all duration-300
+                            ${isFullScreen ? 'inset-4 rounded-2xl' : 'bottom-24 right-6 w-[400px] h-[600px] max-h-[80vh]'}
+                        `}
+                        >
+                            {/* Header */}
+                            <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-8 rounded-full bg-gradient-to-br from-emerald-500/20 to-emerald-900/20 flex items-center justify-center border border-emerald-500/30">
+                                        <Sparkles size={14} className="text-emerald-400" />
                                     </div>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => handleSend(`Analyze this screen: ${activeTab}`)}
-                                className="text-[10px] uppercase tracking-wider bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg transition-colors border border-white/5"
-                            >
-                                ✨ Analyze Tab
-                            </button>
-                        </div>
-
-                        {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
-                            {messages.map((m) => {
-                                const isPilot = m.role === 'pilot';
-                                return (
-                                    <div key={m.id} className={`flex ${isPilot ? 'justify-start' : 'justify-end'} gap-3`}>
-                                        {isPilot && (
-                                            <div className="size-6 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-1">
-                                                <Sparkles size={12} className="text-emerald-400" />
-                                            </div>
-                                        )}
-                                        <div className={`max-w-[85%] rounded-2xl p-3 text-sm leading-relaxed ${isPilot
-                                            ? 'bg-white/5 text-zinc-300 border border-white/5 rounded-tl-none'
-                                            : 'bg-white text-black font-medium rounded-tr-none'
-                                            }`}>
-                                            {m.text}
+                                    <div>
+                                        <h3 className="text-sm font-bold text-white">Project Pilot</h3>
+                                        <div className="flex items-center gap-1.5 opacity-50">
+                                            <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                            <span className="text-[10px] uppercase tracking-wider">Online</span>
                                         </div>
                                     </div>
-                                );
-                            })}
-                            {isTyping && (
-                                <div className="flex justify-start gap-3">
-                                    <div className="size-6 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-1">
-                                        <Sparkles size={12} className="text-emerald-400" />
-                                    </div>
-                                    <div className="bg-white/5 rounded-2xl rounded-tl-none p-3 h-10 flex items-center gap-1">
-                                        <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" />
-                                        <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce delay-75" />
-                                        <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce delay-150" />
-                                    </div>
                                 </div>
-                            )}
-                            <div ref={messagesEndRef} />
-                        </div>
 
-                        {/* Input */}
-                        <div className="p-4 bg-black/40 border-t border-white/5">
-                            {currentAttachment && (
-                                <div className="flex items-center gap-2 mb-2 p-2 bg-white/5 rounded-lg border border-white/5">
-                                    <Paperclip size={12} className="text-blue-400" />
-                                    <span className="text-xs text-zinc-300 truncate max-w-[200px]">{currentAttachment.name}</span>
-                                    <button onClick={() => setCurrentAttachment(null)} className="ml-auto text-zinc-500 hover:text-white"><X size={12} /></button>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => handleSend(`Analyze this screen: ${activeTab}`)}
+                                        className="text-[10px] uppercase tracking-wider bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg transition-colors border border-white/5 mr-2"
+                                    >
+                                        ✨ Analyze Tab
+                                    </button>
+
+                                    <button
+                                        onClick={handleReset}
+                                        className="p-2 text-zinc-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                        title="New Conversation"
+                                    >
+                                        <RefreshCw size={16} />
+                                    </button>
+
+                                    <button
+                                        onClick={() => setIsFullScreen(!isFullScreen)}
+                                        className="p-2 text-zinc-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                        title={isFullScreen ? "Minimize" : "Full Screen"}
+                                    >
+                                        {isFullScreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                                    </button>
                                 </div>
-                            )}
-                            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl p-1 pr-2 focus-within:border-white/20 transition-colors">
-                                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
-                                <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="p-2 text-zinc-500 hover:text-white transition-colors"
-                                >
-                                    <Paperclip size={18} />
-                                </button>
-                                <input
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                                    placeholder="Message Project Pilot..."
-                                    className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-white placeholder:text-zinc-600 h-9"
-                                    disabled={isUploading}
-                                />
-                                <button
-                                    onClick={() => handleSend()}
-                                    disabled={!input.trim() && !currentAttachment}
-                                    className="p-2 bg-white text-black rounded-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all"
-                                >
-                                    <ArrowUp size={16} />
-                                </button>
                             </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+
+                            {/* Messages */}
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
+                                {messages.map((m) => {
+                                    const isPilot = m.role === 'pilot';
+                                    return (
+                                        <div key={m.id} className={`flex ${isPilot ? 'justify-start' : 'justify-end'} gap-3`}>
+                                            {isPilot && (
+                                                <div className="size-6 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-1">
+                                                    <Sparkles size={12} className="text-emerald-400" />
+                                                </div>
+                                            )}
+                                            <div className={`max-w-[85%] rounded-2xl p-3 text-sm leading-relaxed ${isPilot
+                                                ? 'bg-white/5 text-zinc-300 border border-white/5 rounded-tl-none'
+                                                : 'bg-white text-black font-medium rounded-tr-none'
+                                                }`}>
+                                                {renderMessageContent(m.text)}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                {isTyping && (
+                                    <div className="flex justify-start gap-3">
+                                        <div className="size-6 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-1">
+                                            <Sparkles size={12} className="text-emerald-400" />
+                                        </div>
+                                        <div className="bg-white/5 rounded-2xl rounded-tl-none p-3 h-10 flex items-center gap-1">
+                                            <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" />
+                                            <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce delay-75" />
+                                            <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce delay-150" />
+                                        </div>
+                                    </div>
+                                )}
+                                <div ref={messagesEndRef} />
+                            </div>
+
+                            {/* Input */}
+                            <div className="p-4 bg-black/40 border-t border-white/5">
+                                {currentAttachment && (
+                                    <div className="flex items-center gap-2 mb-2 p-2 bg-white/5 rounded-lg border border-white/5">
+                                        <Paperclip size={12} className="text-blue-400" />
+                                        <span className="text-xs text-zinc-300 truncate max-w-[200px]">{currentAttachment.name}</span>
+                                        <button onClick={() => setCurrentAttachment(null)} className="ml-auto text-zinc-500 hover:text-white"><X size={12} /></button>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl p-1 pr-2 focus-within:border-white/20 transition-colors">
+                                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="p-2 text-zinc-500 hover:text-white transition-colors"
+                                    >
+                                        <Paperclip size={18} />
+                                    </button>
+                                    <input
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                                        placeholder="Message Project Pilot..."
+                                        className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-white placeholder:text-zinc-600 h-9"
+                                        disabled={isUploading}
+                                    />
+                                    <button
+                                        onClick={() => handleSend()}
+                                        disabled={!input.trim() && !currentAttachment}
+                                        className="p-2 bg-white text-black rounded-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all"
+                                    >
+                                        <ArrowUp size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )
+                }
+            </AnimatePresence >
         </>
     );
 };

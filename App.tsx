@@ -16,6 +16,7 @@ import { VendorConnectPage } from './components/vendor/VendorConnectPage';
 // App Components
 import { MainApp } from './components/MainApp';
 import { LoginScreen } from './components/LoginScreen';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -46,7 +47,9 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <UIProvider>
             <NavigationProvider>
-              <MainApp />
+              <ErrorBoundary>
+                <MainApp />
+              </ErrorBoundary>
             </NavigationProvider>
           </UIProvider>
         </ProtectedRoute>

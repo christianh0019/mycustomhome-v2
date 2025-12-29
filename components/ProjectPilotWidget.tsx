@@ -191,9 +191,10 @@ export const ProjectPilotWidget: React.FC = () => {
                     {!isOpen && showIntro && (
                         <motion.div
                             initial={{ opacity: 0, y: 10, scale: 0.9 }}
+
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
-                            className="bg-white text-black text-xs font-medium pl-4 pr-8 py-2 rounded-xl shadow-xl mb-2 relative group cursor-pointer"
+                            className="bg-white dark:bg-white text-black text-xs font-medium pl-4 pr-8 py-2 rounded-xl shadow-xl mb-2 relative group cursor-pointer"
                         >
                             I can answer or analyze anything!
                             <button
@@ -226,7 +227,7 @@ export const ProjectPilotWidget: React.FC = () => {
 
                 <button
                     onClick={() => { setIsOpen(!isOpen); setShowIntro(false); }}
-                    className={`group flex items-center justify-center size-14 rounded-full shadow-2xl transition-all duration-300 ${isOpen ? 'bg-zinc-800 text-white' : 'bg-white text-black hover:scale-110'}`}
+                    className={`group flex items-center justify-center size-14 rounded-full shadow-2xl transition-all duration-300 ${isOpen ? 'bg-zinc-900 dark:bg-zinc-800 text-white' : 'bg-white text-black hover:scale-110'}`}
                 >
                     {isOpen ? <X size={24} /> : <Sparkles size={24} className={(notification || showIntro) ? 'animate-pulse' : ''} />}
                 </button>
@@ -266,18 +267,18 @@ export const ProjectPilotWidget: React.FC = () => {
                             animate={isFullScreen ? { opacity: 1, scale: 1, y: 0 } : { opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 20, scale: 0.95 }}
                             transition={{ duration: 0.2 }}
-                            className={`fixed bg-[#0A0A0A]/95 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl z-50 flex flex-col overflow-hidden transition-all duration-300
+                            className={`fixed bg-white/95 dark:bg-[#0A0A0A]/95 backdrop-blur-xl border border-zinc-200 dark:border-white/10 rounded-3xl shadow-2xl z-50 flex flex-col overflow-hidden transition-all duration-300
                             ${isFullScreen ? 'inset-4 rounded-2xl' : 'bottom-24 right-6 w-[400px] h-[600px] max-h-[80vh]'}
                         `}
                         >
                             {/* Header */}
-                            <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                            <div className="p-4 border-b border-zinc-200 dark:border-white/5 flex items-center justify-between bg-zinc-50 dark:bg-white/[0.02]">
                                 <div className="flex items-center gap-3">
                                     <div className="size-8 rounded-full bg-gradient-to-br from-emerald-500/20 to-emerald-900/20 flex items-center justify-center border border-emerald-500/30">
                                         <Sparkles size={14} className="text-emerald-400" />
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-bold text-white">Project Pilot</h3>
+                                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">Project Pilot</h3>
                                         <div className="flex items-center gap-1.5 opacity-50">
                                             <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                             <span className="text-[10px] uppercase tracking-wider">Online</span>
@@ -295,7 +296,7 @@ export const ProjectPilotWidget: React.FC = () => {
 
                                     <button
                                         onClick={handleReset}
-                                        className="p-2 text-zinc-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                        className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/10 rounded-lg transition-colors"
                                         title="New Conversation"
                                     >
                                         <RefreshCw size={16} />
@@ -303,7 +304,7 @@ export const ProjectPilotWidget: React.FC = () => {
 
                                     <button
                                         onClick={() => setIsFullScreen(!isFullScreen)}
-                                        className="p-2 text-zinc-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                        className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/10 rounded-lg transition-colors"
                                         title={isFullScreen ? "Minimize" : "Full Screen"}
                                     >
                                         {isFullScreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
@@ -322,9 +323,9 @@ export const ProjectPilotWidget: React.FC = () => {
                                                     <Sparkles size={12} className="text-emerald-400" />
                                                 </div>
                                             )}
-                                            <div className={`max-w-[85%] rounded-2xl p-3 text-sm leading-relaxed ${isPilot
-                                                ? 'bg-white/5 text-zinc-300 border border-white/5 rounded-tl-none'
-                                                : 'bg-white text-black font-medium rounded-tr-none'
+                                            <div className={`max-w-[85%] rounded-xl p-3 text-sm leading-relaxed ${isPilot
+                                                ? 'bg-zinc-100 dark:bg-white/5 text-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-white/5 rounded-tl-none'
+                                                : 'bg-indigo-600 dark:bg-white text-white dark:text-black font-medium rounded-tr-none'
                                                 }`}>
                                                 {renderMessageContent(m.text)}
                                             </div>
@@ -336,7 +337,7 @@ export const ProjectPilotWidget: React.FC = () => {
                                         <div className="size-6 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-1">
                                             <Sparkles size={12} className="text-emerald-400" />
                                         </div>
-                                        <div className="bg-white/5 rounded-2xl rounded-tl-none p-3 h-10 flex items-center gap-1">
+                                        <div className="bg-zinc-100 dark:bg-white/5 rounded-2xl rounded-tl-none p-3 h-10 flex items-center gap-1">
                                             <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" />
                                             <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce delay-75" />
                                             <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce delay-150" />
@@ -347,19 +348,19 @@ export const ProjectPilotWidget: React.FC = () => {
                             </div>
 
                             {/* Input */}
-                            <div className="p-4 bg-black/40 border-t border-white/5">
+                            <div className="p-4 bg-zinc-50 dark:bg-black/40 border-t border-zinc-200 dark:border-white/5">
                                 {currentAttachment && (
-                                    <div className="flex items-center gap-2 mb-2 p-2 bg-white/5 rounded-lg border border-white/5">
-                                        <Paperclip size={12} className="text-blue-400" />
-                                        <span className="text-xs text-zinc-300 truncate max-w-[200px]">{currentAttachment.name}</span>
-                                        <button onClick={() => setCurrentAttachment(null)} className="ml-auto text-zinc-500 hover:text-white"><X size={12} /></button>
+                                    <div className="flex items-center gap-2 mb-2 p-2 bg-zinc-200 dark:bg-white/5 rounded-lg border border-zinc-300 dark:border-white/5">
+                                        <Paperclip size={12} className="text-blue-500 dark:text-blue-400" />
+                                        <span className="text-xs text-zinc-700 dark:text-zinc-300 truncate max-w-[200px]">{currentAttachment.name}</span>
+                                        <button onClick={() => setCurrentAttachment(null)} className="ml-auto text-zinc-500 hover:text-zinc-900 dark:hover:text-white"><X size={12} /></button>
                                     </div>
                                 )}
-                                <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl p-1 pr-2 focus-within:border-white/20 transition-colors">
+                                <div className="flex items-center gap-2 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl p-1 pr-2 focus-within:border-zinc-300 dark:focus-within:border-white/20 transition-colors">
                                     <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="p-2 text-zinc-500 hover:text-white transition-colors"
+                                        className="p-2 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
                                     >
                                         <Paperclip size={18} />
                                     </button>
@@ -368,13 +369,13 @@ export const ProjectPilotWidget: React.FC = () => {
                                         onChange={(e) => setInput(e.target.value)}
                                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                                         placeholder="Message Project Pilot..."
-                                        className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-white placeholder:text-zinc-600 h-9"
+                                        className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 h-9"
                                         disabled={isUploading}
                                     />
                                     <button
                                         onClick={() => handleSend()}
                                         disabled={!input.trim() && !currentAttachment}
-                                        className="p-2 bg-white text-black rounded-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all"
+                                        className="p-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all"
                                     >
                                         <ArrowUp size={16} />
                                     </button>

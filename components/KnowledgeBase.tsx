@@ -45,7 +45,7 @@ export const KnowledgeBase: React.FC = () => {
     const featuredArticle = ARTICLES.find(a => a.featured);
 
     return (
-        <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-32">
+        <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-900 dark:text-zinc-100 pb-32 transition-colors duration-300">
             <OnboardingModal
                 isOpen={showTour}
                 onClose={handleTourClose}
@@ -63,8 +63,8 @@ export const KnowledgeBase: React.FC = () => {
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
                 <div className="space-y-3">
                     <h2 className="text-4xl md:text-5xl font-serif tracking-tighter">The Library</h2>
-                    <div className="h-[1px] w-12 bg-white/30"></div>
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">Market Intelligence & Strategy</p>
+                    <div className="h-[1px] w-12 bg-zinc-300 dark:bg-white/30"></div>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 dark:text-white/40">Market Intelligence & Strategy</p>
                 </div>
 
                 {/* Category Filter */}
@@ -74,8 +74,8 @@ export const KnowledgeBase: React.FC = () => {
                             key={cat}
                             onClick={() => setActiveCategory(cat)}
                             className={`px-4 py-2 rounded-full text-[10px] uppercase tracking-widest transition-all ${activeCategory === cat
-                                ? 'bg-white text-black font-bold'
-                                : 'bg-white/5 text-zinc-500 hover:bg-white/10'
+                                ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-bold'
+                                : 'bg-zinc-100 dark:bg-white/5 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-white/10'
                                 }`}
                         >
                             {cat}
@@ -96,9 +96,9 @@ export const KnowledgeBase: React.FC = () => {
                     >
                         <button
                             onClick={() => setSelectedArticle(null)}
-                            className="mb-8 text-[10px] uppercase tracking-[0.2em] text-white/50 hover:text-white flex items-center gap-2 transition-colors group"
+                            className="mb-8 text-[10px] uppercase tracking-[0.2em] text-zinc-500 dark:text-white/50 hover:text-zinc-900 dark:hover:text-white flex items-center gap-2 transition-colors group"
                         >
-                            <div className="p-2 rounded-full bg-white/5 group-hover:bg-white/10">
+                            <div className="p-2 rounded-full bg-zinc-100 dark:bg-white/5 group-hover:bg-zinc-200 dark:group-hover:bg-white/10">
                                 <X size={14} />
                             </div>
                             Close Article
@@ -111,7 +111,7 @@ export const KnowledgeBase: React.FC = () => {
 
                         <div className="max-w-2xl mx-auto">
                             <div className="flex items-center gap-4 mb-6">
-                                <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[10px] uppercase tracking-widest text-zinc-400">
+                                <span className="px-3 py-1 rounded-full border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
                                     {selectedArticle.category}
                                 </span>
                                 <span className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-zinc-500">
@@ -119,14 +119,14 @@ export const KnowledgeBase: React.FC = () => {
                                 </span>
                             </div>
 
-                            <h1 className="text-3xl md:text-5xl font-serif mb-6 leading-tight">
+                            <h1 className="text-3xl md:text-5xl font-serif mb-6 leading-tight text-zinc-900 dark:text-white">
                                 {selectedArticle.title}
                             </h1>
-                            <p className="text-xl text-zinc-400 font-light mb-12 italic border-l-2 border-white/10 pl-6">
+                            <p className="text-xl text-zinc-500 dark:text-zinc-400 font-light mb-12 italic border-l-2 border-zinc-200 dark:border-white/10 pl-6">
                                 {selectedArticle.subtitle}
                             </p>
 
-                            <div className="prose prose-invert prose-lg text-zinc-300">
+                            <div className="prose prose-lg text-zinc-600 dark:text-zinc-300 dark:prose-invert">
                                 {selectedArticle.content}
                             </div>
                         </div>
@@ -152,7 +152,7 @@ export const KnowledgeBase: React.FC = () => {
                                     <div className="bg-white/10 backdrop-blur-md self-start px-3 py-1 rounded-full text-[10px] uppercase tracking-widest text-white mb-4 border border-white/10">
                                         Featured • {featuredArticle.category}
                                     </div>
-                                    <h2 className="text-3xl md:text-5xl font-serif max-w-2xl leading-tight mb-4 group-hover:text-white text-zinc-100 transition-colors">
+                                    <h2 className="text-3xl md:text-5xl font-serif max-w-2xl leading-tight mb-4 text-white transition-colors">
                                         {featuredArticle.title}
                                     </h2>
                                     <p className="text-zinc-400 max-w-xl text-sm md:text-base mb-6 line-clamp-2">
@@ -174,30 +174,30 @@ export const KnowledgeBase: React.FC = () => {
                                     transition={{ delay: i * 0.05 }}
                                     key={article.id}
                                     onClick={() => setSelectedArticle(article)}
-                                    className="group cursor-pointer bg-[#0A0A0A] border border-white/5 rounded-2xl p-6 hover:bg-white/[0.02] hover:border-white/20 transition-all relative overflow-hidden h-[320px] flex flex-col justify-between"
+                                    className="group cursor-pointer bg-white dark:bg-[#0A0A0A] border border-zinc-200 dark:border-white/5 rounded-2xl p-6 hover:bg-zinc-50 dark:hover:bg-white/[0.02] hover:border-zinc-300 dark:hover:border-white/20 transition-all relative overflow-hidden h-[320px] flex flex-col justify-between shadow-sm dark:shadow-none"
                                 >
                                     {/* Abstract Visual Gradient Top */}
                                     <div className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${article.gradient} opacity-20 group-hover:opacity-30 transition-opacity`} />
 
                                     <div className="relative z-10 flex justify-between items-start">
-                                        <div className="p-3 bg-white/5 rounded-xl border border-white/5 text-zinc-400 group-hover:text-white transition-colors">
+                                        <div className="p-3 bg-zinc-100 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/5 text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
                                             <article.icon size={20} />
                                         </div>
-                                        <span className="text-[10px] uppercase tracking-widest text-zinc-600 border border-white/5 px-2 py-1 rounded-full">
+                                        <span className="text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-600 border border-zinc-200 dark:border-white/5 px-2 py-1 rounded-full bg-zinc-50 dark:bg-transparent">
                                             {article.category}
                                         </span>
                                     </div>
 
                                     <div className="relative z-10 mt-4">
-                                        <h3 className="text-xl font-serif mb-3 text-zinc-200 group-hover:text-white group-hover:underline decoration-white/20 underline-offset-4 transition-colors">
+                                        <h3 className="text-xl font-serif mb-3 text-zinc-900 dark:text-zinc-200 group-hover:text-emerald-600 dark:group-hover:text-white group-hover:underline decoration-zinc-300 dark:decoration-white/20 underline-offset-4 transition-colors">
                                             {article.title}
                                         </h3>
-                                        <p className="text-sm text-zinc-500 line-clamp-2 leading-relaxed font-light group-hover:text-zinc-400 transition-colors">
+                                        <p className="text-sm text-zinc-500 line-clamp-2 leading-relaxed font-light group-hover:text-zinc-600 dark:group-hover:text-zinc-400 transition-colors">
                                             {article.subtitle}
                                         </p>
                                     </div>
 
-                                    <div className="relative z-10 pt-6 border-t border-white/5 flex items-center justify-between text-[10px] uppercase tracking-widest text-zinc-600 group-hover:text-zinc-400 transition-colors">
+                                    <div className="relative z-10 pt-6 border-t border-zinc-100 dark:border-white/5 flex items-center justify-between text-[10px] uppercase tracking-widest text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-900 dark:group-hover:text-zinc-400 transition-colors">
                                         <span>{article.readTime}</span>
                                         <span className="group-hover:translate-x-1 transition-transform">Read →</span>
                                     </div>

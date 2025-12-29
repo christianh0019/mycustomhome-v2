@@ -95,7 +95,7 @@ export const MessagesTab: React.FC = () => {
    };
 
    return (
-      <div className="h-full flex flex-col md:flex-row bg-black text-white relative">
+      <div className="h-full flex flex-col md:flex-row bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white relative transition-colors duration-300">
          <OnboardingModal
             isOpen={showTour}
             onClose={handleTourClose}
@@ -110,12 +110,12 @@ export const MessagesTab: React.FC = () => {
          />
 
          {/* --- Sidebar (Thread List) --- */}
-         <div className={`w-full md:w-80 border-r border-white/5 flex flex-col bg-[#0A0A0A] ${activeThreadId ? 'hidden md:flex' : 'flex'}`}>
+         <div className={`w-full md:w-80 border-r border-zinc-200 dark:border-white/5 flex flex-col bg-white dark:bg-[#0A0A0A] ${activeThreadId ? 'hidden md:flex' : 'flex'}`}>
 
             {/* Header */}
-            <div className="h-16 px-6 border-b border-white/5 flex items-center justify-between shrink-0">
+            <div className="h-16 px-6 border-b border-zinc-200 dark:border-white/5 flex items-center justify-between shrink-0">
                <h2 className="text-sm font-semibold tracking-widest uppercase">Messages</h2>
-               <button className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+               <button className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 flex items-center justify-center transition-colors">
                   <span className="text-lg mb-1">+</span>
                </button>
             </div>
@@ -130,7 +130,7 @@ export const MessagesTab: React.FC = () => {
                      <div
                         key={thread.id}
                         onClick={() => setActiveThreadId(thread.id)}
-                        className={`px-5 py-4 flex items-center gap-4 cursor-pointer transition-all border-b border-white/[0.02] hover:bg-white/[0.02] ${isActive ? 'bg-white/[0.05]' : ''}`}
+                        className={`px-5 py-4 flex items-center gap-4 cursor-pointer transition-all border-b border-zinc-100 dark:border-white/[0.02] hover:bg-zinc-50 dark:hover:bg-white/[0.02] ${isActive ? 'bg-zinc-100 dark:bg-white/[0.05]' : ''}`}
                      >
                         <div className="relative">
                            <img src={thread.partner.avatar} className="w-12 h-12 rounded-full object-cover opacity-90" alt="avatar" />
@@ -141,13 +141,13 @@ export const MessagesTab: React.FC = () => {
 
                         <div className="flex-1 min-w-0">
                            <div className="flex justify-between items-baseline mb-1">
-                              <h3 className="text-sm font-medium truncate pr-2">{thread.partner.name}</h3>
-                              <span className="text-[10px] text-white/30 whitespace-nowrap">{lastMsg?.timestamp}</span>
+                              <h3 className="text-sm font-medium truncate pr-2 text-zinc-900 dark:text-white">{thread.partner.name}</h3>
+                              <span className="text-[10px] text-zinc-500 dark:text-white/30 whitespace-nowrap">{lastMsg?.timestamp}</span>
                            </div>
                            <div className="flex justify-between items-center">
-                              <p className="text-xs text-white/50 truncate max-w-[180px]">{lastMsg?.text}</p>
+                              <p className="text-xs text-zinc-500 dark:text-white/50 truncate max-w-[180px]">{lastMsg?.text}</p>
                               {thread.unreadCount > 0 && (
-                                 <div className="w-5 h-5 bg-white text-black text-[10px] font-bold rounded-full flex items-center justify-center">
+                                 <div className="w-5 h-5 bg-zinc-900 dark:bg-white text-white dark:text-black text-[10px] font-bold rounded-full flex items-center justify-center">
                                     {thread.unreadCount}
                                  </div>
                               )}
@@ -160,22 +160,22 @@ export const MessagesTab: React.FC = () => {
          </div>
 
          {/* --- Main Chat Area --- */}
-         <div className={`flex-1 flex flex-col bg-[#050505] relative ${!activeThreadId ? 'hidden md:flex' : 'flex'}`}>
+         <div className={`flex-1 flex flex-col bg-zinc-50 dark:bg-[#050505] relative ${!activeThreadId ? 'hidden md:flex' : 'flex'}`}>
 
             {activeThread ? (
                <>
                   {/* Chat Header */}
-                  <div className="h-16 px-6 border-b border-white/5 flex items-center justify-between shrink-0 bg-black/40 backdrop-blur-md z-1">
+                  <div className="h-16 px-6 border-b border-zinc-200 dark:border-white/5 flex items-center justify-between shrink-0 bg-white/80 dark:bg-black/40 backdrop-blur-md z-1">
                      <div className="flex items-center gap-4">
                         <button
                            onClick={() => setActiveThreadId(null)}
-                           className="md:hidden text-white/60 hover:text-white mr-2"
+                           className="md:hidden text-zinc-500 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white mr-2"
                         >
                            ←
                         </button>
                         <img src={activeThread.partner.avatar} className="w-10 h-10 rounded-full" />
                         <div>
-                           <h3 className="text-sm font-semibold tracking-wide">{activeThread.partner.name}</h3>
+                           <h3 className="text-sm font-semibold tracking-wide text-zinc-900 dark:text-white">{activeThread.partner.name}</h3>
                            <p className="text-[10px] text-green-500 uppercase tracking-wider font-medium">
                               {activeThread.partner.status === 'typing' ? 'Typing...' : activeThread.partner.status}
                            </p>
@@ -195,15 +195,15 @@ export const MessagesTab: React.FC = () => {
                            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
                               <div className={`max-w-[85%] md:max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col`}>
                                  <div
-                                    className={`px-5 py-3 text-[13px] leading-relaxed shadow-lg backdrop-blur-sm ${isMe
-                                       ? 'bg-white text-black rounded-l-2xl rounded-tr-2xl'
-                                       : 'bg-white/10 text-white border border-white/5 rounded-r-2xl rounded-tl-2xl'
+                                    className={`px-5 py-3 text-[13px] leading-relaxed shadow-sm ${isMe
+                                       ? 'bg-indigo-600 dark:bg-white text-white dark:text-black rounded-l-2xl rounded-tr-2xl'
+                                       : 'bg-white dark:bg-white/10 text-zinc-800 dark:text-white border border-zinc-200 dark:border-white/5 rounded-r-2xl rounded-tl-2xl'
                                        }`}
                                  >
                                     {msg.text}
                                  </div>
                                  <div className="flex items-center gap-1 mt-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <span className="text-[10px] text-white/30">{msg.timestamp}</span>
+                                    <span className="text-[10px] text-zinc-400 dark:text-white/30">{msg.timestamp}</span>
                                     {isMe && msg.isRead && <span className="text-[10px] text-blue-400">✓✓</span>}
                                  </div>
                               </div>
@@ -213,21 +213,21 @@ export const MessagesTab: React.FC = () => {
                   </div>
 
                   {/* Input Area */}
-                  <div className="p-4 md:p-6 bg-black/40 border-t border-white/5 backdrop-blur-md">
+                  <div className="p-4 md:p-6 bg-white/80 dark:bg-black/40 border-t border-zinc-200 dark:border-white/5 backdrop-blur-md">
                      <div className="flex items-center gap-3 max-w-4xl mx-auto">
-                        <button className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors flex items-center justify-center">
+                        <button className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-500 dark:text-white/50 hover:text-zinc-900 dark:hover:text-white transition-colors flex items-center justify-center">
                            📎
                         </button>
                         <input
                            value={input}
                            onChange={(e) => setInput(e.target.value)}
                            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                           className="flex-1 bg-white/[0.03] border border-white/10 text-white rounded-full px-6 py-3 text-sm focus:border-white/20 focus:bg-white/[0.05] outline-none transition-all placeholder:text-white/20"
+                           className="flex-1 bg-zinc-100 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-white rounded-full px-6 py-3 text-sm focus:border-indigo-500 dark:focus:border-white/20 focus:bg-white dark:focus:bg-white/[0.05] outline-none transition-all placeholder:text-zinc-400 dark:placeholder:text-white/20"
                            placeholder="Type a message..."
                         />
                         <button
                            onClick={handleSend}
-                           className="w-10 h-10 rounded-full bg-white text-black hover:scale-105 active:scale-95 transition-all flex items-center justify-center font-bold"
+                           className="w-10 h-10 rounded-full bg-indigo-600 dark:bg-white text-white dark:text-black hover:scale-105 active:scale-95 transition-all flex items-center justify-center font-bold"
                         >
                            ↑
                         </button>
@@ -236,8 +236,8 @@ export const MessagesTab: React.FC = () => {
                </>
             ) : (
                /* Empty State */
-               <div className="flex-1 flex flex-col items-center justify-center text-white/30 select-none">
-                  <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center text-4xl mb-6">
+               <div className="flex-1 flex flex-col items-center justify-center text-zinc-400 dark:text-white/30 select-none">
+                  <div className="w-20 h-20 bg-zinc-100 dark:bg-white/5 rounded-full flex items-center justify-center text-4xl mb-6">
                      💬
                   </div>
                   <p className="uppercase tracking-widest text-xs">Select a conversation</p>

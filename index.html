@@ -33,13 +33,22 @@
     body {
       margin: 0;
       padding: 0;
-      background-color: #000000;
-      color: #ffffff;
+      /* Default to Light, Dark handled by Tailwind classes on root */
+      background-color: #FAFAFA;
+      /* zinc-50 */
+      color: #18181B;
+      /* zinc-900 */
       font-family: 'Inter', sans-serif;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
       /* Prevent bounce scroll on mobile for a more app-like feel */
       overscroll-behavior-y: none;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .dark body {
+      background-color: #000000;
+      color: #ffffff;
     }
 
     h1,

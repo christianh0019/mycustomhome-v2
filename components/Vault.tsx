@@ -182,7 +182,7 @@ export const Vault: React.FC = () => {
     : files.filter(f => f.category === activeCategory);
 
   return (
-    <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-32">
+    <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-900 dark:text-zinc-100 pb-32 transition-colors duration-300">
       <OnboardingModal
         isOpen={showTour}
         onClose={handleTourClose}
@@ -200,16 +200,16 @@ export const Vault: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
         <div className="space-y-3">
           <h2 className="text-4xl md:text-5xl font-serif tracking-tighter">The Safe Box</h2>
-          <div className="h-[1px] w-12 bg-white/30"></div>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">AI-Indexed Secure Storage</p>
+          <div className="h-[1px] w-12 bg-zinc-300 dark:bg-white/30"></div>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 dark:text-white/40">AI-Indexed Secure Storage</p>
         </div>
 
         <div className="flex gap-4">
-          <div className="bg-[#0A0A0A] border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-4">
+          <div className="bg-white dark:bg-[#0A0A0A] border border-zinc-200 dark:border-white/10 px-6 py-3 rounded-2xl flex items-center gap-4 shadow-sm dark:shadow-none">
             <BrainCircuit size={16} className="text-emerald-500 animate-pulse" />
             <div className="flex flex-col text-right">
               <span className="text-[9px] uppercase tracking-widest text-zinc-500">AI Status</span>
-              <span className="text-xs font-bold text-white flex items-center gap-2 justify-end">
+              <span className="text-xs font-bold text-zinc-900 dark:text-white flex items-center gap-2 justify-end">
                 Active & Monitoring
               </span>
             </div>
@@ -226,8 +226,8 @@ export const Vault: React.FC = () => {
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
-            className={`relative h-[300px] rounded-3xl border-2 border-dashed modern-transition flex flex-col items-center justify-center p-8 text-center cursor-pointer group bg-[#0A0A0A] overflow-hidden
-                            ${dragActive ? 'border-emerald-500 bg-emerald-900/10' : 'border-white/10 hover:border-white/20'}`}
+            className={`relative h-[300px] rounded-3xl border-2 border-dashed modern-transition flex flex-col items-center justify-center p-8 text-center cursor-pointer group bg-white dark:bg-[#0A0A0A] overflow-hidden shadow-sm dark:shadow-none
+                            ${dragActive ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10' : 'border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20'}`}
             onClick={() => fileInputRef.current?.click()}
           >
             <input
@@ -237,24 +237,24 @@ export const Vault: React.FC = () => {
               onChange={handleUpload}
             />
 
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-100 dark:from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-            <div className={`w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6 modern-transition ${uploading ? 'animate-pulse' : 'group-hover:scale-110'}`}>
+            <div className={`w-20 h-20 rounded-full bg-zinc-50 dark:bg-white/5 flex items-center justify-center mb-6 modern-transition ${uploading ? 'animate-pulse' : 'group-hover:scale-110'}`}>
               {uploading ? (
                 <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
               ) : (
-                <Upload size={32} className="text-zinc-400 group-hover:text-white" />
+                <Upload size={32} className="text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white" />
               )}
             </div>
 
-            <h3 className="text-xl font-serif text-white mb-2 relative z-10">
+            <h3 className="text-xl font-serif text-zinc-900 dark:text-white mb-2 relative z-10">
               {uploading ? 'Encrypting & Analyzing...' : 'Secure Upload'}
             </h3>
             <p className="text-xs text-zinc-500 max-w-[200px] relative z-10">
               Drag files here. AI will scan, categorize, and rename them automatically.
             </p>
 
-            <div className="mt-8 flex items-center gap-2 text-[9px] uppercase tracking-widest text-zinc-600 bg-black/50 px-3 py-1 rounded-full border border-white/5 relative z-10">
+            <div className="mt-8 flex items-center gap-2 text-[9px] uppercase tracking-widest text-zinc-600 bg-zinc-100 dark:bg-black/50 px-3 py-1 rounded-full border border-zinc-200 dark:border-white/5 relative z-10">
               <Sparkles size={10} className="text-emerald-500" />
               Auto-Organize On
             </div>
@@ -270,8 +270,8 @@ export const Vault: React.FC = () => {
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
                 className={`px-4 py-2 rounded-full text-[10px] uppercase tracking-widest transition-all whitespace-nowrap border ${activeCategory === cat.id
-                  ? 'bg-white text-black border-white font-bold'
-                  : 'bg-transparent text-zinc-500 border-transparent hover:bg-white/5'
+                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white font-bold'
+                  : 'bg-transparent text-zinc-500 border-transparent hover:bg-zinc-100 dark:hover:bg-white/5'
                   }`}
               >
                 {cat.name}
@@ -279,7 +279,7 @@ export const Vault: React.FC = () => {
             ))}
           </div>
 
-          <div className="bg-[#0A0A0A] border border-white/5 rounded-3xl overflow-hidden min-h-[400px]">
+          <div className="bg-white dark:bg-[#0A0A0A] border border-zinc-200 dark:border-white/5 rounded-3xl overflow-hidden min-h-[400px] shadow-sm dark:shadow-none transition-colors duration-300">
             {loading ? (
               <div className="w-full h-[400px] flex items-center justify-center">
                 <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
@@ -291,15 +291,15 @@ export const Vault: React.FC = () => {
                 <p className="text-xs">Uploaded files will be auto-categorized here.</p>
               </div>
             ) : (
-              <div className="divide-y divide-white/5">
+              <div className="divide-y divide-zinc-100 dark:divide-white/5">
                 {sortedFiles.map((file) => (
                   <div
                     key={file.id}
                     onClick={() => setSelectedFile(file)}
-                    className="p-5 flex items-center justify-between group hover:bg-white/[0.02] transition-colors relative cursor-pointer"
+                    className="p-5 flex items-center justify-between group hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors relative cursor-pointer"
                   >
                     <div className="flex items-center gap-5 min-w-0">
-                      <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform border border-white/5">
+                      <div className="w-12 h-12 rounded-xl bg-zinc-100 dark:bg-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform border border-zinc-200 dark:border-white/5">
                         {file.status === 'analyzing' ? (
                           <Sparkles size={18} className="text-emerald-500 animate-pulse" />
                         ) : (
@@ -307,7 +307,7 @@ export const Vault: React.FC = () => {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <h4 className="text-sm font-medium text-white truncate pr-4 flex items-center gap-2">
+                        <h4 className="text-sm font-medium text-zinc-900 dark:text-white truncate pr-4 flex items-center gap-2">
                           {file.smart_name || file.original_name}
                           {file.status === 'analyzing' && <span className="text-[9px] text-emerald-500 uppercase tracking-widest animate-pulse">• Analyzing</span>}
                         </h4>
@@ -320,7 +320,7 @@ export const Vault: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <button className="p-2 rounded-lg hover:border border-transparent hover:border-white/10 text-zinc-600 hover:text-white transition-all">
+                      <button className="p-2 rounded-lg hover:border border-transparent hover:border-zinc-200 dark:hover:border-white/10 text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all">
                         <Eye size={16} />
                       </button>
                     </div>

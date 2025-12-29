@@ -132,7 +132,7 @@ export const Partners: React.FC = () => {
     : sortedRecommendations.filter(r => r.category === selectedTab || r.category + 's' === selectedTab);
 
   return (
-    <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-32">
+    <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-900 dark:text-zinc-100 pb-32 transition-colors duration-300">
       <OnboardingModal
         isOpen={showTour}
         onClose={handleTourClose}
@@ -150,22 +150,22 @@ export const Partners: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
         <div className="space-y-3">
           <h2 className="text-4xl md:text-5xl font-serif tracking-tighter">The Team</h2>
-          <div className="h-[1px] w-12 bg-white/30"></div>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">
+          <div className="h-[1px] w-12 bg-zinc-300 dark:bg-white/30"></div>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 dark:text-white/40">
             {user?.city ? `Executive Board • ${user.city}` : "AI Curated Vendors"}
           </p>
         </div>
 
         <div className="flex flex-wrap gap-2 md:gap-4 items-center">
           {/* Filter Tabs */}
-          <div className="bg-[#0A0A0A] border border-white/10 p-1.5 rounded-xl flex gap-1">
+          <div className="bg-white dark:bg-[#0A0A0A] border border-zinc-200 dark:border-white/10 p-1.5 rounded-xl flex gap-1 shadow-sm dark:shadow-none">
             {['All', 'Lender', 'Builder', 'Architect'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setSelectedTab(tab)}
                 className={`px-4 py-2 rounded-lg text-[9px] uppercase tracking-widest transition-all ${selectedTab === tab
-                  ? 'bg-white text-black font-bold shadow-lg'
-                  : 'text-zinc-500 hover:text-white hover:bg-white/5'
+                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-bold shadow-lg'
+                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5'
                   }`}
               >
                 {tab}
@@ -175,16 +175,16 @@ export const Partners: React.FC = () => {
 
           {/* Add Resource */}
           <div className="relative group z-20">
-            <button className="px-5 py-3 bg-[#0A0A0A] text-white border border-white/10 hover:border-white/30 text-[9px] uppercase tracking-widest font-bold rounded-xl transition-all flex items-center gap-2">
+            <button className="px-5 py-3 bg-zinc-900 dark:bg-[#0A0A0A] text-white border border-transparent dark:border-white/10 hover:border-zinc-700 dark:hover:border-white/30 text-[9px] uppercase tracking-widest font-bold rounded-xl transition-all flex items-center gap-2">
               <Search size={12} /> Scout Talent
             </button>
-            <div className="absolute right-0 top-full mt-2 w-48 bg-[#0A0A0A] border border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform translate-y-2 group-hover:translate-y-0 shadow-2xl">
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#0A0A0A] border border-zinc-200 dark:border-white/10 rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform translate-y-2 group-hover:translate-y-0 shadow-2xl z-50">
               {CATEGORIES.map(cat => (
                 <button
                   key={cat}
                   onClick={() => handleResearch(cat)}
                   disabled={!!loadingCategory}
-                  className="w-full text-left px-4 py-3 text-[10px] uppercase tracking-wider text-zinc-400 hover:text-white hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
+                  className="w-full text-left px-4 py-3 text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors border-b border-zinc-100 dark:border-white/5 last:border-0"
                 >
                   Find {cat}s
                 </button>
@@ -209,14 +209,14 @@ export const Partners: React.FC = () => {
           <div
             key={rec.id}
             onClick={() => handleOpenVendor(rec)}
-            className="group relative bg-[#0A0A0A] border border-white/5 p-8 hover:border-white/20 transition-all flex flex-col justify-between min-h-[380px] cursor-pointer hover:-translate-y-1 hover:shadow-2xl rounded-2xl overflow-hidden"
+            className="group relative bg-white dark:bg-[#0A0A0A] border border-zinc-200 dark:border-white/5 p-8 hover:border-zinc-300 dark:hover:border-white/20 transition-all flex flex-col justify-between min-h-[380px] cursor-pointer hover:-translate-y-1 hover:shadow-2xl rounded-2xl overflow-hidden shadow-sm dark:shadow-none"
           >
             {/* Background Gradient Hover */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 dark:from-white/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
             {/* Header */}
             <div className="relative z-10 flex justify-between items-start mb-6">
-              <div className="w-14 h-14 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center overflow-hidden">
+              <div className="w-14 h-14 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5 flex items-center justify-center overflow-hidden">
                 {rec.logo_url ? (
                   <img src={rec.logo_url} className="w-full h-full object-cover" />
                 ) : (
@@ -237,7 +237,7 @@ export const Partners: React.FC = () => {
                 <span className="text-[9px] uppercase tracking-widest text-zinc-500">{rec.category}</span>
                 {rec.verified_badge && <CheckCircle size={10} className="text-emerald-500" />}
               </div>
-              <h4 className="text-2xl font-serif leading-tight text-white mb-3 group-hover:text-emerald-400 transition-colors">
+              <h4 className="text-2xl font-serif leading-tight text-zinc-900 dark:text-white mb-3 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                 {rec.name}
               </h4>
               <p className="text-xs text-zinc-500 leading-relaxed line-clamp-3 mb-6">
@@ -247,32 +247,32 @@ export const Partners: React.FC = () => {
               {/* Metrics */}
               <div className="grid grid-cols-3 gap-2 border-t border-white/5 pt-6">
                 <div>
-                  <div className="text-[8px] uppercase tracking-widest text-zinc-600 mb-1">Score</div>
-                  <div className="text-lg font-serif text-white">{getOverallScore(rec)}</div>
+                  <div className="text-[8px] uppercase tracking-widest text-zinc-500 dark:text-zinc-600 mb-1">Score</div>
+                  <div className="text-lg font-serif text-zinc-900 dark:text-white">{getOverallScore(rec)}</div>
                 </div>
                 <div>
-                  <div className="text-[8px] uppercase tracking-widest text-zinc-600 mb-1">Local</div>
-                  <div className="text-lg font-serif text-white">{rec.scores.locality}%</div>
+                  <div className="text-[8px] uppercase tracking-widest text-zinc-500 dark:text-zinc-600 mb-1">Local</div>
+                  <div className="text-lg font-serif text-zinc-900 dark:text-white">{rec.scores.locality}%</div>
                 </div>
                 <div>
-                  <div className="text-[8px] uppercase tracking-widest text-zinc-600 mb-1">Rep</div>
-                  <div className="text-lg font-serif text-white">{rec.scores.reputation}%</div>
+                  <div className="text-[8px] uppercase tracking-widest text-zinc-500 dark:text-zinc-600 mb-1">Rep</div>
+                  <div className="text-lg font-serif text-zinc-900 dark:text-white">{rec.scores.reputation}%</div>
                 </div>
               </div>
             </div>
 
             {/* Hover Action */}
-            <div className="relative z-10 mt-6 pt-6 border-t border-white/5 flex items-center justify-between opacity-50 group-hover:opacity-100 transition-opacity">
-              <span className="text-[9px] uppercase tracking-widest text-white">View Full Dossier</span>
-              <ArrowUpRight size={14} className="text-white" />
+            <div className="relative z-10 mt-6 pt-6 border-t border-zinc-100 dark:border-white/5 flex items-center justify-between opacity-50 group-hover:opacity-100 transition-opacity">
+              <span className="text-[9px] uppercase tracking-widest text-zinc-900 dark:text-white">View Full Dossier</span>
+              <ArrowUpRight size={14} className="text-zinc-900 dark:text-white" />
             </div>
 
           </div>
         ))}
 
         {recommendations.length === 0 && !loadingCategory && (
-          <div className="col-span-full p-20 border border-dashed border-white/10 text-center rounded-3xl bg-[#0A0A0A]">
-            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 text-zinc-600">
+          <div className="col-span-full p-20 border border-dashed border-zinc-300 dark:border-white/10 text-center rounded-3xl bg-white dark:bg-[#0A0A0A]">
+            <div className="w-16 h-16 bg-zinc-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 text-zinc-400 dark:text-zinc-600">
               <Search size={24} />
             </div>
             <p className="uppercase tracking-widest text-zinc-500 text-sm font-bold">Boardroom Empty</p>
@@ -290,18 +290,18 @@ export const Partners: React.FC = () => {
           onClick={() => setSelectedVendor(null)}
         >
           <div
-            className="w-full max-w-4xl bg-[#0A0A0A] border border-white/10 rounded-3xl overflow-hidden relative shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-4xl bg-white dark:bg-[#0A0A0A] border border-zinc-200 dark:border-white/10 rounded-3xl overflow-hidden relative shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <button
               onClick={() => setSelectedVendor(null)}
-              className="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white text-white/40 hover:text-black transition-all z-20"
+              className="absolute top-6 right-6 p-2 rounded-full bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white text-zinc-500 dark:text-white/40 hover:text-zinc-900 dark:hover:text-black transition-all z-20"
             >
               ✕
             </button>
 
             {/* Dossier Header */}
-            <div className="p-8 md:p-12 pb-8 border-b border-white/5 flex flex-col md:flex-row gap-8 items-start bg-gradient-to-b from-white/[0.02] to-transparent relative">
+            <div className="p-8 md:p-12 pb-8 border-b border-zinc-200 dark:border-white/5 flex flex-col md:flex-row gap-8 items-start bg-gradient-to-b from-zinc-50 dark:from-white/[0.02] to-transparent relative">
               <div className="absolute top-0 right-0 p-32 opacity-[0.05] bg-emerald-500 blur-3xl rounded-full -translate-y-16 translate-x-16 pointer-events-none" />
 
               <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 shadow-2xl">
@@ -311,7 +311,7 @@ export const Partners: React.FC = () => {
               <div className="space-y-4 flex-grow relative z-10">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-4xl md:text-5xl font-serif tracking-tighter text-white">{selectedVendor.name}</h2>
+                    <h2 className="text-4xl md:text-5xl font-serif tracking-tighter text-zinc-900 dark:text-white">{selectedVendor.name}</h2>
                     {selectedVendor.verified_badge && (
                       <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-3 py-1 text-[9px] uppercase tracking-widest rounded-full font-bold flex items-center gap-1">
                         <Shield size={10} /> Certified
@@ -343,12 +343,12 @@ export const Partners: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-12">
 
               {/* Left (Analysis) */}
-              <div className="md:col-span-7 p-8 md:p-12 space-y-10 border-b md:border-b-0 md:border-r border-white/5">
+              <div className="md:col-span-7 p-8 md:p-12 space-y-10 border-b md:border-b-0 md:border-r border-zinc-200 dark:border-white/5">
 
                 <section>
                   <h3 className="text-xs uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2"><Zap size={14} /> Executive Summary</h3>
-                  <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
-                    <p className="text-sm leading-7 text-zinc-300">
+                  <div className="p-6 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/5 rounded-2xl">
+                    <p className="text-sm leading-7 text-zinc-600 dark:text-zinc-300">
                       {selectedVendor.reviews_summary || <span className="animate-pulse">Running AI Market Analysis...</span>}
                     </p>
                   </div>
@@ -356,12 +356,12 @@ export const Partners: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   {selectedVendor.phone && (
-                    <a href={`tel:${selectedVendor.phone}`} className="flex items-center justify-center gap-2 py-4 border border-white/10 rounded-xl hover:bg-white hover:text-black transition-all text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                    <a href={`tel:${selectedVendor.phone}`} className="flex items-center justify-center gap-2 py-4 border border-zinc-200 dark:border-white/10 rounded-xl hover:bg-zinc-900 dark:hover:bg-white hover:text-white dark:hover:text-black transition-all text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
                       <Phone size={14} /> Call Office
                     </a>
                   )}
                   {selectedVendor.website && (
-                    <a href={selectedVendor.website} target="_blank" className="flex items-center justify-center gap-2 py-4 border border-white/10 rounded-xl hover:bg-white hover:text-black transition-all text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                    <a href={selectedVendor.website} target="_blank" className="flex items-center justify-center gap-2 py-4 border border-zinc-200 dark:border-white/10 rounded-xl hover:bg-zinc-900 dark:hover:bg-white hover:text-white dark:hover:text-black transition-all text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
                       Website <ExternalLink size={14} />
                     </a>
                   )}
@@ -370,12 +370,12 @@ export const Partners: React.FC = () => {
               </div>
 
               {/* Right (Scores & Actions) */}
-              <div className="md:col-span-5 p-8 md:p-12 space-y-10 bg-[#0A0A0A]">
+              <div className="md:col-span-5 p-8 md:p-12 space-y-10 bg-zinc-50 dark:bg-[#0A0A0A]">
 
-                <div className="flex items-center gap-6 pb-8 border-b border-white/5">
-                  <div className="w-20 h-20 rounded-full border-4 border-emerald-500/20 flex items-center justify-center text-3xl font-serif text-white relative">
+                <div className="flex items-center gap-6 pb-8 border-b border-zinc-200 dark:border-white/5">
+                  <div className="w-20 h-20 rounded-full border-4 border-emerald-500/20 flex items-center justify-center text-3xl font-serif text-zinc-900 dark:text-white relative">
                     {getOverallScore(selectedVendor)}
-                    <span className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full text-[10px] flex items-center justify-center font-bold text-black border-2 border-black">A+</span>
+                    <span className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full text-[10px] flex items-center justify-center font-bold text-black border-2 border-zinc-50 dark:border-black">A+</span>
                   </div>
                   <div>
                     <div className="text-xs font-bold text-white uppercase tracking-widest mb-1">Pilot Score</div>
@@ -390,10 +390,10 @@ export const Partners: React.FC = () => {
                       <div key={k} className="space-y-2">
                         <div className="flex justify-between text-[10px] uppercase tracking-widest">
                           <span className="text-zinc-500">{k}</span>
-                          <span className="text-white font-bold">{val}/100</span>
+                          <span className="text-zinc-900 dark:text-white font-bold">{val}/100</span>
                         </div>
-                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                          <div className="h-full bg-white transition-all duration-1000 ease-out" style={{ width: `${val}%` }} />
+                        <div className="h-1.5 bg-zinc-200 dark:bg-white/5 rounded-full overflow-hidden">
+                          <div className="h-full bg-zinc-900 dark:bg-white transition-all duration-1000 ease-out" style={{ width: `${val}%` }} />
                         </div>
                       </div>
                     )
@@ -431,7 +431,7 @@ export const Partners: React.FC = () => {
                         btn.disabled = false;
                       }
                     }}
-                    className="w-full py-5 bg-white text-black font-bold uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-5 bg-zinc-900 dark:bg-white text-white dark:text-black font-bold uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Start Conversation
                   </button>

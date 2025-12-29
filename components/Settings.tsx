@@ -68,14 +68,14 @@ export const Settings: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-black text-white p-6 md:p-12 pb-32 flex flex-col items-center">
+        <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white p-6 md:p-12 pb-32 flex flex-col items-center transition-colors duration-300">
 
             {/* Header */}
             <div className="w-full max-w-2xl mb-12 flex justify-between items-end">
                 <div className="space-y-2">
                     <h2 className="text-4xl md:text-5xl font-serif tracking-tighter">Identity</h2>
-                    <div className="h-[1px] w-12 bg-white/30"></div>
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-white/40">Access Card & Clearance</p>
+                    <div className="h-[1px] w-12 bg-zinc-300 dark:bg-white/30"></div>
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 dark:text-white/40">Access Card & Clearance</p>
                 </div>
                 <button
                     onClick={logout}
@@ -90,7 +90,7 @@ export const Settings: React.FC = () => {
             <div className="w-full max-w-2xl relative group perspective-1000">
                 <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-purple-500/20 to-blue-500/20 rounded-3xl blur opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
 
-                <div className="relative bg-[#0A0A0A] border border-white/10 rounded-3xl overflow-hidden p-8 md:p-12 shadow-2xl backdrop-blur-xl">
+                <div className="relative bg-white dark:bg-[#0A0A0A] border border-zinc-200 dark:border-white/10 rounded-3xl overflow-hidden p-8 md:p-12 shadow-2xl backdrop-blur-xl transition-colors duration-300">
                     {/* Holographic Texture */}
                     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none"></div>
                     <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/5 blur-3xl rounded-full pointer-events-none"></div>
@@ -135,26 +135,26 @@ export const Settings: React.FC = () => {
 
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h3 className="text-xs uppercase tracking-[0.2em] text-white/40 mb-1">Operative Name</h3>
+                                    <h3 className="text-xs uppercase tracking-[0.2em] text-zinc-400 dark:text-white/40 mb-1">Operative Name</h3>
                                     {isEditing ? (
                                         <input
                                             value={formData.name}
                                             onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                            className="bg-white/5 border border-white/10 rounded px-3 py-2 text-xl font-serif text-white w-full focus:outline-none focus:border-white/30"
+                                            className="bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded px-3 py-2 text-xl font-serif text-zinc-900 dark:text-white w-full focus:outline-none focus:border-zinc-400 dark:focus:border-white/30"
                                         />
                                     ) : (
-                                        <h2 className="text-3xl font-serif text-white tracking-wide">{user.name}</h2>
+                                        <h2 className="text-3xl font-serif text-zinc-900 dark:text-white tracking-wide">{user.name}</h2>
                                     )}
                                 </div>
                                 <div className="text-right">
-                                    <Fingerprint className="text-white/10 w-12 h-12" />
+                                    <Fingerprint className="text-zinc-200 dark:text-white/10 w-12 h-12" />
                                 </div>
                             </div>
 
                             <div className="space-y-4">
-                                <div className="p-4 bg-white/[0.03] border border-white/5 rounded-xl">
+                                <div className="p-4 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/5 rounded-xl">
                                     <div className="flex justify-between items-center mb-2">
-                                        <span className="text-[9px] uppercase tracking-widest text-white/40 flex items-center gap-2">
+                                        <span className="text-[9px] uppercase tracking-widest text-zinc-400 dark:text-white/40 flex items-center gap-2">
                                             <Layers size={10} /> Bio / Status
                                         </span>
                                     </div>
@@ -162,55 +162,55 @@ export const Settings: React.FC = () => {
                                         <textarea
                                             value={formData.bio}
                                             onChange={e => setFormData({ ...formData, bio: e.target.value })}
-                                            className="w-full bg-transparent border-none focus:ring-0 text-sm text-zinc-300 resize-none h-20 placeholder:text-zinc-700"
+                                            className="w-full bg-transparent border-none focus:ring-0 text-sm text-zinc-900 dark:text-zinc-300 resize-none h-20 placeholder:text-zinc-400 dark:placeholder:text-zinc-700"
                                             placeholder="Enter your bio..."
                                         />
                                     ) : (
-                                        <p className="text-sm text-zinc-400 italic leading-relaxed">
+                                        <p className="text-sm text-zinc-600 dark:text-zinc-400 italic leading-relaxed">
                                             {user.bio || "No status update set."}
                                         </p>
                                     )}
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="p-3 bg-white/[0.03] border border-white/5 rounded-lg flex items-center gap-3">
-                                        <Mail size={14} className="text-zinc-500" />
+                                    <div className="p-3 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/5 rounded-lg flex items-center gap-3">
+                                        <Mail size={14} className="text-zinc-400 dark:text-zinc-500" />
                                         <div className="overflow-hidden">
-                                            <p className="text-[8px] uppercase tracking-widest text-zinc-600">Comms</p>
-                                            <p className="text-xs text-zinc-300 truncate">{user.email}</p>
+                                            <p className="text-[8px] uppercase tracking-widest text-zinc-500 dark:text-zinc-600">Comms</p>
+                                            <p className="text-xs text-zinc-900 dark:text-zinc-300 truncate">{user.email}</p>
                                         </div>
                                     </div>
-                                    <div className="p-3 bg-white/[0.03] border border-white/5 rounded-lg flex items-center gap-3">
-                                        <MapPin size={14} className="text-zinc-500" />
+                                    <div className="p-3 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/5 rounded-lg flex items-center gap-3">
+                                        <MapPin size={14} className="text-zinc-400 dark:text-zinc-500" />
                                         <div>
-                                            <p className="text-[8px] uppercase tracking-widest text-zinc-600">Location</p>
+                                            <p className="text-[8px] uppercase tracking-widest text-zinc-500 dark:text-zinc-600">Location</p>
                                             {isEditing ? (
                                                 <input
                                                     value={formData.city}
                                                     onChange={e => setFormData({ ...formData, city: e.target.value })}
-                                                    className="bg-transparent border-b border-white/10 text-xs text-zinc-300 w-full focus:outline-none focus:border-white/50"
+                                                    className="bg-transparent border-b border-zinc-300 dark:border-white/10 text-xs text-zinc-900 dark:text-zinc-300 w-full focus:outline-none focus:border-zinc-500 dark:focus:border-white/50"
                                                 />
                                             ) : (
-                                                <p className="text-xs text-zinc-300">{user.city || 'Unknown Sector'}</p>
+                                                <p className="text-xs text-zinc-900 dark:text-zinc-300">{user.city || 'Unknown Sector'}</p>
                                             )}
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="pt-6 border-t border-white/5 flex gap-4">
+                            <div className="pt-6 border-t border-zinc-200 dark:border-white/5 flex gap-4">
                                 {isEditing ? (
                                     <>
                                         <button
                                             onClick={handleSave}
                                             disabled={isLoading}
-                                            className="flex-1 py-3 bg-white text-black font-bold uppercase tracking-widest text-xs rounded hover:bg-white/90 transition-colors flex items-center justify-center gap-2"
+                                            className="flex-1 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black font-bold uppercase tracking-widest text-xs rounded hover:bg-zinc-800 dark:hover:bg-white/90 transition-colors flex items-center justify-center gap-2"
                                         >
                                             {isLoading ? 'Saving...' : <><Save size={14} /> Update Identity</>}
                                         </button>
                                         <button
                                             onClick={() => setIsEditing(false)}
-                                            className="px-6 py-3 border border-white/10 hover:bg-white/5 text-xs uppercase tracking-widest rounded transition-colors"
+                                            className="px-6 py-3 border border-zinc-300 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-white/5 text-xs uppercase tracking-widest rounded transition-colors text-zinc-600 dark:text-zinc-400"
                                         >
                                             Cancel
                                         </button>
@@ -218,7 +218,7 @@ export const Settings: React.FC = () => {
                                 ) : (
                                     <button
                                         onClick={() => setIsEditing(true)}
-                                        className="flex-1 py-3 bg-white/[0.05] hover:bg-white text-white hover:text-black border border-white/10 font-bold uppercase tracking-widest text-xs rounded transition-all flex items-center justify-center gap-2"
+                                        className="flex-1 py-3 bg-zinc-100 dark:bg-white/[0.05] hover:bg-zinc-200 dark:hover:bg-white text-zinc-900 dark:text-white hover:text-black border border-zinc-200 dark:border-white/10 font-bold uppercase tracking-widest text-xs rounded transition-all flex items-center justify-center gap-2"
                                     >
                                         Edit Profile
                                     </button>
@@ -228,7 +228,7 @@ export const Settings: React.FC = () => {
                     </div>
 
                     {/* Footer Deco */}
-                    <div className="mt-8 pt-6 border-t border-white/5 flex justify-between items-center opacity-50">
+                    <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-white/5 flex justify-between items-center opacity-50">
                         <div className="flex gap-4">
                             <CreditCard size={14} className="text-zinc-600" />
                             <Shield size={14} className="text-zinc-600" />

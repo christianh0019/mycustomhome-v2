@@ -103,7 +103,7 @@ export const Roadmap: React.FC = () => {
   };
 
   return (
-    <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-100 pb-32">
+    <div className="p-6 md:p-12 lg:p-12 max-w-7xl mx-auto w-full min-h-screen text-zinc-900 dark:text-zinc-100 pb-32 transition-colors duration-300">
       {/* Stage Welcome Modal (Level Up) */}
       <OnboardingModal
         isOpen={showWelcomeModal}
@@ -135,10 +135,10 @@ export const Roadmap: React.FC = () => {
           <p className="text-[10px] uppercase tracking-[0.2em] text-white/40">Your Journey from Dirt to Door-Keys</p>
         </div>
 
-        <div className="bg-[#0A0A0A] border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-4">
+        <div className="bg-white dark:bg-[#0A0A0A] border border-zinc-200 dark:border-white/10 px-6 py-3 rounded-2xl flex items-center gap-4 transition-colors duration-300 shadow-sm dark:shadow-none">
           <div className="flex flex-col text-right">
             <span className="text-[9px] uppercase tracking-widest text-zinc-500">Current Phase</span>
-            <span className="text-xs uppercase tracking-widest text-white font-bold flex items-center gap-2 justify-end">
+            <span className="text-xs uppercase tracking-widest text-zinc-900 dark:text-white font-bold flex items-center gap-2 justify-end">
               {ROADMAP_CONFIG[currentStageIndex as keyof typeof ROADMAP_CONFIG]?.name || 'Unknown'}
             </span>
           </div>
@@ -148,7 +148,7 @@ export const Roadmap: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24">
 
         {/* Timeline Column */}
-        <div className="lg:col-span-4 relative pl-8 border-l border-white/5 space-y-24">
+        <div className="lg:col-span-4 relative pl-8 border-l border-zinc-200 dark:border-white/5 space-y-24">
           {Object.values(ROADMAP_CONFIG).map((stage) => {
             const status = user ? RoadmapService.getStageStatus(user, stage.id) : 'locked';
             const isLocked = status === 'locked';
@@ -159,21 +159,21 @@ export const Roadmap: React.FC = () => {
             return (
               <div
                 key={stage.id}
-                className={`relative group cursor - pointer ${isLocked ? 'opacity-30 grayscale' : 'opacity-100'} `}
+                className={`relative group cursor-pointer ${isLocked ? 'opacity-30 grayscale' : 'opacity-100'} `}
                 onClick={() => !isLocked && setExpandedStage(stage.id)}
               >
                 {/* Node */}
-                <div className={`absolute - left - [45px] top - 0 size - 8 rounded - full border - 2 flex items - center justify - center transition - all duration - 500 z - 10 ${isCompleted ? 'bg-emerald-500 border-emerald-500 text-black' :
-                  isActive ? 'bg-[#0A0A0A] border-white text-white shadow-[0_0_20px_rgba(255,255,255,0.3)]' :
-                    'bg-[#0A0A0A] border-white/10 text-white/20'
-                  } `}>
+                <div className={`absolute -left-[45px] top-0 size-8 rounded-full border-2 flex items-center justify-center transition-all duration-500 z-10 ${isCompleted ? 'bg-emerald-500 border-emerald-500 text-black' :
+                  isActive ? 'bg-white dark:bg-[#0A0A0A] border-zinc-900 dark:border-white text-zinc-900 dark:text-white shadow-lg dark:shadow-[0_0_20px_rgba(255,255,255,0.3)]' :
+                    'bg-zinc-100 dark:bg-[#0A0A0A] border-zinc-300 dark:border-white/10 text-zinc-400 dark:text-white/20'
+                  }`}>
                   {isCompleted ? <CheckCircle size={14} /> : isLocked ? <Lock size={12} /> : <div className="size-2 bg-white rounded-full animate-pulse" />}
                 </div>
 
                 {/* Content */}
                 <div>
-                  <span className={`text - [9px] font - bold uppercase tracking - widest mb - 1 block ${isActive ? 'text-emerald-400' : 'text-zinc-600'} `}>0{stage.id}</span>
-                  <h3 className={`text - 2xl font - serif transition - colors ${isActive ? 'text-white' : 'text-white/60 group-hover:text-white'} `}>{stage.name}</h3>
+                  <span className={`text-[9px] font-bold uppercase tracking-widest mb-1 block ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500 dark:text-zinc-600'}`}>0{stage.id}</span>
+                  <h3 className={`text-2xl font-serif transition-colors ${isActive ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-white/60 group-hover:text-zinc-900 dark:group-hover:text-white'}`}>{stage.name}</h3>
 
                   {isActive && (
                     <motion.div layoutId="active-glow" className="absolute -inset-4 bg-white/5 rounded-xl -z-10 blur-xl opacity-50" />
@@ -193,7 +193,7 @@ export const Roadmap: React.FC = () => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="bg-[#111] border border-white/5 rounded-3xl p-8 md:p-12 relative overflow-hidden"
+                className="bg-white dark:bg-[#111] border border-zinc-200 dark:border-white/5 rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-sm dark:shadow-none transition-colors duration-300"
               >
                 {/* Background Decoration */}
                 <div className="absolute top-0 right-0 p-32 bg-emerald-500/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
@@ -203,10 +203,10 @@ export const Roadmap: React.FC = () => {
                     <span className="size-1.5 rounded-full bg-emerald-500"></span>
                     Active Verification Protocol
                   </span>
-                  <h2 className="text-4xl md:text-5xl font-serif text-white mb-6">
+                  <h2 className="text-4xl md:text-5xl font-serif text-zinc-900 dark:text-white mb-6">
                     {ROADMAP_CONFIG[expandedStage as keyof typeof ROADMAP_CONFIG].name}
                   </h2>
-                  <p className="text-zinc-400 leading-relaxed max-w-xl mb-12">
+                  <p className="text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-xl mb-12">
                     Complete the following verification tasks to unlock the next stage of your project.
                   </p>
 
@@ -220,15 +220,15 @@ export const Roadmap: React.FC = () => {
                           key={task.id}
                           className={`p-5 rounded-xl border transition-all duration-300 flex items-center gap-5 group ${isDone
                             ? 'bg-emerald-500/10 border-emerald-500/30'
-                            : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]'
+                            : 'bg-zinc-50 dark:bg-white/[0.02] border-zinc-200 dark:border-white/5 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
                             }`}
                         >
-                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isDone ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/20 text-transparent'}`}>
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isDone ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-zinc-300 dark:border-white/20 text-transparent'}`}>
                             {isDone && <CheckCircle size={14} />}
                           </div>
 
                           <div className="flex-1">
-                            <span className={`text-sm font-medium transition-colors ${isDone ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200'}`}>
+                            <span className={`text-sm font-medium transition-colors ${isDone ? 'text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200'}`}>
                               {task.label}
                             </span>
                           </div>

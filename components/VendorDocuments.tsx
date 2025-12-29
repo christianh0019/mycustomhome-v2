@@ -1,10 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-    FileText, Plus, Search, MoreVertical,
+    FileText, Plus, Search,
     PenTool, Type, Calendar, CheckSquare,
-    Users, Send, ChevronLeft, Save, GripVertical, Settings, Upload, X, Trash2, Eye, Pencil
+    Users, Send, ChevronLeft, Save, GripVertical, Settings, Upload, X, Trash2, Eye, Pencil, File
 } from 'lucide-react';
-import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabase';
 import { motion } from 'framer-motion';
@@ -34,8 +33,7 @@ interface DraggableField {
     label: string;
     x: number; // Percentage 0-100
     y: number; // Percentage 0-100
-    width?: number; // Pixels (optional default)
-    height?: number;
+    pageNumber: number; // 1-indexed
     value?: string;
     recipientId?: number; // 1 = Primary
 }
@@ -82,13 +80,12 @@ export const VendorDocuments: React.FC = () => {
     };
 
     const handleOpenDoc = (doc: DocItem) => {
-        console.log("Opening document:", doc);
         setSelectedDoc(doc);
         setView('create');
     };
 
     const handleDeleteDoc = async (id: string, e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent opening the doc
+        e.stopPropagation();
         if (!confirm('Are you sure you want to delete this document?')) return;
 
         const { error } = await supabase.from('documents').delete().eq('id', id);
@@ -157,10 +154,12 @@ export const VendorDocuments: React.FC = () => {
                             {docs.map(doc => (
                                 <tr
                                     key={doc.id}
-                                    onClick={() => handleOpenDoc(doc)}
-                                    className="group hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
+                                    className="group hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors"
                                 >
-                                    <td className="px-8 py-4">
+                                    <td
+                                        onClick={() => handleOpenDoc(doc)}
+                                        className="px-8 py-4 cursor-pointer"
+                                    >
                                         <div className="flex items-center gap-3">
                                             <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
                                                 <FileText size={18} />
@@ -168,11 +167,11 @@ export const VendorDocuments: React.FC = () => {
                                             <span className="font-medium text-zinc-900 dark:text-white group-hover:underline decoration-zinc-400/50 underline-offset-4">{doc.title}</span>
                                         </div>
                                     </td>
-                                    <td className="px-8 py-4 text-zinc-600 dark:text-zinc-400 text-sm">{doc.recipient}</td>
-                                    <td className="px-8 py-4">
+                                    <td className="px-8 py-4 text-zinc-600 dark:text-zinc-400 text-sm cursor-default">{doc.recipient}</td>
+                                    <td className="px-8 py-4 cursor-default">
                                         <StatusBadge status={doc.status} />
                                     </td>
-                                    <td className="px-8 py-4 text-zinc-500 text-sm">{doc.date}</td>
+                                    <td className="px-8 py-4 text-zinc-500 text-sm cursor-default">{doc.date}</td>
                                     <td className="px-8 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                             {doc.status === 'draft' ? (
@@ -215,12 +214,9 @@ export const VendorDocuments: React.FC = () => {
 
 const StatusBadge: React.FC<{ status: DocumentStatus }> = ({ status }) => {
     switch (status) {
-        case 'completed':
-            return <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-[10px] uppercase tracking-widest font-bold">Completed</span>;
-        case 'sent':
-            return <span className="px-3 py-1 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-full text-[10px] uppercase tracking-widest font-bold">Sent</span>;
-        case 'draft':
-            return <span className="px-3 py-1 bg-zinc-500/10 text-zinc-500 border border-zinc-500/20 rounded-full text-[10px] uppercase tracking-widest font-bold">Draft</span>;
+        case 'completed': return <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-[10px] uppercase tracking-widest font-bold">Completed</span>;
+        case 'sent': return <span className="px-3 py-1 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-full text-[10px] uppercase tracking-widest font-bold">Sent</span>;
+        case 'draft': return <span className="px-3 py-1 bg-zinc-500/10 text-zinc-500 border border-zinc-500/20 rounded-full text-[10px] uppercase tracking-widest font-bold">Draft</span>;
     }
 };
 
@@ -233,41 +229,44 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     const [docTitle, setDocTitle] = useState(initialDoc?.title || 'Untitled Document');
     const [file, setFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-    const [fileType, setFileType] = useState<'image' | 'pdf' | null>(null);
+
+    // 'blank' means user chose to write from scratch
+    const [fileType, setFileType] = useState<'image' | 'pdf' | 'blank' | null>(null);
+    const [numPages, setNumPages] = useState<number>(1);
+
     const [fields, setFields] = useState<DraggableField[]>(initialDoc?.metadata || []);
     const [saving, setSaving] = useState(false);
 
-    // Recipient State
     const [recipientName, setRecipientName] = useState(initialDoc?.recipient || 'Christian Hostetler');
     const [recipientEmail, setRecipientEmail] = useState(initialDoc?.recipient_email || 'client@example.com');
 
-    const canvasRef = useRef<HTMLDivElement>(null);
+    // Key fix: Use refs for each page to calculate accurate drop positions
+    const pageRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Initialize document data if provided
+    // Initialize document data
     useEffect(() => {
-        if (initialDoc && initialDoc.file_url) {
-            loadFileFromStorage(initialDoc.file_url);
+        if (initialDoc) {
+            if (initialDoc.file_url) {
+                loadFileFromStorage(initialDoc.file_url);
+            } else {
+                // If no file but has ID, assume blank or legacy?
+                // For now, if no url, default null unless marked as blank type (future compat)
+            }
         }
     }, [initialDoc]);
 
     const loadFileFromStorage = async (path: string) => {
         try {
-            const { data, error } = await supabase.storage
-                .from('document-files')
-                .download(path);
-
+            const { data, error } = await supabase.storage.from('document-files').download(path);
             if (error) throw error;
             if (data) {
-                // Determine type from metadata or extension
                 const type = path.endsWith('.pdf') ? 'pdf' : 'image';
                 setFileType(type);
                 setPreviewUrl(URL.createObjectURL(data));
-                // We don't set 'file' object because we don't want to re-upload it unless changed
             }
-        } catch (err: any) {
+        } catch (err) {
             console.error("Error loading document:", err);
-            alert("Could not load document file. It may have been deleted.");
         }
     };
 
@@ -277,32 +276,29 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
             setFile(selectedFile);
             setPreviewUrl(URL.createObjectURL(selectedFile));
             setFileType(selectedFile.type === 'application/pdf' ? 'pdf' : 'image');
+            // If image/pdf, numPages will be set by onLoadSuccess or default to 1
         }
     };
 
+    const handleStartBlank = () => {
+        setFileType('blank');
+        setNumPages(1);
+    };
+
     const handleSave = async () => {
-        if (!user) {
-            alert('You must be logged in to save.');
-            return;
-        }
-        if (!docTitle) {
-            alert('Please enter a document title.');
+        if (!user || !docTitle) {
+            alert('Please login and enter a title.');
             return;
         }
 
         setSaving(true);
         try {
-            let fileUrl = initialDoc?.file_url; // Default to existing URL
+            let fileUrl = initialDoc?.file_url;
 
-            // 1. Upload NEW File (only if changed)
             if (file) {
                 const fileExt = file.name.split('.').pop();
                 const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-                const { error: uploadError } = await supabase.storage
-                    .from('document-files')
-                    .upload(fileName, file);
-
+                const { error: uploadError } = await supabase.storage.from('document-files').upload(fileName, file);
                 if (uploadError) throw uploadError;
                 fileUrl = fileName;
             }
@@ -313,63 +309,62 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                 recipient_email: recipientEmail,
                 metadata: fields,
                 file_url: fileUrl,
-                status: 'draft' // ensure keeps as draft when saving
+                status: 'draft'
             };
 
-            let error;
+            const query = initialDoc?.id
+                ? supabase.from('documents').update(docData).eq('id', initialDoc.id)
+                : supabase.from('documents').insert({ ...docData, vendor_id: user.id });
 
-            if (initialDoc?.id) {
-                // Update existing
-                const { error: updateError } = await supabase
-                    .from('documents')
-                    .update(docData)
-                    .eq('id', initialDoc.id);
-                error = updateError;
-            } else {
-                // Insert new
-                const { error: insertError } = await supabase
-                    .from('documents')
-                    .insert({
-                        ...docData,
-                        vendor_id: user.id
-                    });
-                error = insertError;
-            }
-
+            const { error } = await query;
             if (error) throw error;
 
             alert('Document Saved Successfully!');
             onBack();
-
         } catch (error: any) {
-            console.error('Error saving document:', error);
             alert(`Error saving document: ${error.message}`);
         } finally {
             setSaving(false);
         }
     };
 
-    const handleDropField = (type: DraggableField['type'], label: string, clientX: number, clientY: number) => {
-        if (isReadOnly || !canvasRef.current) return;
+    const handleDropField = (type: DraggableField['type'], label: string) => {
+        // This is called by the tool palette, but actual placement happens via dragEnd on the tool itself
+        // or we can allow "click to add" to center of page 1
+    };
 
-        const rect = canvasRef.current.getBoundingClientRect();
+    // NEW: Accurate Drop Handler calculates which page the field was dropped on
+    const handleFieldDrop = (type: DraggableField['type'], label: string, clientX: number, clientY: number) => {
+        if (isReadOnly) return;
 
-        // Calculate position relative to container
-        const relativeX = clientX - rect.left;
-        const relativeY = clientY - rect.top;
+        // Find which page container encompasses these coordinates
+        let targetPage = 1;
+        let relativeX = 0;
+        let relativeY = 0;
+        let found = false;
 
-        // Convert to percentage
-        const percentX = (relativeX / rect.width) * 100;
-        const percentY = (relativeY / rect.height) * 100;
+        for (let i = 1; i <= numPages; i++) {
+            const el = pageRefs.current[i];
+            if (el) {
+                const rect = el.getBoundingClientRect();
+                if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+                    targetPage = i;
+                    relativeX = ((clientX - rect.left) / rect.width) * 100;
+                    relativeY = ((clientY - rect.top) / rect.height) * 100;
+                    found = true;
+                    break;
+                }
+            }
+        }
 
-        // Ensure within bounds
-        if (percentX >= 0 && percentX <= 100 && percentY >= 0 && percentY <= 100) {
+        if (found) {
             setFields(prev => [...prev, {
                 id: Date.now().toString(),
                 type,
                 label,
-                x: percentX,
-                y: percentY,
+                x: relativeX,
+                y: relativeY,
+                pageNumber: targetPage,
                 recipientId: 1
             }]);
         }
@@ -381,13 +376,18 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     };
 
     const updateFieldPosition = (id: string, deltaX: number, deltaY: number) => {
-        if (isReadOnly || !canvasRef.current) return;
-        const rect = canvasRef.current.getBoundingClientRect();
+        // NOTE: React-motion drag gives deltaX/Y in pixels. We need to convert to % of CURRENT page.
+        // But detecting "page switching" during drag is hard with simple framer-motion drag.
+        // For now, we enforce staying on the same page OR we need a more complex drag handler.
+        // For this iteration, we'll keep it simple: update position relative to its current page.
 
         setFields(prev => prev.map(f => {
             if (f.id !== id) return f;
 
-            // Convert pixel delta to percentage
+            const el = pageRefs.current[f.pageNumber || 1];
+            if (!el) return f;
+
+            const rect = el.getBoundingClientRect();
             const pDeltaX = (deltaX / rect.width) * 100;
             const pDeltaY = (deltaY / rect.height) * 100;
 
@@ -398,6 +398,10 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
             };
         }));
     };
+
+    function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+        setNumPages(numPages);
+    }
 
     return (
         <div className="h-full flex flex-col bg-zinc-100 dark:bg-[#050505]">
@@ -444,18 +448,17 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
             </div>
 
             <div className="flex-1 flex overflow-hidden">
-                {/* Tools Sidebar (Hidden if Read Only) */}
+                {/* Tools Sidebar */}
                 {!isReadOnly && (
-                    <div className="w-64 bg-white dark:bg-[#0A0A0A] border-r border-zinc-200 dark:border-white/10 flex flex-col">
+                    <div className="w-64 bg-white dark:bg-[#0A0A0A] border-r border-zinc-200 dark:border-white/10 flex flex-col z-10">
                         <div className="p-4 border-b border-zinc-200 dark:border-white/5">
                             <h3 className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-4">Standard Fields</h3>
                             <div className="space-y-3">
-                                {/* Draggable sources */}
-                                <DraggableTool type="signature" icon={PenTool} label="Signature" color="text-blue-500" onDrop={handleDropField} />
-                                <DraggableTool type="initials" icon={Type} label="Initials" onDrop={handleDropField} />
-                                <DraggableTool type="date" icon={Calendar} label="Date Signed" onDrop={handleDropField} />
-                                <DraggableTool type="text" icon={Type} label="Text Box" onDrop={handleDropField} />
-                                <DraggableTool type="checkbox" icon={CheckSquare} label="Checkbox" onDrop={handleDropField} />
+                                <DraggableTool type="signature" icon={PenTool} label="Signature" color="text-blue-500" onDrop={handleFieldDrop} />
+                                <DraggableTool type="initials" icon={Type} label="Initials" onDrop={handleFieldDrop} />
+                                <DraggableTool type="date" icon={Calendar} label="Date Signed" onDrop={handleFieldDrop} />
+                                <DraggableTool type="text" icon={Type} label="Text Box" onDrop={handleFieldDrop} />
+                                <DraggableTool type="checkbox" icon={CheckSquare} label="Checkbox" onDrop={handleFieldDrop} />
                             </div>
                         </div>
                     </div>
@@ -463,56 +466,79 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
 
                 {/* Main Canvas Area */}
                 <div className="flex-1 bg-zinc-100 dark:bg-[#050505] overflow-auto p-12 flex justify-center relative">
-                    {/* The "Paper" Container */}
-                    <div
-                        className="relative w-[8.5in] min-h-[11in] bg-white shadow-2xl transition-all duration-300"
-                        ref={canvasRef}
-                    >
-                        {!previewUrl ? (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 m-8 rounded-xl bg-zinc-50 dark:bg-zinc-900/50">
-                                <div className="p-6 bg-white dark:bg-black rounded-full shadow-lg mb-6">
-                                    <Upload size={32} className="text-zinc-400" />
-                                </div>
-                                <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-2">Upload Document</h3>
-                                <p className="text-sm text-zinc-500 mb-6 text-center max-w-xs">Upload a PDF or Image (PNG, JPG) to start adding signature fields.</p>
-                                {!isReadOnly && (
-                                    <>
+                    <div className="flex flex-col gap-8 pb-32"> {/* Scrollable column of pages */}
+
+                        {!fileType && (
+                            <div className="flex flex-col items-center justify-center min-h-[500px]">
+                                <div className="bg-white dark:bg-[#0A0A0A] p-12 rounded-3xl shadow-xl max-w-lg w-full text-center border border-zinc-200 dark:border-white/5">
+                                    <div className="w-16 h-16 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                                        <FileText size={32} />
+                                    </div>
+                                    <h2 className="text-2xl font-serif text-zinc-900 dark:text-white mb-2">Create Document</h2>
+                                    <p className="text-zinc-500 mb-8">Upload a contract or start from a blank page.</p>
+
+                                    <div className="grid grid-cols-2 gap-4">
                                         <button
                                             onClick={() => fileInputRef.current?.click()}
-                                            className="px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-xs font-bold uppercase tracking-widest hover:scale-105 transition-transform"
+                                            className="flex flex-col items-center gap-3 p-6 rounded-2xl border border-zinc-200 dark:border-white/10 hover:border-blue-500 hover:bg-blue-500/5 transition-all group"
                                         >
-                                            Select File
+                                            <Upload className="text-zinc-400 group-hover:text-blue-500" />
+                                            <span className="font-bold text-sm text-zinc-700 dark:text-zinc-200">Upload PDF/Image</span>
                                         </button>
-                                        <input
-                                            type="file"
-                                            ref={fileInputRef}
-                                            onChange={handleFileSelect}
-                                            accept="image/*,.pdf"
-                                            className="hidden"
-                                        />
-                                    </>
-                                )}
+                                        <button
+                                            onClick={handleStartBlank}
+                                            className="flex flex-col items-center gap-3 p-6 rounded-2xl border border-zinc-200 dark:border-white/10 hover:border-blue-500 hover:bg-blue-500/5 transition-all group"
+                                        >
+                                            <File className="text-zinc-400 group-hover:text-blue-500" />
+                                            <span className="font-bold text-sm text-zinc-700 dark:text-zinc-200">Start Blank</span>
+                                        </button>
+                                    </div>
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleFileSelect}
+                                        accept="image/*,.pdf"
+                                        className="hidden"
+                                    />
+                                </div>
                             </div>
-                        ) : (
-                            <>
-                                {/* Rendering Layer */}
-                                {fileType === 'image' && previewUrl && (
-                                    <img src={previewUrl} alt="Document" className="w-full h-auto select-none pointer-events-none" />
-                                )}
+                        )}
+
+                        {fileType && Array.from({ length: numPages }, (_, i) => i + 1).map((pageNum) => (
+                            <div
+                                key={pageNum}
+                                ref={(el) => pageRefs.current[pageNum] = el}
+                                className="relative w-[8.5in] min-h-[11in] bg-white shadow-2xl transition-all duration-300 mx-auto"
+                            >
+                                {/* Background Layer */}
                                 {fileType === 'pdf' && previewUrl && (
-                                    <Document file={previewUrl} className="w-full">
-                                        {/* Just showing page 1 for simple prototype */}
+                                    <Document
+                                        file={previewUrl}
+                                        onLoadSuccess={onDocumentLoadSuccess}
+                                        loading={<div className="h-[11in] flex items-center justify-center text-zinc-400">Loading Page...</div>}
+                                    >
                                         <Page
-                                            pageNumber={1}
-                                            width={canvasRef.current?.getBoundingClientRect().width || 800}
+                                            pageNumber={pageNum}
+                                            width={816} // 8.5in * 96dpi approx
                                             renderTextLayer={false}
                                             renderAnnotationLayer={false}
                                         />
                                     </Document>
                                 )}
+                                {fileType === 'image' && previewUrl && pageNum === 1 && (
+                                    <img src={previewUrl} alt="Document" className="w-full h-auto select-none pointer-events-none" />
+                                )}
+                                {fileType === 'blank' && (
+                                    <div className="p-12 h-full">
+                                        {/* Blank writeable area - could be contenteditable or just a container for text fields */}
+                                        <div className="h-full border border-dashed border-zinc-100 rounded-lg flex items-center justify-center text-zinc-200 text-6xl font-serif opacity-30 select-none">
+                                            Page {pageNum}
+                                        </div>
+                                    </div>
+                                )}
 
-                                {/* Fields Overlay Layer */}
-                                {fields.map((field) => (
+                                {/* Fields Overlay - Filtered by Page */}
+                                {fields.filter(f => (f.pageNumber || 1) === pageNum).map((field) => (
                                     <DraggableFieldOnCanvas
                                         key={field.id}
                                         field={field}
@@ -521,7 +547,22 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                                         isReadOnly={isReadOnly}
                                     />
                                 ))}
-                            </>
+
+                                {/* Page Number indicator */}
+                                <div className="absolute -right-12 top-0 text-xs text-zinc-400 font-medium">
+                                    Page {pageNum}
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* Add Page Button for Blank Mode */}
+                        {fileType === 'blank' && !isReadOnly && (
+                            <button
+                                onClick={() => setNumPages(prev => prev + 1)}
+                                className="mx-auto flex items-center gap-2 px-6 py-3 bg-white dark:bg-[#0A0A0A] rounded-full shadow-lg text-sm font-bold text-zinc-600 hover:text-blue-500 hover:scale-105 transition-all"
+                            >
+                                <Plus size={16} /> Add Page
+                            </button>
                         )}
                     </div>
                 </div>
@@ -535,11 +576,6 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
 
                         <div className="space-y-4">
                             <div className="p-4 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/5 relative group">
-                                {!isReadOnly && (
-                                    <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-zinc-400 hover:text-red-500">
-                                        ×
-                                    </div>
-                                )}
                                 <div className="flex items-center gap-3 mb-2">
                                     <div className="w-8 h-8 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center font-bold text-xs">1</div>
                                     <div>
@@ -560,26 +596,17 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                                     readOnly={isReadOnly}
                                 />
                             </div>
-
-                            {!isReadOnly && (
-                                <button className="w-full py-3 border border-dashed border-zinc-300 dark:border-white/20 rounded-xl text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-400 dark:hover:border-white/40 transition-colors uppercase tracking-widest font-bold">
-                                    + Add Recipient
-                                </button>
-                            )}
                         </div>
                     </div>
 
                     <div className="mt-auto p-6 border-t border-zinc-200 dark:border-white/5">
                         {!isReadOnly && (
                             <button
-                                onClick={() => { setFile(null); setFields([]); }}
+                                onClick={() => { setFile(null); setFileType(null); setFields([]); setNumPages(1); }}
                                 className="w-full flex items-center justify-center gap-2 text-xs text-red-500 hover:text-red-600 transition-colors py-2"
                             >
                                 Reset / Clear Document
                             </button>
-                        )}
-                        {isReadOnly && (
-                            <p className="text-center text-xs text-zinc-500">This document is {initialDoc?.status} and cannot be edited.</p>
                         )}
                     </div>
                 </div>
@@ -606,7 +633,7 @@ const DraggableTool: React.FC<{
                 // @ts-ignore - clientX/Y exist on drag events
                 onDrop(type, label, e.clientX || e.pageX, e.clientY || e.pageY);
             }}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-white/5 cursor-grab active:cursor-grabbing transition-colors group relative bg-white dark:bg-[#0A0A0A]"
+            className="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-white/5 cursor-grab active:cursor-grabbing transition-colors group relative bg-white dark:bg-[#0A0A0A] border border-transparent hover:border-zinc-200"
         >
             <Icon size={16} className={color || "text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white"} />
             <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white">{label}</span>
@@ -635,7 +662,10 @@ const DraggableFieldOnCanvas: React.FC<{
                 position: 'absolute',
                 left: `${field.x}%`,
                 top: `${field.y}%`,
-                // Center the anchor
+                // We want the drag point to be the center, but initial placement should be accurate
+                // If x/y are top-left based:
+                // x: `${field.x}%`, y: `${field.y}%`
+                // But generally users drag by center. Let's assume touch point is center.
                 x: '-50%',
                 y: '-50%',
                 cursor: isReadOnly ? 'default' : 'grab'

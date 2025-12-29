@@ -113,8 +113,44 @@ export const Dashboard: React.FC = () => {
                             </p>
                         </div>
                     </div>
+                    {/* Market Data Context Alert */}
+                    {budget.marketData ? (
+                        <div className={`px-4 py-2 rounded-lg border flex items-center gap-2 ${ppsf < budget.marketData.low
+                            ? 'bg-red-500/10 border-red-500/20 text-red-400'
+                            : ppsf > budget.marketData.high
+                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
+                            }`}>
+                            <AlertCircle size={16} />
+                            <span className="text-sm font-medium">
+                                {ppsf < budget.marketData.low
+                                    ? "Below Market Rate"
+                                    : ppsf > budget.marketData.high
+                                        ? "Strong Budget"
+                                        : "In Market Range"}
+                            </span>
+                        </div>
+                    ) : null}
+
+
+                    <div className="mt-6 pt-6 border-t border-white/5">
+                        <p className="text-zinc-400 text-sm">
+                            <strong className="text-white">Analysis:</strong> Based on
+                            {budget.marketData ? ` ${budget.marketData.city} rates` : ' national averages'},
+                            your target of <span className="text-white font-mono">{budget.targetSqFt} sqft</span> allows for
+                            <span className="text-white font-medium"> ${(ppsf).toFixed(0)}/sqft</span> in hard costs.
+
+                            {budget.marketData ? (
+                                ppsf < budget.marketData.low
+                                    ? ` This is below the local entry-point of $${budget.marketData.low}/sf. You may need to increase budget or reduce size.`
+                                    : ` This is within the expected range ($${budget.marketData.low}-$${budget.marketData.high}/sf) for this market.`
+                            ) : (
+                                ppsf < 250 ? " This is lean." : " This is a workable starting point."
+                            )}
+                        </p>
+                    </div>
                 </motion.div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };

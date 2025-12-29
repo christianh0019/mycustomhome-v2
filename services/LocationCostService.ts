@@ -15,7 +15,15 @@ const STATE_MULTIPLIERS: Record<string, number> = {
     'TX': 0.95, 'FL': 1.05, 'AZ': 1.0, 'NV': 1.1, 'TN': 0.95,
     'NC': 0.9, 'SC': 0.9, 'GA': 0.9, 'IL': 1.1, 'OH': 0.9,
     'MI': 0.95, 'PA': 1.05, 'VA': 0.95, 'MD': 1.05,
-    // Add defaults for others implicitly as 1.0
+    'MN': 1.05, 'WI': 1.0, 'IN': 0.9, 'MO': 0.9, 'CT': 1.25
+};
+
+const STATE_NAMES: Record<string, string> = {
+    'Texas': 'TX', 'California': 'CA', 'New York': 'NY', 'Colorado': 'CO',
+    'Florida': 'FL', 'Arizona': 'AZ', 'Washington': 'WA', 'Oregon': 'OR',
+    'Massachusetts': 'MA', 'Nevada': 'NV', 'Tennessee': 'TN', 'North Carolina': 'NC',
+    'Georgia': 'GA', 'Illinois': 'IL', 'Ohio': 'OH', 'Michigan': 'MI',
+    'Pennsylvania': 'PA', 'Virginia': 'VA', 'Maryland': 'MD'
 };
 
 // "Tier 1" Luxury/Resort Markets (City Name Match)

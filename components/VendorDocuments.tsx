@@ -815,9 +815,80 @@ const DraggableFieldOnCanvas: React.FC<{
     onUpdateValue?: (id: string, value: string) => void,
     isReadOnly?: boolean
 }> = ({ field, onRemove, onUpdatePos, onUpdateValue, isReadOnly }) => {
-    const ref = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const grabOffset = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
+    const elementRef = useRef<HTMLDivElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+
+    // Manual Drag State
+    const dragStart = useRef<{ x: number, y: number, initialLeft: number, initialTop: number } | null>(null);
+
+    const handlePointerDown = (e: React.PointerEvent) => {
+        if (isReadOnly) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const el = elementRef.current;
+        if (!el) return;
+
+        // Capture initial state
+        const rect = el.getBoundingClientRect();
+        const parent = el.offsetParent?.getBoundingClientRect();
+
+        if (!parent) return;
+
+        setIsDragging(true);
+        dragStart.current = {
+            x: e.clientX,
+            y: e.clientY,
+            // Calculate current Left/Top in Pixels relative to parent
+            initialLeft: rect.left - parent.left + (rect.width / 2),
+            initialTop: rect.top - parent.top + (rect.height / 2)
+        };
+
+        const handlePointerMove = (moveEvent: PointerEvent) => {
+            moveEvent.preventDefault();
+            if (!dragStart.current || !el || !el.offsetParent) return;
+
+            const deltaX = moveEvent.clientX - dragStart.current.x;
+            const deltaY = moveEvent.clientY - dragStart.current.y;
+
+            // Apply translation directly for performance
+            el.style.transform = `translate(${deltaX}px, ${deltaY}px) translate(-50%, -50%)`;
+        };
+
+        const handlePointerUp = (upEvent: PointerEvent) => {
+            document.removeEventListener('pointermove', handlePointerMove);
+            document.removeEventListener('pointerup', handlePointerUp);
+
+            if (!dragStart.current || !el || !el.offsetParent) {
+                setIsDragging(false);
+                return;
+            }
+
+            const deltaX = upEvent.clientX - dragStart.current.x;
+            const deltaY = upEvent.clientY - dragStart.current.y;
+
+            const parentRect = el.offsetParent.getBoundingClientRect();
+
+            // Calculate final position in pixels
+            const finalPixelX = dragStart.current.initialLeft + deltaX;
+            const finalPixelY = dragStart.current.initialTop + deltaY;
+
+            // Convert to Percentage
+            const finalPercentX = (finalPixelX / parentRect.width) * 100;
+            const finalPercentY = (finalPixelY / parentRect.height) * 100;
+
+            // Reset style transform and update state
+            el.style.transform = 'translate(-50%, -50%)';
+            setIsDragging(false);
+            dragStart.current = null;
+
+            onUpdatePos(field.id, finalPercentX, finalPercentY);
+        };
+
+        document.addEventListener('pointermove', handlePointerMove);
+        document.addEventListener('pointerup', handlePointerUp);
+    };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0] && onUpdateValue) {
@@ -827,63 +898,39 @@ const DraggableFieldOnCanvas: React.FC<{
     };
 
     return (
-        <motion.div
-            ref={ref}
-            drag={!isReadOnly}
-            dragMomentum={false}
-            onDragStart={(e) => {
-                if (ref.current) {
-                    const rect = ref.current.getBoundingClientRect();
-                    const centerX = rect.left + (rect.width / 2);
-                    const centerY = rect.top + (rect.height / 2);
-                    // @ts-ignore
-                    const clientX = e.clientX || e.pageX;
-                    // @ts-ignore
-                    const clientY = e.clientY || e.pageY;
-                    grabOffset.current = {
-                        x: clientX - centerX,
-                        y: clientY - centerY
-                    };
-                }
-            }}
-            onDragEnd={(e) => {
-                if (!isReadOnly) {
-                    // @ts-ignore
-                    const clientX = e.clientX || e.pageX;
-                    // @ts-ignore
-                    const clientY = e.clientY || e.pageY;
-
-                    const finalCenterX = clientX - grabOffset.current.x;
-                    const finalCenterY = clientY - grabOffset.current.y;
-
-                    onUpdatePos(field.id, finalCenterX, finalCenterY);
-                }
-            }}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
+        <div
+            ref={elementRef}
+            onPointerDown={handlePointerDown}
             style={{
                 position: 'absolute',
                 left: `${field.x}%`,
                 top: `${field.y}%`,
-                x: '-50%',
-                y: '-50%',
-                cursor: isReadOnly ? 'default' : 'grab'
+                transform: 'translate(-50%, -50%)',
+                cursor: isReadOnly ? 'default' : (isDragging ? 'grabbing' : 'grab'),
+                zIndex: isDragging ? 50 : 10,
+                touchAction: 'none'
             }}
-            className="absolute z-10 group"
+            className="group"
         >
             {field.type === 'image' ? (
                 <div className="relative group/image">
                     {field.value ? (
                         <div className="relative">
-                            <img src={field.value} alt="Logo" className="h-16 w-auto object-contain border border-transparent hover:border-blue-500 rounded" />
+                            <img src={field.value} alt="Logo" className="h-16 w-auto object-contain border border-transparent hover:border-blue-500 rounded select-none pointer-events-none" />
                             {!isReadOnly && (
-                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded cursor-pointer pointer-events-auto" onPointerDown={(e) => e.stopPropagation()} onClick={() => fileInputRef.current?.click()}>
                                     <Pencil size={12} className="text-white" />
                                 </div>
                             )}
                         </div>
                     ) : (
                         <div
+                            onPointerDown={(e) => {
+                                // Allow resolving click for upload if not dragging
+                                // But here we want the whole box to be draggable, so maybe specific click area?
+                                // Actually, for empty state, clicking anywhere should upload.
+                                // We can check if it was a drag or click in Handler, but for now allow bubble up if its just a click
+                            }}
                             onClick={() => !isReadOnly && fileInputRef.current?.click()}
                             className="w-16 h-16 bg-zinc-100 border-2 border-dashed border-zinc-300 rounded flex items-center justify-center cursor-pointer hover:bg-zinc-200 hover:border-zinc-400 transition-colors"
                         >
@@ -893,7 +940,7 @@ const DraggableFieldOnCanvas: React.FC<{
                     <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                 </div>
             ) : (
-                <div className={`p-2 rounded border-2 shadow-sm flex items-center gap-2 ${!isReadOnly && 'active:cursor-grabbing'}
+                <div className={`p-2 rounded border-2 shadow-sm flex items-center gap-2 select-none
                     ${field.type === 'signature' ? 'bg-blue-500/10 border-blue-500 text-blue-600' : 'bg-yellow-500/10 border-yellow-500 text-yellow-600'}
                 `}>
                     <span className="text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">{field.label}</span>
@@ -902,12 +949,13 @@ const DraggableFieldOnCanvas: React.FC<{
 
             {!isReadOnly && (
                 <button
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.stopPropagation(); onRemove(field.id); }}
-                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:scale-110"
+                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:scale-110 cursor-pointer pointer-events-auto"
                 >
                     <X size={10} />
                 </button>
             )}
-        </motion.div>
+        </div>
     );
 };

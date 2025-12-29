@@ -15,6 +15,8 @@ export const BudgetCreator: React.FC = () => {
     // Inputs
 
     const [isLoadingMarket, setIsLoadingMarket] = useState(false);
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
     // Educational Modal State
     const [viewingArticle, setViewingArticle] = useState<Article | null>(null);
 
@@ -35,6 +37,7 @@ export const BudgetCreator: React.FC = () => {
 
     const handleRunMarketResearch = async () => {
         setIsLoadingMarket(true);
+        setShowSuggestions(false); // Hide suggestions when searching
         if (city) {
             const data = await LocationCostService.getMarketData(city);
             if (data) {
@@ -42,6 +45,30 @@ export const BudgetCreator: React.FC = () => {
             }
         }
         setIsLoadingMarket(false);
+    };
+
+    const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        updateBudget({ city: val });
+
+        if (val.length >= 2) {
+            const matches = LocationCostService.searchCities(val);
+            setSuggestions(matches);
+            setShowSuggestions(matches.length > 0);
+        } else {
+            setSuggestions([]);
+            setShowSuggestions(false);
+        }
+    };
+
+    const selectCity = (selectedCity: string) => {
+        updateBudget({ city: selectedCity });
+        setSuggestions([]);
+        setShowSuggestions(false);
+        // Optional: Auto-trigger search or let user click arrow? 
+        // User said: "when they choose one and hit the arrow" -> implies manual trigger after selection.
+        // But also said "choose one ... an actual ai search should occur". 
+        // I'll leave it manual trigger via arrow/enter for now to match "hit the arrow".
     };
 
     // Auto-run on mount if we have city
@@ -155,18 +182,33 @@ export const BudgetCreator: React.FC = () => {
                             <h3 className="text-sm font-bold uppercase tracking-widest">Market Context</h3>
                         </div>
 
-                        <div className="flex gap-2 mb-4">
-                            <input
-                                placeholder="Enter City, State..."
-                                value={city}
-                                onChange={(e) => updateBudget({ city: e.target.value })}
-                                onKeyPress={(e) => e.key === 'Enter' && handleRunMarketResearch()}
-                                className="bg-transparent border-none text-white focus:ring-0 placeholder:text-zinc-600 w-full"
-                            />
+                        <div className="flex gap-2 mb-4 relative">
+                            <div className="relative w-full">
+                                <input
+                                    placeholder="Enter City, State..."
+                                    value={city}
+                                    onChange={handleCityChange}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleRunMarketResearch()}
+                                    className="bg-transparent border-none text-white focus:ring-0 placeholder:text-zinc-600 w-full"
+                                />
+                                {showSuggestions && (
+                                    <div className="absolute top-full left-0 right-0 mt-2 bg-[#111] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                        {suggestions.map((s) => (
+                                            <button
+                                                key={s}
+                                                onClick={() => selectCity(s)}
+                                                className="w-full text-left px-4 py-3 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/5 last:border-0"
+                                            >
+                                                {s}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                             <button
                                 onClick={handleRunMarketResearch}
                                 disabled={isLoadingMarket}
-                                className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-4 flex items-center justify-center transition-colors"
+                                className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-4 flex items-center justify-center transition-colors shrink-0"
                             >
                                 {isLoadingMarket ? <div className="size-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <ArrowRight size={16} />}
                             </button>

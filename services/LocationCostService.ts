@@ -65,5 +65,17 @@ export const LocationCostService = {
             city: city, // Keep user's input
             description: "City not found in database. Showing National Averages."
         };
+    },
+
+    /**
+     * Returns a list of matching city names for autocomplete.
+     */
+    searchCities: (query: string): string[] => {
+        if (!query || query.length < 2) return [];
+        const normalized = query.toLowerCase();
+
+        return Object.values(MOCK_DB)
+            .filter(data => data.city.toLowerCase().includes(normalized))
+            .map(data => data.city);
     }
 };

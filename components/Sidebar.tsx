@@ -31,7 +31,7 @@ const ORDERED_TABS = [
   AppTab.Partners,
   AppTab.Messages,
   AppTab.KnowledgeBase,
-  AppTab.EquityClub,
+  // AppTab.EquityClub, // Hidden per user request for now
   AppTab.TheLedger,
 ];
 

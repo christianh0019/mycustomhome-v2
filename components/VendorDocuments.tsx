@@ -254,21 +254,6 @@ const RichTextEditor: React.FC<{
 
     return (
         <div className="h-full flex flex-col relative w-full">
-            {!readOnly && (
-                <div className="flex flex-wrap items-center gap-1 p-2 border-b border-zinc-100 bg-zinc-50/50 sticky top-0 z-20">
-                    <ToolbarBtn icon={Bold} label="Bold" onClick={() => exec('bold')} />
-                    <ToolbarBtn icon={Italic} label="Italic" onClick={() => exec('italic')} />
-                    <ToolbarBtn icon={Underline} label="Underline" onClick={() => exec('underline')} />
-                    <div className="w-[1px] h-4 bg-zinc-300 mx-1" />
-                    <ToolbarBtn icon={AlignLeft} label="Align Left" onClick={() => exec('justifyLeft')} />
-                    <ToolbarBtn icon={AlignCenter} label="Align Center" onClick={() => exec('justifyCenter')} />
-                    <ToolbarBtn icon={AlignRight} label="Align Right" onClick={() => exec('justifyRight')} />
-                    <div className="w-[1px] h-4 bg-zinc-300 mx-1" />
-                    <ToolbarBtn icon={Heading1} label="Heading 1" onClick={() => exec('formatBlock', 'H2')} />
-                    <ToolbarBtn icon={Heading2} label="Heading 2" onClick={() => exec('formatBlock', 'H3')} />
-                    <ToolbarBtn icon={List} label="List" onClick={() => exec('insertUnorderedList')} />
-                </div>
-            )}
 
             <div
                 ref={editorRef}
@@ -598,49 +583,77 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
         setFields(prev => prev.map(f => f.id === id ? { ...f, value } : f));
     }
 
+    const updateFieldSize = (id: string, width: number, height: number) => {
+        setFields(prev => prev.map(f => f.id === id ? { ...f, width, height } : f));
+    }
+
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         setNumPages(numPages);
     }
 
+    const exec = (command: string, value: string | undefined = undefined) => {
+        document.execCommand(command, false, value);
+    };
+
     return (
         <div className="h-full flex flex-col bg-zinc-100 dark:bg-[#050505]">
-            <div className="h-16 bg-white dark:bg-[#0A0A0A] border-b border-zinc-200 dark:border-white/10 flex items-center justify-between px-6 shrink-0 z-20">
-                <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="p-2 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-lg text-zinc-500 dark:text-zinc-400">
-                        <ChevronLeft size={20} />
-                    </button>
-                    <div className="h-6 w-[1px] bg-zinc-200 dark:bg-white/10"></div>
-                    <input
-                        value={docTitle}
-                        onChange={(e) => setDocTitle(e.target.value)}
-                        readOnly={isReadOnly}
-                        className="bg-transparent text-zinc-900 dark:text-white font-serif text-lg focus:outline-none"
-                    />
-                    <StatusBadge status={isReadOnly ? (initialDoc?.status || 'sent') : 'draft'} />
-                </div>
-                {!isReadOnly ? (
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2"
-                        >
-                            {saving ? 'Saving...' : <><Save size={14} /> Save</>}
+            <div className="bg-white dark:bg-[#0A0A0A] border-b border-zinc-200 dark:border-white/10 flex flex-col shrink-0 z-20">
+                {/* Top Row: Navigation & Save */}
+                <div className="h-16 flex items-center justify-between px-6 border-b border-zinc-100 dark:border-white/5">
+                    <div className="flex items-center gap-4">
+                        <button onClick={onBack} className="p-2 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-lg text-zinc-500 dark:text-zinc-400">
+                            <ChevronLeft size={20} />
                         </button>
-                        <button
-                            onClick={() => alert(`Sending document with ${fields.length} fields!`)}
-                            disabled={fields.length === 0}
-                            className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-colors shadow-lg
-                                 ${fields.length > 0 ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20' : 'bg-zinc-200 dark:bg-white/10 text-zinc-400 cursor-not-allowed'}`}
-                        >
-                            <Send size={14} /> Send
-                        </button>
+                        <div className="h-6 w-[1px] bg-zinc-200 dark:bg-white/10"></div>
+                        <input
+                            value={docTitle}
+                            onChange={(e) => setDocTitle(e.target.value)}
+                            readOnly={isReadOnly}
+                            className="bg-transparent text-zinc-900 dark:text-white font-serif text-lg focus:outline-none"
+                        />
+                        <StatusBadge status={isReadOnly ? (initialDoc?.status || 'sent') : 'draft'} />
                     </div>
-                ) : (
-                    <div className="flex items-center gap-3">
-                        <span className="text-zinc-400 text-xs uppercase tracking-widest font-bold flex items-center gap-2">
-                            <Eye size={14} /> Read Only Mode
-                        </span>
+                    {!isReadOnly ? (
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={handleSave}
+                                disabled={saving}
+                                className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                            >
+                                {saving ? 'Saving...' : <><Save size={14} /> Save</>}
+                            </button>
+                            <button
+                                onClick={() => alert(`Sending document with ${fields.length} fields!`)}
+                                disabled={fields.length === 0}
+                                className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-colors shadow-lg
+                                     ${fields.length > 0 ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20' : 'bg-zinc-200 dark:bg-white/10 text-zinc-400 cursor-not-allowed'}`}
+                            >
+                                <Send size={14} /> Send
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-3">
+                            <span className="text-zinc-400 text-xs uppercase tracking-widest font-bold flex items-center gap-2">
+                                <Eye size={14} /> Read Only Mode
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Second Row: Toolbar (Only if not read-only and is editable type) */}
+                {!isReadOnly && (fileType === 'blank' || fileType === 'template') && (
+                    <div className="h-12 flex items-center gap-1 px-6 bg-zinc-50/50 dark:bg-white/5">
+                        <ToolbarBtn icon={Bold} label="Bold" onClick={() => exec('bold')} />
+                        <ToolbarBtn icon={Italic} label="Italic" onClick={() => exec('italic')} />
+                        <ToolbarBtn icon={Underline} label="Underline" onClick={() => exec('underline')} />
+                        <div className="w-[1px] h-4 bg-zinc-300 mx-2" />
+                        <ToolbarBtn icon={AlignLeft} label="Align Left" onClick={() => exec('justifyLeft')} />
+                        <ToolbarBtn icon={AlignCenter} label="Align Center" onClick={() => exec('justifyCenter')} />
+                        <ToolbarBtn icon={AlignRight} label="Align Right" onClick={() => exec('justifyRight')} />
+                        <div className="w-[1px] h-4 bg-zinc-300 mx-2" />
+                        <ToolbarBtn icon={Heading1} label="Heading 1" onClick={() => exec('formatBlock', 'H2')} />
+                        <ToolbarBtn icon={Heading2} label="Heading 2" onClick={() => exec('formatBlock', 'H3')} />
+                        <ToolbarBtn icon={List} label="List" onClick={() => exec('insertUnorderedList')} />
                     </div>
                 )}
             </div>
@@ -755,6 +768,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                                         onRemove={removeField}
                                         onUpdatePos={updateFieldPosition}
                                         onUpdateValue={updateFieldValue}
+                                        onUpdateSize={updateFieldSize}
                                         isReadOnly={isReadOnly}
                                     />
                                 ))}
@@ -819,11 +833,19 @@ const DraggableFieldOnCanvas: React.FC<{
     const elementRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
 
+    // Manual Resize State
+    const [isResizing, setIsResizing] = useState(false);
+    const resizeStart = useRef<{ x: number, y: number, initialWidth: number, initialHeight: number } | null>(null);
+
     // Manual Drag State
     const dragStart = useRef<{ x: number, y: number, initialLeft: number, initialTop: number } | null>(null);
 
     const handlePointerDown = (e: React.PointerEvent) => {
         if (isReadOnly) return;
+        // Don't start drag if clicking resize handle
+        // @ts-ignore
+        if (e.target.dataset.resizeHandle) return;
+
         e.preventDefault();
         e.stopPropagation();
 
@@ -887,6 +909,57 @@ const DraggableFieldOnCanvas: React.FC<{
         document.addEventListener('pointerup', handlePointerUp);
     };
 
+    const handleResizeStart = (e: React.PointerEvent) => {
+        if (isReadOnly) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const el = elementRef.current;
+        if (!el) return;
+
+        setIsResizing(true);
+        const rect = el.getBoundingClientRect();
+
+        resizeStart.current = {
+            x: e.clientX,
+            y: e.clientY,
+            initialWidth: rect.width,
+            initialHeight: rect.height
+        };
+
+        const handleResizeMove = (moveEvent: PointerEvent) => {
+            moveEvent.preventDefault();
+            if (!resizeStart.current || !el) return;
+
+            const deltaX = moveEvent.clientX - resizeStart.current.x;
+            const deltaY = moveEvent.clientY - resizeStart.current.y;
+
+            const newWidth = Math.max(50, resizeStart.current.initialWidth + deltaX);
+            const newHeight = Math.max(30, resizeStart.current.initialHeight + deltaY);
+
+            el.style.width = `${newWidth}px`;
+            el.style.height = `${newHeight}px`;
+        };
+
+        const handleResizeUp = (upEvent: PointerEvent) => {
+            document.removeEventListener('pointermove', handleResizeMove);
+            document.removeEventListener('pointerup', handleResizeUp);
+
+            setIsResizing(false);
+            if (!resizeStart.current || !el) return;
+
+            const newWidth = parseFloat(el.style.width);
+            const newHeight = parseFloat(el.style.height);
+
+            if (onUpdateSize) {
+                onUpdateSize(field.id, newWidth, newHeight);
+            }
+        };
+
+        document.addEventListener('pointermove', handleResizeMove);
+        document.addEventListener('pointerup', handleResizeUp);
+    }
+
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0] && onUpdateValue) {
             const url = URL.createObjectURL(e.target.files[0]);
@@ -902,18 +975,20 @@ const DraggableFieldOnCanvas: React.FC<{
                 position: 'absolute',
                 left: `${field.x}%`,
                 top: `${field.y}%`,
+                width: field.width ? `${field.width}px` : undefined,
+                height: field.height ? `${field.height}px` : undefined,
                 transform: 'translate(-50%, -50%)',
                 cursor: isReadOnly ? 'default' : (isDragging ? 'grabbing' : 'grab'),
-                zIndex: isDragging ? 50 : 10,
+                zIndex: isDragging || isResizing ? 50 : 10,
                 touchAction: 'none'
             }}
             className="group"
         >
             {field.type === 'image' ? (
-                <div className="relative group/image">
+                <div className="relative group/image w-full h-full">
                     {field.value ? (
-                        <div className="relative">
-                            <img src={field.value} alt="Logo" className="h-16 w-auto object-contain border border-transparent hover:border-blue-500 rounded select-none pointer-events-none" />
+                        <div className="relative w-full h-full">
+                            <img src={field.value} alt="Logo" className="w-full h-full object-contain border border-transparent hover:border-blue-500 rounded select-none pointer-events-none" />
                             {!isReadOnly && (
                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded cursor-pointer pointer-events-auto" onPointerDown={(e) => e.stopPropagation()} onClick={() => fileInputRef.current?.click()}>
                                     <Pencil size={12} className="text-white" />
@@ -922,14 +997,8 @@ const DraggableFieldOnCanvas: React.FC<{
                         </div>
                     ) : (
                         <div
-                            onPointerDown={(e) => {
-                                // Allow resolving click for upload if not dragging
-                                // But here we want the whole box to be draggable, so maybe specific click area?
-                                // Actually, for empty state, clicking anywhere should upload.
-                                // We can check if it was a drag or click in Handler, but for now allow bubble up if its just a click
-                            }}
                             onClick={() => !isReadOnly && fileInputRef.current?.click()}
-                            className="w-16 h-16 bg-zinc-100 border-2 border-dashed border-zinc-300 rounded flex items-center justify-center cursor-pointer hover:bg-zinc-200 hover:border-zinc-400 transition-colors"
+                            className="w-full h-full min-w-[64px] min-h-[64px] bg-zinc-100 border-2 border-dashed border-zinc-300 rounded flex items-center justify-center cursor-pointer hover:bg-zinc-200 hover:border-zinc-400 transition-colors"
                         >
                             <ImageIcon size={20} className="text-zinc-400" />
                         </div>
@@ -937,21 +1006,28 @@ const DraggableFieldOnCanvas: React.FC<{
                     <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                 </div>
             ) : (
-                <div className={`p-2 rounded border-2 shadow-sm flex items-center gap-2 select-none
+                <div className={`w-full h-full p-2 rounded border-2 shadow-sm flex items-center justify-center text-center gap-2 select-none overflow-hidden
                     ${field.type === 'signature' ? 'bg-blue-500/10 border-blue-500 text-blue-600' : 'bg-yellow-500/10 border-yellow-500 text-yellow-600'}
                 `}>
-                    <span className="text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">{field.label}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis">{field.label}</span>
                 </div>
             )}
 
             {!isReadOnly && (
-                <button
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => { e.stopPropagation(); onRemove(field.id); }}
-                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:scale-110 cursor-pointer pointer-events-auto"
-                >
-                    <X size={10} />
-                </button>
+                <>
+                    <button
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => { e.stopPropagation(); onRemove(field.id); }}
+                        className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:scale-110 cursor-pointer pointer-events-auto z-20"
+                    >
+                        <X size={10} />
+                    </button>
+                    <div
+                        onPointerDown={handleResizeStart}
+                        data-resize-handle="true"
+                        className="absolute -bottom-1 -right-1 w-3 h-3 bg-white border border-zinc-400 rounded-full cursor-nwse-resize opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                    />
+                </>
             )}
         </div>
     );

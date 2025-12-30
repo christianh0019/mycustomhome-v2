@@ -292,12 +292,13 @@ export const DocumentEditor: React.FC<{
                     type: fileType,
                     numPages
                 },
-                updated_at: new Date().toISOString(),
+                // updated_at removed as it does not exist in the schema
                 file_url: finalUrl
             };
 
             if (lead) {
-                updates.recipient = lead.project_title;
+                updates.recipient_name = lead.project_title;
+                // updates.recipient_email = lead.email; // If we had email
             }
 
             if (initialDoc?.id) {

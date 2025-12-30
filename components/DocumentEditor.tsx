@@ -272,8 +272,8 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialDoc, onBa
         if (selectedFieldId === id) setSelectedFieldId(null);
     };
 
-    const handleSave = async (status: 'draft' | 'sent' = 'draft', shouldExit = true, lead?: Lead) => {
-        if (!user) return;
+    const handleSave = async (status: 'draft' | 'sent' = 'draft', shouldExit = true, lead?: Lead): Promise<string | null> => {
+        if (!user) return null;
         setSaving(true);
         try {
             let finalUrl = previewUrl;
@@ -305,24 +305,53 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialDoc, onBa
                 // updates.recipient_email = lead.email; // If we had email
             }
 
-            if (initialDoc?.id) {
-                await supabase.from('documents').update(updates).eq('id', initialDoc.id);
+            let docId = initialDoc?.id;
+
+            if (docId) {
+                await supabase.from('documents').update(updates).eq('id', docId);
             } else {
-                await supabase.from('documents').insert({
+                const { data, error } = await supabase.from('documents').insert({
                     vendor_id: user.id,
                     ...updates
-                });
+                }).select().single();
+
+                if (error) throw error;
+                if (data) docId = data.id;
             }
 
             if (shouldExit) onBack();
+            return docId || null;
 
         } catch (err: any) {
             console.error(err);
             alert("Error saving: " + err.message);
+            return null;
         } finally {
             setSaving(false);
         }
     };
+
+    // ... (rendering code)
+
+    {
+        isSendModalOpen && (
+            <SendDocumentModal
+                isOpen={isSendModalOpen}
+                onClose={() => setIsSendModalOpen(false)}
+                onSend={(lead) => {
+                    if (confirm(`Are you sure you want to sign and send this document to ${lead.name}? This document will be locked for editing.`)) {
+                        // First save as locking/draft, but effectively we want to move to signing mode.
+                        handleSave('draft', false, lead).then(async (savedDocId) => {
+                            setIsSendModalOpen(false);
+                            if (savedDocId && onStartSigning) {
+                                onStartSigning(savedDocId);
+                            }
+                        });
+                    }
+                }}
+            />
+        )
+    }
 
     return (
         <div className="fixed inset-0 z-50 bg-[#e3e3e3] dark:bg-[#111] flex flex-col font-sans">
@@ -590,59 +619,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialDoc, onBa
                 </div>
             </div>
 
-            {isSendModalOpen && (
-                <SendDocumentModal
-                    isOpen={isSendModalOpen}
-                    onClose={() => setIsSendModalOpen(false)}
-                    onSend={(lead) => {
-                        if (confirm(`Are you sure you want to sign and send this document to ${lead.name}? This document will be locked for editing.`)) {
-                            // First save as locking/draft, but effectively we want to move to signing mode.
-                            // However, we need to save the recipient first so it's associated.
-                            handleSave('draft', false, lead).then(async () => {
-                                // Now we need to transition to the signing view.
-                                // We can do this by updating the status to 'locking_for_signature' or similar,
-                                // BUT the robust way is:
-                                // 1. Save document with recipient.
-                                // 2. Log 'locking' action.
-                                // 3. Call onBack() (or similar) to go to list, OR handle signing inline?
-                                // "It will be locked for editing... and taken to the signing page".
 
-                                // Let's invoke a prop callback onSwitchToSigning if we were to lift state, 
-                                // but simpler is to use a special status or just navigate.
-                                // Since DocumentSigner is in VendorDocuments (parent), we might need to tell parent "Edit Mode Done, Start Signing".
-                                // For now, let's keep it simple: Save as 'draft' (with recipient) then...
-                                // Wait, the prompt says "Save as locking_for_signature".
-
-                                // Actually, let's create a NEW status 'signing_business' to indicate business needs to sign.
-                                // But `documents` table has limited status enum? Code says 'draft', 'sent', 'completed'.
-                                // Let's stick to 'draft' but maybe add a metadata flag, or just handle it in UI.
-                                // The User said "once they confirm... taken to signing page".
-
-                                // Let's assume we invoke a callback or return simple success, then parent handles it.
-                                // But `handleSave` has `onBack`.
-
-                                // Let's modify handleSave to return the docId.
-                                // Update: `handleSave` is async.
-
-                                // Let's persist a "locking" intention?
-                                // Actually, why not just immediately open the signer?
-                                // We need to update the parent component to switch views.
-                                // `DocumentEditor` has `onBack`, maybe we need `onSign(docId)`.
-
-                                setIsSendModalOpen(false);
-                                // We will modify/add a prop to DocumentEditor `onStartSigning`.
-                                // For now, let's use a browser alert and assume we're done here, 
-                                // but we need to pass this up to `VendorDocuments`.
-
-                                // If I can't change props easily without breaking things, I'll assume 
-                                // `onBack` refreshes the list, and we can find it there. 
-                                // BUT the user wants to go STRAIGHT to signing.
-                                // So I should add `onStartSigning` prop to DocumentEditor.
-                            });
-                        }
-                    }}
-                />
-            )}
         </div>
     );
 };

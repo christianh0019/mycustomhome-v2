@@ -10,6 +10,7 @@ import { DocItem, DraggableField, DroppableCanvas, DraggableFieldOnCanvas } from
 import { RichTextEditor } from './DocumentEditor';
 import { SignaturePadModal } from './SignaturePadModal';
 import { InputModal } from './InputModal';
+import { auditService } from '../services/AuditService';
 
 // Set worker for PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -90,10 +91,92 @@ export const DocumentSigner: React.FC<{
     const handleFinish = async () => {
         if (!isComplete) return;
 
-        // Optimistic update
-        onSigningComplete(initialDoc.id);
+        // 1. Save field values to metadata (crucial step!)
+        const updates: any = {
+            metadata: {
+                fields,
+                content: pageContent,
+                type: fileType, // Preserve type info
+                numPages
+            },
+            updated_at: new Date().toISOString()
+        };
 
-        // Audit Log would go here
+        // 2. Determine Next Status & Actions based on Role
+        let nextStatus = initialDoc.status;
+        let auditAction: 'signed_by_business' | 'signed_by_client' | null = null;
+
+        if (currentUserRole === 'business') {
+            nextStatus = 'sent';
+            auditAction = 'signed_by_business';
+        } else if (currentUserRole === 'contact') {
+            nextStatus = 'completed';
+            auditAction = 'signed_by_client';
+        }
+
+        if (nextStatus) updates.status = nextStatus;
+
+        try {
+            // Update Document
+            const { error: updateError } = await supabase
+                .from('documents')
+                .update(updates)
+                .eq('id', initialDoc.id);
+
+            if (updateError) throw updateError;
+
+            // Log Audit
+            if (auditAction) {
+                await auditService.logAction(initialDoc.id, auditAction, user?.id);
+            }
+
+            // Post-Signing Actions
+            if (currentUserRole === 'business' && nextStatus === 'sent') {
+                // Send Message to Lead
+                // We need to find the lead (thread_id) associated with this document.
+                // The document 'recipient_name' matches lead 'project_title'.
+                // Ideally we stored 'recipient_lead_id' or 'thread_id' on the doc.
+                // For now, we search for the lead by project_title/name.
+
+                // Better approach: When saving in Editor, we set 'recipient_name'.
+                // We should assume we can look up the lead, or we passed it in.
+
+                // Let's try to lookup the lead by project_title to get ID for message thread.
+                if (initialDoc.recipient_name) {
+                    const { data: leadData } = await supabase
+                        .from('leads')
+                        .select('id')
+                        .eq('project_title', initialDoc.recipient_name) // assuming unique project title for simpler lookup
+                        .single();
+
+                    if (leadData) {
+                        // Send "Signature Request" Message
+                        await supabase.from('messages').insert({
+                            thread_id: leadData.id,
+                            sender_id: user?.id,
+                            type: 'signature_request',
+                            text: `Please sign the document: ${initialDoc.title}`,
+                            metadata: {
+                                documentId: initialDoc.id,
+                                documentTitle: initialDoc.title,
+                                status: 'pending'
+                            }
+                        });
+
+                        await auditService.logAction(initialDoc.id, 'sent', user?.id, { recipient_lead_id: leadData.id });
+                    }
+                }
+            } else if (currentUserRole === 'contact' && nextStatus === 'completed') {
+                await auditService.logAction(initialDoc.id, 'completed', user?.id);
+                // Trigger Certificate Generation (Pseudo-code)
+            }
+
+            onSigningComplete(initialDoc.id);
+
+        } catch (err) {
+            console.error(err);
+            alert('Failed to sign and save document.');
+        }
     };
 
     return (
@@ -150,7 +233,7 @@ export const DocumentSigner: React.FC<{
                             }`}
                     >
                         <CheckCircle2 size={18} />
-                        Finish & Sign
+                        {currentUserRole === 'business' ? 'Sign & Send to Client' : 'Sign & Complete'}
                     </button>
                 </div>
             </div>

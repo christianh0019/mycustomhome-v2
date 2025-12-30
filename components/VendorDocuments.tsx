@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabase';
 import { DocItem } from './DocumentComponents';
 import { DocumentEditor } from './DocumentEditor';
+import { DocumentSigner } from './DocumentSigner';
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
     switch (status) {
@@ -33,7 +34,7 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
 
 export const VendorDocuments: React.FC = () => {
     const { user } = useAuth();
-    const [view, setView] = useState<'list' | 'create'>('list');
+    const [view, setView] = useState<'list' | 'create' | 'signing'>('list');
     const [docs, setDocs] = useState<DocItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedDoc, setSelectedDoc] = useState<DocItem | null>(null);
@@ -65,7 +66,14 @@ export const VendorDocuments: React.FC = () => {
 
     const handleOpenDoc = (doc: DocItem) => {
         setSelectedDoc(doc);
-        setView('create');
+        if (doc.status === 'draft') {
+            setView('create');
+        } else {
+            // If already sent or completed (or partially signed), maybe go to signing view or just preview?
+            // For business owner, if status is 'locking_for_signature' (which we simulate via draft + action), or just 'draft' but we want to sign...
+            // Let's assume hitting "Edit" opens Editor. The Editor has the "Sign & Send" button.
+            setView('create');
+        }
     };
 
     const handleDeleteDoc = async (id: string, e: React.MouseEvent) => {
@@ -86,6 +94,45 @@ export const VendorDocuments: React.FC = () => {
                     fetchDocuments();
                 }}
                 initialDoc={selectedDoc}
+                onStartSigning={(docId) => {
+                    // Update the local doc state if needed, or re-fetch?
+                    // Ideally we have the doc object.
+                    // If we just saved it, our selectedDoc might be stale if it was new.
+                    // But onStartSigning is called after save.
+                    // We can re-fetch strictly or just use the id.
+                    fetchDocuments().then(() => {
+                        const updatedDoc = docs.find(d => d.id === docId) || selectedDoc;
+                        // Wait, fetchDocuments updates 'docs' state asynchronously.
+                        // simpler: Just set view to signing. selectedDoc might need refresh.
+                        // We will rely on DocumentSigner fetching or passing correct data.
+                        // Actually DocumentSigner takes 'initialDoc'. We need the fresh one with 'recipient'.
+
+                        // Let's fetch the single doc to be safe.
+                        supabase.from('documents').select('*').eq('id', docId).single().then(({ data }) => {
+                            if (data) {
+                                setSelectedDoc(data);
+                                setView('signing');
+                            }
+                        });
+                    });
+                }}
+            />
+        );
+    }
+
+    if (view === 'signing' && selectedDoc) {
+        return (
+            <DocumentSigner
+                initialDoc={selectedDoc}
+                onBack={() => {
+                    setView('list');
+                    fetchDocuments();
+                }}
+                onSigningComplete={() => {
+                    setView('list');
+                    fetchDocuments();
+                }}
+                currentUserRole="business"
             />
         );
     }

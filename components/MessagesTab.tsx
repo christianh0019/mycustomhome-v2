@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { AppTab } from '../types';
 import { OnboardingModal } from './OnboardingModal';
@@ -6,91 +6,51 @@ import { markFeatureAsSeen } from './NewBadge';
 import { SignatureModal } from './SignatureModal';
 import { FileText, CheckCircle2 } from 'lucide-react';
 import { useUI } from '../contexts/UIContext';
+import { supabase } from '../services/supabase';
 
 // --- Types ---
 interface ChatUser {
    id: string;
    name: string;
-   avatar: string;
+   avatar: string; // We'll generate this from name
    status: 'online' | 'offline' | 'typing';
 }
 
 interface ChatMessage {
    id: string;
-   senderId: string;
+   senderId: string; // 'me' (user id) or lead id
    text: string;
-   timestamp: string;
+   timestamp: string; // Display string
+   createdAt: string; // ISO string for sorting
    isRead: boolean;
    type?: 'text' | 'signature_request';
    metadata?: {
+      documentId?: string;
       documentTitle?: string;
       status?: 'pending' | 'signed';
    };
 }
 
 interface Thread {
-   id: string;
+   id: string; // This is the Lead ID
    partner: ChatUser;
    messages: ChatMessage[];
    unreadCount: number;
 }
 
-// --- Mock Data ---
-const ME_ID = 'me';
-
-const THREADS: Thread[] = [
-   {
-      id: '1',
-      partner: { id: 'p1', name: 'Precision Builders', avatar: 'https://ui-avatars.com/api/?name=Precision+Builders&background=0D8ABC&color=fff', status: 'online' },
-      unreadCount: 2,
-      messages: [
-         { id: '1', senderId: 'me', text: 'When can we expect the updated bid?', timestamp: '10:00 AM', isRead: true },
-         { id: '2', senderId: 'p1', text: 'Just finalizing the lumber package costs.', timestamp: '10:15 AM', isRead: true },
-         { id: '3', senderId: 'p1', text: 'I should have it to you by EOD.', timestamp: '10:16 AM', isRead: true },
-         {
-            id: '4',
-            senderId: 'p1',
-            text: 'Please review and sign the preliminary agreement.',
-            timestamp: '10:20 AM',
-            isRead: false,
-            type: 'signature_request',
-            metadata: {
-               documentTitle: 'Preliminary Construction Agreement v2.pdf',
-               status: 'pending'
-            }
-         },
-      ]
-   },
-   {
-      id: '2',
-      partner: { id: 'p2', name: 'Studio Arch', avatar: 'https://ui-avatars.com/api/?name=Studio+Arch&background=2E3A59&color=fff', status: 'offline' },
-      unreadCount: 0,
-      messages: [
-         { id: '1', senderId: 'p2', text: 'Here are the revised elevations.', timestamp: 'Yesterday', isRead: true },
-         { id: '2', senderId: 'me', text: 'Love the new roofline! Approved.', timestamp: 'Yesterday', isRead: true },
-      ]
-   },
-   {
-      id: '3',
-      partner: { id: 'p3', name: 'Private Capital', avatar: 'https://ui-avatars.com/api/?name=Private+Capital&background=10B981&color=fff', status: 'typing' },
-      unreadCount: 5,
-      messages: [
-         { id: '1', senderId: 'p3', text: 'Pre-approval letter attached.', timestamp: '2 days ago', isRead: true },
-         { id: '2', senderId: 'p3', text: 'We need your updated tax returns.', timestamp: '2 days ago', isRead: true },
-      ]
-   }
-];
-
 export const MessagesTab: React.FC = () => {
+   const { user } = useAuth();
    const { showToast } = useUI();
-   const [activeThreadId, setActiveThreadId] = useState<string>(THREADS[0].id);
+
+   const [threads, setThreads] = useState<Thread[]>([]);
+   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
    const [input, setInput] = useState('');
-   const [localThreads, setLocalThreads] = useState<Thread[]>(THREADS); // Use local state for UI updates
+   const [loading, setLoading] = useState(true);
 
    // Signature State
    const [signingMessageId, setSigningMessageId] = useState<string | null>(null);
 
-   const activeThread = localThreads.find(t => t.id === activeThreadId);
+   const activeThread = threads.find(t => t.id === activeThreadId);
 
    // Tour State
    const [showTour, setShowTour] = useState(false);
@@ -112,70 +72,175 @@ export const MessagesTab: React.FC = () => {
       markFeatureAsSeen(AppTab.Messages);
    };
 
-   const handleSend = () => {
-      if (!input.trim() || !activeThread) return;
+   // --- Data Fetching ---
+   useEffect(() => {
+      if (!user) return;
 
-      const newMessage: ChatMessage = {
-         id: Date.now().toString(),
-         senderId: ME_ID,
+      const fetchData = async () => {
+         setLoading(true);
+
+         // 1. Fetch Leads (Threads)
+         // Ensure we handle RLS: User must own the leads
+         const { data: leads, error: leadsError } = await supabase
+            .from('leads')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+         if (leadsError) {
+            console.error('Error fetching leads:', leadsError);
+            return;
+         }
+
+         if (!leads || leads.length === 0) {
+            setThreads([]);
+            setLoading(false);
+            return;
+         }
+
+         // 2. Fetch Messages for these leads
+         const leadIds = leads.map(l => l.id);
+         const { data: messages, error: messagesError } = await supabase
+            .from('messages')
+            .select('*')
+            .in('thread_id', leadIds)
+            .order('created_at', { ascending: true });
+
+         if (messagesError) console.error('Error fetching messages:', messagesError);
+
+         // 3. Assemble Threads
+         const builtThreads: Thread[] = leads.map(lead => {
+            const leadConf = {
+               id: lead.id,
+               name: lead.project_title || 'Untitled Project',
+               avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(lead.project_title || 'L')}&background=random&color=fff`,
+               status: 'online' as const // Mock status for now
+            };
+
+            const threadMessages: ChatMessage[] = (messages || [])
+               .filter(m => m.thread_id === lead.id)
+               .map(m => ({
+                  id: m.id,
+                  senderId: m.sender_id === 'me' || m.sender_id === user.id ? 'me' : m.sender_id,
+                  text: m.text,
+                  timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  createdAt: m.created_at,
+                  isRead: m.is_read || false,
+                  type: m.type,
+                  metadata: m.metadata
+               }));
+
+            return {
+               id: lead.id,
+               partner: leadConf,
+               messages: threadMessages,
+               unreadCount: threadMessages.filter(m => m.senderId !== 'me' && !m.isRead).length
+            };
+         });
+
+         // Sort threads by latest message
+         builtThreads.sort((a, b) => {
+            const lastMsgA = a.messages[a.messages.length - 1]?.createdAt || '';
+            const lastMsgB = b.messages[b.messages.length - 1]?.createdAt || '';
+            return lastMsgB.localeCompare(lastMsgA);
+         });
+
+         setThreads(builtThreads);
+         setLoading(false);
+
+         // Auto-select first thread if none selected
+         if (!activeThreadId && builtThreads.length > 0) {
+            setActiveThreadId(builtThreads[0].id);
+         }
+      };
+
+      fetchData();
+
+      // Set up polling interval for new messages
+      const interval = setInterval(fetchData, 3000);
+      return () => clearInterval(interval);
+
+   }, [user, activeThreadId]);
+
+   const handleSend = async () => {
+      if (!input.trim() || !activeThreadId || !user) return;
+
+      const optimisticMsg: ChatMessage = {
+         id: 'temp-' + Date.now(),
+         senderId: 'me',
          text: input,
          timestamp: 'Just now',
+         createdAt: new Date().toISOString(),
          isRead: true,
          type: 'text'
       };
 
-      const updatedThreads = localThreads.map(t => {
+      // Optimistic UI Update
+      setThreads(prev => prev.map(t => {
          if (t.id === activeThreadId) {
-            return {
-               ...t,
-               messages: [...t.messages, newMessage]
-            };
+            return { ...t, messages: [...t.messages, optimisticMsg] };
          }
          return t;
+      }));
+      setInput('');
+
+      // DB Insert
+      const { error } = await supabase.from('messages').insert({
+         thread_id: activeThreadId,
+         sender_id: user.id, // Current user is sender
+         text: optimisticMsg.text,
+         type: 'text'
       });
 
-      setLocalThreads(updatedThreads);
-      setInput('');
+      if (error) {
+         console.error('Error sending message:', error);
+         showToast('Failed to send message.', 'error');
+      }
    };
 
    const handleSignClick = (messageId: string) => {
       setSigningMessageId(messageId);
    };
 
-   const handleSignatureComplete = (signatureDataUrl: string) => {
-      if (!signingMessageId) return;
+   const handleSignatureComplete = async (signatureDataUrl: string) => {
+      if (!signingMessageId || !activeThreadId || !user) return;
 
-      // 1. Update the message status to 'signed'
-      const updatedThreads = localThreads.map(t => {
-         const msgIndex = t.messages.findIndex(m => m.id === signingMessageId);
-         if (msgIndex !== -1) {
-            const newMessages = [...t.messages];
-            newMessages[msgIndex] = {
-               ...newMessages[msgIndex],
-               metadata: {
-                  ...newMessages[msgIndex].metadata,
-                  status: 'signed'
-               }
-            };
-            // Add a system confirmation message
-            newMessages.push({
-               id: Date.now().toString(),
-               senderId: ME_ID,
-               text: `Signed ${newMessages[msgIndex].metadata?.documentTitle}.`,
-               timestamp: 'Just now',
-               isRead: true,
-               type: 'text'
-            });
-            return { ...t, messages: newMessages };
-         }
-         return t;
-      });
+      const signingMessage = activeThread?.messages.find(m => m.id === signingMessageId);
+      if (!signingMessage || !signingMessage.metadata?.documentId) return;
 
-      setLocalThreads(updatedThreads);
+      const docId = signingMessage.metadata.documentId;
+
+      // 1. Update Document Status in DB
+      const { error: docError } = await supabase
+         .from('documents')
+         .update({ status: 'completed' })
+         .eq('id', docId);
+
+      if (docError) {
+         console.error('Error updating document status:', docError);
+         showToast('Failed to sign document.', 'error');
+         return;
+      }
+
+      // 2. Update Message Metadata in DB
+      const newMetadata = { ...signingMessage.metadata, status: 'signed' };
+
+      const { error: msgError } = await supabase
+         .from('messages')
+         .update({ metadata: newMetadata })
+         .eq('id', signingMessageId);
+
+      // 3. Insert Confirmation Message
+      if (!msgError) {
+         await supabase.from('messages').insert({
+            thread_id: activeThreadId,
+            sender_id: user.id, // Confirmed by user (acting as signer)
+            text: `Signed ${signingMessage.metadata?.documentTitle}.`,
+            type: 'text'
+         });
+      }
+
       setSigningMessageId(null);
       showToast("Document signed successfully!", "success");
-
-      // In a real app, this is where we'd upload the signed PDF to the Vault
    };
 
    const signingMessage = activeThread?.messages.find(m => m.id === signingMessageId);
@@ -216,7 +281,14 @@ export const MessagesTab: React.FC = () => {
 
             {/* List */}
             <div className="flex-1 overflow-y-auto">
-               {localThreads.map(thread => {
+               {loading && threads.length === 0 && (
+                  <div className="p-6 text-center text-zinc-400 text-xs">Loading conversations...</div>
+               )}
+               {!loading && threads.length === 0 && (
+                  <div className="p-6 text-center text-zinc-400 text-xs">No conversations yet.</div>
+               )}
+
+               {threads.map(thread => {
                   const lastMsg = thread.messages[thread.messages.length - 1];
                   const isActive = activeThreadId === thread.id;
 
@@ -239,7 +311,9 @@ export const MessagesTab: React.FC = () => {
                               <span className="text-[10px] text-zinc-500 dark:text-white/30 whitespace-nowrap">{lastMsg?.timestamp}</span>
                            </div>
                            <div className="flex justify-between items-center">
-                              <p className="text-xs text-zinc-500 dark:text-white/50 truncate max-w-[180px]">{lastMsg?.text}</p>
+                              <p className="text-xs text-zinc-500 dark:text-white/50 truncate max-w-[180px]">
+                                 {lastMsg?.type === 'signature_request' ? '📄 Signature Request' : lastMsg?.text || 'No messages'}
+                              </p>
                               {thread.unreadCount > 0 && (
                                  <div className="w-5 h-5 bg-zinc-900 dark:bg-white text-white dark:text-black text-[10px] font-bold rounded-full flex items-center justify-center">
                                     {thread.unreadCount}
@@ -283,8 +357,12 @@ export const MessagesTab: React.FC = () => {
 
                   {/* Messages */}
                   <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-6">
+                     {activeThread.messages.length === 0 && (
+                        <div className="text-center text-zinc-400 text-sm mt-10">Start a conversation via the documents tab or type below.</div>
+                     )}
+
                      {activeThread.messages.map((msg, idx) => {
-                        const isMe = msg.senderId === ME_ID;
+                        const isMe = msg.senderId === 'me';
 
                         // Signature Request Card
                         if (msg.type === 'signature_request' && msg.metadata) {

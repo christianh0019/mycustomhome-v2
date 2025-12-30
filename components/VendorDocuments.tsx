@@ -42,6 +42,129 @@ interface DraggableField {
     assignee?: 'business' | 'contact';
 }
 
+interface Lead {
+    id: string;
+    project_title: string;
+    location_city: string;
+    location_state: string;
+}
+
+const SendDocumentModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onSend: (lead: Lead) => void;
+}> = ({ isOpen, onClose, onSend }) => {
+    const [leads, setLeads] = useState<Lead[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchLeads();
+        }
+    }, [isOpen]);
+
+    const fetchLeads = async () => {
+        setLoading(true);
+        // Fetch leads from Supabase
+        const { data, error } = await supabase
+            .from('leads')
+            .select('id, project_title, location_city, location_state')
+            .order('created_at', { ascending: false });
+
+        if (data) {
+            setLeads(data);
+        }
+        setLoading(false);
+    };
+
+    const filteredLeads = leads.filter(l =>
+        (l.project_title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (l.location_city?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+    );
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-white dark:bg-[#111] w-full max-w-md rounded-2xl shadow-xl border border-zinc-200 dark:border-white/10 overflow-hidden flex flex-col max-h-[80vh]"
+            >
+                <div className="p-6 border-b border-zinc-200 dark:border-white/10 flex justify-between items-center">
+                    <h3 className="text-xl font-serif font-bold text-zinc-900 dark:text-white">Send Document</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-full text-zinc-500">
+                        <X size={18} />
+                    </button>
+                </div>
+
+                <div className="p-4 border-b border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/20">
+                    <div className="relative">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                        <input
+                            type="text"
+                            placeholder="Search leads..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-lg text-sm text-zinc-900 dark:text-white focus:outline-none focus:border-zinc-400"
+                        />
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-2">
+                    {loading ? (
+                        <div className="p-8 text-center text-zinc-400 text-sm">Loading leads...</div>
+                    ) : filteredLeads.length === 0 ? (
+                        <div className="p-8 text-center text-zinc-400 text-sm">No leads found.</div>
+                    ) : (
+                        <div className="space-y-1">
+                            {filteredLeads.map(lead => (
+                                <button
+                                    key={lead.id}
+                                    onClick={() => setSelectedLead(lead)}
+                                    className={`w-full p-3 rounded-xl text-left transition-all flex items-center gap-3
+                                        ${selectedLead?.id === lead.id
+                                            ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30'
+                                            : 'hover:bg-zinc-50 dark:hover:bg-white/5 border border-transparent'
+                                        }
+                                    `}
+                                >
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-serif
+                                        ${selectedLead?.id === lead.id ? 'bg-blue-100 text-blue-600' : 'bg-zinc-100 text-zinc-500'}
+                                    `}>
+                                        {lead.project_title?.[0] || 'L'}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className={`text-sm font-bold truncate ${selectedLead?.id === lead.id ? 'text-blue-900 dark:text-blue-100' : 'text-zinc-900 dark:text-white'}`}>
+                                            {lead.project_title || 'Untitled Lead'}
+                                        </p>
+                                        <p className="text-xs text-zinc-500 truncate">
+                                            {lead.location_city}, {lead.location_state}
+                                        </p>
+                                    </div>
+                                    {selectedLead?.id === lead.id && <CheckSquare size={16} className="text-blue-500" />}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="p-6 border-t border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/20">
+                    <button
+                        onClick={() => selectedLead && onSend(selectedLead)}
+                        disabled={!selectedLead}
+                        className="w-full py-3 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-xl font-bold uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-xl"
+                    >
+                        Confirm & Send
+                    </button>
+                </div>
+            </motion.div>
+        </div>
+    );
+};
+
 export const VendorDocuments: React.FC = () => {
     const { user } = useAuth();
     const [view, setView] = useState<'list' | 'create'>('list');
@@ -399,6 +522,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     const [recipientEmail, setRecipientEmail] = useState(initialDoc?.recipient_email || 'client@example.com');
 
     const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+    const [isSendModalOpen, setIsSendModalOpen] = useState(false);
 
     const pageRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -570,7 +694,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
         initializeTemplate(recipientName);
     };
 
-    const handleSave = async () => {
+    const handleSave = async (status: DocumentStatus = 'draft', skipAlert = false, recipientData?: { name: string, id?: string }) => {
         if (!user || !docTitle) {
             alert('Please login and enter a title.');
             return;
@@ -592,11 +716,11 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
 
             const docData = {
                 title: docTitle,
-                recipient_name: recipientName,
+                recipient_name: recipientData?.name || recipientName,
                 recipient_email: recipientEmail,
                 metadata: fields,
                 file_url: fileUrl,
-                status: 'draft'
+                status: status
             };
 
             const query = initialDoc?.id
@@ -606,13 +730,46 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
             const { error } = await query;
             if (error) throw error;
 
-            alert('Document Saved Successfully!');
-            onBack();
+            if (!skipAlert) alert('Document Saved Successfully!');
+            if (status === 'sent') {
+                onBack();
+            } else {
+                // If just saving draft, maybe stay? Or go back. Let's go back for now as per original.
+                // onBack(); 
+                // Actually original was onBack() always. Let's keep it unless we want to keep editing.
+                // But the user might want to keep editing a draft.
+                // Let's stick to original behavior: alert then back.
+                onBack();
+            }
         } catch (error: any) {
             alert(`Error saving document: ${error.message}`);
         } finally {
             setSaving(false);
         }
+    };
+
+    const handleSendClick = () => {
+        // 1. Validate Business Fields
+        const businessFields = fields.filter(f => f.assignee === 'business');
+        // Check if value is present (and not just empty string)
+        // Some fields like checkbox might have 'true'/'false' or nothing.
+        // For Image, value is URL.
+        const emptyFields = businessFields.filter(f => !f.value || f.value.trim() === '');
+
+        if (emptyFields.length > 0) {
+            alert(`Please fill in all ${emptyFields.length} fields assigned to "My Business" before sending.`);
+            return;
+        }
+
+        // 2. Open Modal
+        setIsSendModalOpen(true);
+    };
+
+    const handleConfirmSend = async (lead: Lead) => {
+        // 3. Update status and recipient
+        await handleSave('sent', true, { name: lead.project_title, id: lead.id });
+        setIsSendModalOpen(false);
+        alert(`Document successfully sent to ${lead.project_title}!`);
     };
 
     const handleFieldDrop = (type: DraggableField['type'], label: string, clientX: number, clientY: number) => {
@@ -730,7 +887,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                                 {saving ? 'Saving...' : <><Save size={14} /> Save</>}
                             </button>
                             <button
-                                onClick={() => alert(`Sending document with ${fields.length} fields!`)}
+                                onClick={handleSendClick}
                                 disabled={fields.length === 0}
                                 className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-colors shadow-lg
                                      ${fields.length > 0 ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20' : 'bg-zinc-200 dark:bg-white/10 text-zinc-400 cursor-not-allowed'}`}
@@ -1053,6 +1210,12 @@ const SettingsSidebar: React.FC<{
                     </div>
                 </div>
             </div>
+
+            <SendDocumentModal
+                isOpen={isSendModalOpen}
+                onClose={() => setIsSendModalOpen(false)}
+                onSend={handleConfirmSend}
+            />
         </div>
     );
 };

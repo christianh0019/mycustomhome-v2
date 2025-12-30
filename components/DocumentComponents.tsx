@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     FileText, Plus, X, GripVertical, Type, Calendar, CheckSquare, PenTool, Hash, Image as ImageIcon,
-    Search, Send, Trash2
+    Search, Send, Trash2, Check
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../services/supabase';
@@ -228,13 +228,15 @@ export const DraggableFieldOnCanvas: React.FC<{
                     onSigningClick();
                 }
             }}
+
             className={`
                 group absolute flex items-center px-2 border rounded cursor-pointer transition-all select-none overflow-hidden
                 ${getStatusColor()}
                 ${isSelected && !isSigningMode ? 'ring-2 ring-indigo-500 z-50' : 'z-10 hover:z-50'}
                 ${isSigningMode && !isAssignedToUser ? 'opacity-50 pointer-events-none' : ''}
-`}
+            `}
         >
+            {/* Image Field Rendering */}
             {field.type === 'image' && (
                 <div className="w-full h-full flex items-center justify-center pointer-events-none overflow-hidden">
                     {field.value ? (
@@ -248,21 +250,39 @@ export const DraggableFieldOnCanvas: React.FC<{
                 </div>
             )}
 
-            {field.type === 'signature' && (
-                <div className="w-full flex items-center justify-center pointer-events-none">
-                    {field.value ? <img src={field.value} className="h-full max-h-8 object-contain" /> : <span className="text-xs font-serif italic text-opacity-50">Signature</span>}
+            {/* Checkbox Field Rendering */}
+            {field.type === 'checkbox' && (
+                <div className="w-full h-full flex items-center justify-center pointer-events-none text-zinc-900 dark:text-white">
+                    {field.value === 'checked' && <Check size={28} strokeWidth={3} />}
                 </div>
             )}
-            {field.type === 'text' && (
-                <div className="w-full truncate text-xs pointer-events-none">{field.value || field.label}</div>
+
+            {/* Signature Rendering */}
+            {field.type === 'signature' && (
+                <div className="w-full flex items-center justify-center pointer-events-none">
+                    {field.value ? (
+                        <img src={field.value} className="w-full h-full object-contain" />
+                    ) : (
+                        <span className="text-xs font-serif italic opacity-50">Signature</span>
+                    )}
+                </div>
             )}
-            {field.type === 'date' && (
-                <div className="w-full truncate text-xs font-mono pointer-events-none">{field.value || 'DD/MM/YYYY'}</div>
-            )}
-            {/* Minimal rendering for other types */}
+
+            {/* Initials Rendering */}
             {field.type === 'initials' && (
                 <div className="w-full flex items-center justify-center pointer-events-none">
-                    {field.value ? <span className="font-serif italic">{field.value}</span> : <span className="text-[10px] opacity-50">Initials</span>}
+                    {field.value ? (
+                        <span className="font-serif italic text-lg">{field.value}</span>
+                    ) : (
+                        <span className="text-[10px] opacity-50">Initials</span>
+                    )}
+                </div>
+            )}
+
+            {/* Text/Date Rendering */}
+            {(field.type === 'text' || field.type === 'date') && (
+                <div className="w-full truncate text-xs pointer-events-none">
+                    {field.value || (field.type === 'date' ? 'DD/MM/YYYY' : field.label)}
                 </div>
             )}
 

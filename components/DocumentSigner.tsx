@@ -71,17 +71,17 @@ export const DocumentSigner: React.FC<{
 
         setActiveSigningFieldId(field.id);
 
-        if (field.type === 'signature' || field.type === 'initials') {
+        if (field.type === 'signature') {
             setIsSignaturePadOpen(true);
         } else if (field.type === 'checkbox') {
             // Toggle Checkbox
             updateFieldValue(field.id, field.value === 'checked' ? '' : 'checked');
         } else {
-            // Open Input Modal for text/date
+            // Open Input Modal for text/date/initials
             setInputModalState({
                 isOpen: true,
                 fieldId: field.id,
-                label: field.label,
+                label: field.type === 'initials' ? 'Enter Initials' : field.label,
                 value: field.value || '',
                 type: field.type === 'date' ? 'date' : 'text'
             });

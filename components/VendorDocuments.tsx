@@ -248,6 +248,81 @@ const ToolbarSelect: React.FC<{
 );
 
 
+
+const RichTextEditor: React.FC<{
+    content: string;
+    onChange: (html: string) => void;
+    isReadOnly?: boolean;
+}> = ({ content, onChange, isReadOnly }) => {
+    const editorRef = useRef<HTMLDivElement>(null);
+
+    // Sync content updates
+    useEffect(() => {
+        if (editorRef.current && content !== editorRef.current.innerHTML) {
+            // Only update if significantly different to avoid cursor jumps?
+            // Simple approach: Only initial or if empty. 
+            // Better: relying on onInput to update state, and this effect to set initial.
+            if (editorRef.current.innerHTML === '' && content) {
+                editorRef.current.innerHTML = content;
+            }
+        }
+    }, []);
+
+    const exec = (command: string, value: string = '') => {
+        document.execCommand(command, false, value);
+        if (editorRef.current) onChange(editorRef.current.innerHTML);
+    };
+
+    return (
+        <div className="w-full h-full flex flex-col relative z-0">
+            {/* Toolbar */}
+            {!isReadOnly && (
+                <div className="sticky top-0 z-10 flex flex-wrap gap-1 p-2 bg-zinc-50 border-b border-zinc-200 dark:bg-zinc-900 dark:border-white/10 rounded-t-lg">
+                    <div className="flex bg-white dark:bg-white/5 rounded border border-zinc-200 dark:border-white/10">
+                        <IconButton icon={Bold} onClick={() => exec('bold')} title="Bold" />
+                        <IconButton icon={Italic} onClick={() => exec('italic')} title="Italic" />
+                        <IconButton icon={Underline} onClick={() => exec('underline')} title="Underline" />
+                    </div>
+                    <div className="w-px h-8 bg-zinc-200 dark:bg-white/10 mx-1" />
+                    <div className="flex bg-white dark:bg-white/5 rounded border border-zinc-200 dark:border-white/10">
+                        <IconButton icon={AlignLeft} onClick={() => exec('justifyLeft')} title="Align Left" />
+                        <IconButton icon={AlignCenter} onClick={() => exec('justifyCenter')} title="Align Center" />
+                        <IconButton icon={AlignRight} onClick={() => exec('justifyRight')} title="Align Right" />
+                    </div>
+                    <div className="w-px h-8 bg-zinc-200 dark:bg-white/10 mx-1" />
+                    <div className="flex bg-white dark:bg-white/5 rounded border border-zinc-200 dark:border-white/10">
+                        <IconButton icon={List} onClick={() => exec('insertUnorderedList')} title="Bullet List" />
+                        <IconButton icon={ListOrdered} onClick={() => exec('insertOrderedList')} title="Numbered List" />
+                    </div>
+                    <div className="w-px h-8 bg-zinc-200 dark:bg-white/10 mx-1" />
+                    <div className="flex bg-white dark:bg-white/5 rounded border border-zinc-200 dark:border-white/10">
+                        <ToolbarSelect
+                            value="p"
+                            onChange={(e) => exec('formatBlock', e.target.value)}
+                            options={[
+                                { label: 'Paragraph', value: 'p' },
+                                { label: 'Heading 1', value: 'H1' },
+                                { label: 'Heading 2', value: 'H2' },
+                                { label: 'Heading 3', value: 'H3' }
+                            ]}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Editor Area */}
+            <div
+                ref={editorRef}
+                className="flex-1 p-12 outline-none focus:ring-0 prose dark:prose-invert max-w-none text-zinc-900 dark:text-white"
+                contentEditable={!isReadOnly}
+                onInput={(e) => onChange(e.currentTarget.innerHTML)}
+                style={{ minHeight: '800px' }}
+                dangerouslySetInnerHTML={{ __html: content }}
+            />
+        </div>
+    );
+};
+
 // Exporting DocumentCreator for reuse in MessagesTab
 export const DocumentCreator: React.FC<{
     onBack: () => void;
@@ -599,7 +674,7 @@ export const DocumentCreator: React.FC<{
                             }}
                         >
                             {/* Document Content Layer */}
-                            {previewUrl && (
+                            {(previewUrl || fileType === 'blank') && (
                                 <div className="absolute inset-0 z-0">
                                     {fileType === 'pdf' ? (
                                         <Document
@@ -617,8 +692,14 @@ export const DocumentCreator: React.FC<{
                                                 />
                                             ))}
                                         </Document>
+                                    ) : fileType === 'blank' ? (
+                                        <RichTextEditor
+                                            content={pageContent[1] || ''}
+                                            onChange={(html) => setPageContent({ ...pageContent, 1: html })}
+                                            isReadOnly={isReadOnly}
+                                        />
                                     ) : (
-                                        <img src={previewUrl} className="w-full h-full object-contain" alt="Document" />
+                                        <img src={previewUrl || ''} className="w-full h-full object-contain" alt="Document" />
                                     )}
                                 </div>
                             )}

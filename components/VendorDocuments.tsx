@@ -342,11 +342,21 @@ export const VendorDocuments: React.FC = () => {
     );
 };
 
-const StatusBadge: React.FC<{ status: DocumentStatus }> = ({ status }) => {
+const StatusBadge: React.FC<{ status: DocumentStatus, isSigning?: boolean }> = ({ status, isSigning }) => {
+    if (isSigning) {
+        return (
+            <div className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                PUBLISHED
+            </div>
+        )
+    }
+
     switch (status) {
-        case 'completed': return <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-[10px] uppercase tracking-widest font-bold">Completed</span>;
+        case 'completed': return <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-[10px] uppercase tracking-widest font-bold">Signed</span>;
         case 'sent': return <span className="px-3 py-1 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-full text-[10px] uppercase tracking-widest font-bold">Sent</span>;
         case 'draft': return <span className="px-3 py-1 bg-zinc-500/10 text-zinc-500 border border-zinc-500/20 rounded-full text-[10px] uppercase tracking-widest font-bold">Draft</span>;
+        default: return <span className="px-3 py-1 bg-zinc-500/10 text-zinc-500 border border-zinc-500/20 rounded-full text-[10px] uppercase tracking-widest font-bold">Draft</span>;
     }
 };
 
@@ -976,7 +986,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                             readOnly={isReadOnly}
                             className="bg-transparent text-zinc-900 dark:text-white font-serif text-lg focus:outline-none"
                         />
-                        <StatusBadge status={isReadOnly ? (initialDoc?.status || 'sent') : 'draft'} />
+                        <StatusBadge status={isReadOnly ? (initialDoc?.status || 'sent') : 'draft'} isSigning={isSigningMode} />
                     </div>
                     {!isReadOnly ? (
                         <div className="flex items-center gap-3">
@@ -1595,66 +1605,49 @@ const DraggableFieldOnCanvas: React.FC<{
         }
     };
 
-    // Determine Colors
-    let borderColor = 'border-zinc-300';
-    let bgColor = 'bg-zinc-100';
-    let textColor = 'text-zinc-600';
+    // Determine Styles based on state
+    const isFilled = !!field.value;
+    const isBusiness = field.assignee === 'business';
+    const isContact = field.assignee === 'contact';
 
-    if (field.assignee === 'business') {
-        borderColor = 'border-red-500';
-        bgColor = 'bg-red-500/10';
-        textColor = 'text-red-600';
-    } else if (field.assignee === 'contact') {
-        borderColor = 'border-emerald-500';
-        bgColor = 'bg-emerald-500/10';
-        textColor = 'text-emerald-600';
-    }
-
-    if (isSelected) {
-        borderColor = 'border-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.3)] ' + borderColor;
-    }
+    // Position Style
+    const style: React.CSSProperties = {
+        position: 'absolute',
+        left: `${field.x}%`,
+        top: `${field.y}%`,
+        width: field.width ? `${field.width}px` : undefined,
+        height: field.height ? `${field.height}px` : undefined,
+        transform: 'translate(-50%, -50%)',
+        cursor: isReadOnly ? (onClick ? 'pointer' : 'default') : (isDragging ? 'grabbing' : 'grab'),
+        zIndex: isDragging || isResizing || isSelected ? 50 : 10,
+        touchAction: 'none'
+    };
 
     return (
         <div
             ref={elementRef}
             onPointerDown={handlePointerDown}
-            style={{
-                position: 'absolute',
-                left: `${field.x}%`,
-                top: `${field.y}%`,
-                width: field.width ? `${field.width}px` : undefined,
-                height: field.height ? `${field.height}px` : undefined,
-                transform: 'translate(-50%, -50%)',
-                cursor: isReadOnly ? 'default' : (isDragging ? 'grabbing' : 'grab'),
-                zIndex: isDragging || isResizing || isSelected ? 50 : 10,
-                touchAction: 'none'
-            }}
-            className="group"
+            style={style}
+            className={`group transition-all duration-200 
+                ${isFilled && (isReadOnly || !isSelected)
+                    ? 'bg-transparent' // Filled State
+                    : 'bg-white/80 dark:bg-zinc-800/80 shadow-sm' // Empty/Edit State
+                }
+                ${(isFilled && isBusiness) ? 'border-2 border-red-500 rounded-lg' : ''}
+                ${(isFilled && isContact) ? 'border-2 border-emerald-500 rounded-lg' : ''}
+                ${(!isFilled) ? `border-2 border-dashed ${isBusiness ? 'border-red-300 bg-red-50/50' : isContact ? 'border-emerald-300 bg-emerald-50/50' : 'border-zinc-300'}` : ''}
+                ${isSelected && !isReadOnly ? 'ring-2 ring-blue-500 ring-offset-2 z-50' : ''}
+            `}
         >
-            {field.type === 'image' ? (
-                <div className={`relative group/image w-full h-full border-2 ${isSelected ? 'border-blue-500' : 'border-transparent'}`}>
-                    {field.value ? (
-                        <div className="relative w-full h-full">
-                            <img src={field.value} alt="Logo" className="w-full h-full object-contain pointer-events-none select-none" />
-                        </div>
-                    ) : (
-                        <div
-                            className="w-full h-full min-w-[64px] min-h-[64px] bg-zinc-100 border-2 border-dashed border-zinc-300 rounded flex items-center justify-center cursor-default"
-                        >
-                            <ImageIcon size={20} className="text-zinc-400" />
-                        </div>
-                    )}
-                </div>
-            ) : (
-                <div className={`w-full h-full p-2 rounded border-2 shadow-sm flex items-center justify-center text-center gap-2 select-none overflow-hidden transition-colors
-                    ${borderColor} ${bgColor} ${textColor}
-                `}>
-                    <span className="text-[10px] font-bold uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis">{field.label}</span>
-                </div>
-            )}
-
-            {!isReadOnly && (
+            {/* Resize Handles */}
+            {isSelected && !isReadOnly && (
                 <>
+                    <div
+                        className="absolute right-0 bottom-0 w-4 h-4 bg-blue-500 cursor-nwse-resize z-50 rounded-tl"
+                        onPointerDown={handleResizeStart}
+                        data-resize-handle="true"
+                    />
+                    {/* Remove Button */}
                     <button
                         onPointerDown={(e) => e.stopPropagation()}
                         onClick={(e) => { e.stopPropagation(); onRemove(field.id); }}
@@ -1662,13 +1655,38 @@ const DraggableFieldOnCanvas: React.FC<{
                     >
                         <X size={10} />
                     </button>
-                    <div
-                        onPointerDown={handleResizeStart}
-                        data-resize-handle="true"
-                        className={`absolute -bottom-1 -right-1 w-3 h-3 bg-white border border-zinc-400 rounded-full cursor-nwse-resize opacity-0 group-hover:opacity-100 transition-opacity z-20 ${isSelected ? 'opacity-100' : ''}`}
-                    />
                 </>
             )}
+
+            <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center pointer-events-none overflow-hidden">
+
+                {/* Always show content if filled */}
+                {isFilled ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                        {field.type === 'signature' || field.type === 'initials' ? (
+                            <img src={field.value} alt="Signature" className="h-full w-auto object-contain" />
+                        ) : field.type === 'image' ? (
+                            <img src={field.value} alt="Content" className="w-full h-full object-cover rounded" />
+                        ) : field.type === 'checkbox' ? (
+                            field.value === 'true' ? <CheckSquare size={24} className="text-zinc-900 dark:text-white" /> : <div className="w-6 h-6 border-2 border-zinc-400 rounded" />
+                        ) : (
+                            <span className="font-serif text-lg text-zinc-900 dark:text-white whitespace-pre-wrap leading-tight">
+                                {field.value}
+                            </span>
+                        )}
+                    </div>
+                ) : (
+                    /* Empty State Label */
+                    <>
+                        {field.type === 'signature' && <PenTool size={16} className="text-zinc-400 mb-1 opacity-50" />}
+                        <span className={`text-[10px] font-bold uppercase tracking-widest truncate max-w-full
+                            ${isBusiness ? 'text-red-500' : isContact ? 'text-emerald-500' : 'text-zinc-400'}
+                        `}>
+                            {field.label}
+                        </span>
+                    </>
+                )}
+            </div>
         </div>
     );
 };

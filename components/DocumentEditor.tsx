@@ -412,28 +412,16 @@ export const DocumentEditor: React.FC<{
 
                                 {/* Field Layer (Overlay) - Fields are siblings in the same relative container */}
                                 {fields.map(field => (
-                                    <div key={field.id} className="relative z-10">
-                                        <DraggableFieldOnCanvas
-                                            field={field}
-                                            isSelected={selectedFieldId === field.id}
-                                            onSelect={() => setSelectedFieldId(field.id)}
-                                            onUpdatePos={updateFieldPosition}
-                                            onUpdateSize={updateFieldSize}
-                                            onUpdateValue={updateFieldValue}
-                                        />
-                                        {selectedFieldId === field.id && (
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); deleteField(field.id); }}
-                                                className="absolute -top-3 -right-3 z-[60] bg-red-500 text-white rounded-full p-1 shadow-sm hover:scale-110 transition-transform"
-                                                style={{
-                                                    top: `calc(${field.y}% - 12px)`, // Adjust delete button position to follow field
-                                                    left: `calc(${field.x}% + ${field.width || 200}px - 12px)`
-                                                }}
-                                            >
-                                                <Trash2 size={10} />
-                                            </button>
-                                        )}
-                                    </div>
+                                    <DraggableFieldOnCanvas
+                                        key={field.id}
+                                        field={field}
+                                        isSelected={selectedFieldId === field.id}
+                                        onSelect={() => setSelectedFieldId(field.id)}
+                                        onUpdatePos={updateFieldPosition}
+                                        onUpdateSize={updateFieldSize}
+                                        onUpdateValue={updateFieldValue}
+                                        onDelete={() => deleteField(field.id)}
+                                    />
                                 ))}
                             </DroppableCanvas>
                         </div>

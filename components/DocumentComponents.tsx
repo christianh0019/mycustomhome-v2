@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-    X, CheckSquare, Search, Send
+    X, CheckSquare, Search, Send, Trash2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../services/supabase';
@@ -125,13 +125,14 @@ export const DraggableFieldOnCanvas: React.FC<{
     onUpdatePos: (id: string, x: number, y: number) => void,
     onUpdateSize?: (id: string, width: number, height: number) => void,
     onUpdateValue?: (id: string, val: string) => void,
+    onDelete?: () => void,
     isReadOnly?: boolean,
     isSigningMode?: boolean,
     onSigningClick?: () => void,
     isBusiness?: boolean,
     isContact?: boolean,
     currentUserRole?: 'business' | 'contact'
-}> = ({ field, isSelected, onSelect, onUpdatePos, onUpdateSize, isReadOnly, isSigningMode, onSigningClick, currentUserRole }) => {
+}> = ({ field, isSelected, onSelect, onUpdatePos, onUpdateSize, onDelete, isReadOnly, isSigningMode, onSigningClick, currentUserRole }) => {
     const elementRef = useRef<HTMLDivElement>(null);
 
     const handlePointerDown = (e: React.PointerEvent, mode: 'move' | 'resize') => {
@@ -250,6 +251,17 @@ export const DraggableFieldOnCanvas: React.FC<{
                 >
                     <div className="w-2 h-2 bg-indigo-500 rounded-sm" />
                 </div>
+            )}
+
+            {/* Delete Button */}
+            {isSelected && !isReadOnly && !isSigningMode && onDelete && (
+                <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    className="absolute -top-3 -right-3 z-[60] bg-red-500 text-white rounded-full p-1 shadow-sm hover:scale-110 transition-transform"
+                    style={{ cursor: 'pointer' }}
+                >
+                    <Trash2 size={10} />
+                </button>
             )}
         </div>
     );

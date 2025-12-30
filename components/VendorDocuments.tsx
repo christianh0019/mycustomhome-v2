@@ -270,12 +270,12 @@ const RichTextEditor: React.FC<{
                 contentEditable={!readOnly}
                 onInput={handleInput}
                 className={`
-                    flex-1 p-16 outline-none font-serif text-[11px] leading-relaxed relative
+                    flex-1 p-16 outline-none font-serif text-[11px] leading-relaxed relative text-black
                     prose prose-sm max-w-none
                     prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wide prose-headings:mb-2 prose-headings:border-b prose-headings:border-zinc-200 prose-headings:pb-1
-                    prose-p:mb-4 prose-p:text-zinc-900
-                    prose-ul:list-disc prose-ul:pl-5 prose-ul:space-y-1 prose-ul:text-zinc-600
-                    prose-ol:list-decimal prose-ol:pl-5 prose-ol:space-y-1 prose-ol:text-zinc-600
+                    prose-p:mb-4 prose-p:text-black
+                    prose-ul:list-disc prose-ul:pl-5 prose-ul:space-y-1 prose-ul:text-black
+                    prose-ol:list-decimal prose-ol:pl-5 prose-ol:space-y-1 prose-ol:text-black
                 `}
                 style={{ minHeight: '100%' }}
             />
@@ -682,8 +682,13 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                             options={[
                                 { label: 'Serif', value: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif' },
                                 { label: 'Sans', value: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' },
-                                { label: 'Mono', value: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }
+                                { label: 'Mono', value: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' },
+                                { label: 'Garamond', value: 'Garamond, serif' },
+                                { label: 'Georgia', value: 'Georgia, serif' },
+                                { label: 'Verdana', value: 'Verdana, sans-serif' },
+                                { label: 'Helvetica', value: 'Helvetica, Arial, sans-serif' }
                             ]}
+                            width="w-32"
                         />
                         <div className="w-[1px] h-4 bg-zinc-300 mx-2" />
                         <ToolbarBtn icon={Minus} label="Decrease Size" onClick={() => exec('fontSize', '3')} />

@@ -263,23 +263,36 @@ const RichTextEditor: React.FC<{
                 if (textBefore.endsWith('1.')) {
                     e.preventDefault();
 
-                    // Select limits ("1." = 2 chars)
-                    const removalRange = document.createRange();
-                    removalRange.setStart(node, offset - 2);
-                    removalRange.setEnd(node, offset);
-                    removalRange.deleteContents();
+                    // Create range covering the "1."
+                    const deleteRange = document.createRange();
+                    deleteRange.setStart(node, offset - 2);
+                    deleteRange.setEnd(node, offset);
 
-                    // Now execute the command on the safe, existing range
+                    // Select it
+                    selection.removeAllRanges();
+                    selection.addRange(deleteRange);
+
+                    // Execute delete (preserves history/focus)
+                    document.execCommand('delete');
+
+                    // Insert list
                     exec('insertOrderedList');
                 } else if (textBefore.endsWith('-')) {
                     e.preventDefault();
 
-                    // Select limits ("-" = 1 char)
-                    const removalRange = document.createRange();
-                    removalRange.setStart(node, offset - 1);
-                    removalRange.setEnd(node, offset);
-                    removalRange.deleteContents();
+                    // Create range covering the "-"
+                    const deleteRange = document.createRange();
+                    deleteRange.setStart(node, offset - 1);
+                    deleteRange.setEnd(node, offset);
 
+                    // Select it
+                    selection.removeAllRanges();
+                    selection.addRange(deleteRange);
+
+                    // Execute delete
+                    document.execCommand('delete');
+
+                    // Insert list
                     exec('insertUnorderedList');
                 }
             }
@@ -950,49 +963,51 @@ const SettingsSidebar: React.FC<{
             </div>
 
             <div className="p-6 flex-1 overflow-y-auto">
-                <div className="mb-8">
-                    <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4">Who fills this out?</label>
+                {field.type !== 'image' && (
+                    <div className="mb-8">
+                        <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4">Who fills this out?</label>
 
-                    <div className="space-y-3">
-                        <button
-                            onClick={() => onUpdateAssignee(field.id, 'business')}
-                            className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center justify-between
+                        <div className="space-y-3">
+                            <button
+                                onClick={() => onUpdateAssignee(field.id, 'business')}
+                                className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center justify-between
                                 ${field.assignee === 'business'
-                                    ? 'border-red-500 bg-red-50 dark:bg-red-900/10'
-                                    : 'border-zinc-200 dark:border-white/10 hover:border-red-200 hover:bg-zinc-50'
-                                }
+                                        ? 'border-red-500 bg-red-50 dark:bg-red-900/10'
+                                        : 'border-zinc-200 dark:border-white/10 hover:border-red-200 hover:bg-zinc-50'
+                                    }
                             `}
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className={`w-3 h-3 rounded-full ${field.assignee === 'business' ? 'bg-red-500' : 'bg-zinc-300'}`} />
-                                <span className={`font-medium text-sm ${field.assignee === 'business' ? 'text-red-700 dark:text-red-400' : 'text-zinc-600 dark:text-zinc-400'}`}>My Business</span>
-                            </div>
-                            {field.assignee === 'business' && <CheckSquare size={16} className="text-red-500" />}
-                        </button>
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-3 h-3 rounded-full ${field.assignee === 'business' ? 'bg-red-500' : 'bg-zinc-300'}`} />
+                                    <span className={`font-medium text-sm ${field.assignee === 'business' ? 'text-red-700 dark:text-red-400' : 'text-zinc-600 dark:text-zinc-400'}`}>My Business</span>
+                                </div>
+                                {field.assignee === 'business' && <CheckSquare size={16} className="text-red-500" />}
+                            </button>
 
-                        <button
-                            onClick={() => onUpdateAssignee(field.id, 'contact')}
-                            className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center justify-between
+                            <button
+                                onClick={() => onUpdateAssignee(field.id, 'contact')}
+                                className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center justify-between
                                 ${field.assignee === 'contact'
-                                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10'
-                                    : 'border-zinc-200 dark:border-white/10 hover:border-emerald-200 hover:bg-zinc-50'
-                                }
+                                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10'
+                                        : 'border-zinc-200 dark:border-white/10 hover:border-emerald-200 hover:bg-zinc-50'
+                                    }
                             `}
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className={`w-3 h-3 rounded-full ${field.assignee === 'contact' ? 'bg-emerald-500' : 'bg-zinc-300'}`} />
-                                <span className={`font-medium text-sm ${field.assignee === 'contact' ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-600 dark:text-zinc-400'}`}>Contact</span>
-                            </div>
-                            {field.assignee === 'contact' && <CheckSquare size={16} className="text-emerald-500" />}
-                        </button>
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-3 h-3 rounded-full ${field.assignee === 'contact' ? 'bg-emerald-500' : 'bg-zinc-300'}`} />
+                                    <span className={`font-medium text-sm ${field.assignee === 'contact' ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-600 dark:text-zinc-400'}`}>Contact</span>
+                                </div>
+                                {field.assignee === 'contact' && <CheckSquare size={16} className="text-emerald-500" />}
+                            </button>
+                        </div>
+                        {/* Visual Key Help */}
+                        <p className="mt-4 text-xs text-zinc-400 leading-relaxed">
+                            Fields assigned to <span className="text-red-500 font-medium">Business</span> (Red) are for you to sign/fill before sending.
+                            Fields for the <span className="text-emerald-500 font-medium">Contact</span> (Green) are for the recipient.
+                            Grey fields are currently unassigned.
+                        </p>
                     </div>
-                    {/* Visual Key Help */}
-                    <p className="mt-4 text-xs text-zinc-400 leading-relaxed">
-                        Fields assigned to <span className="text-red-500 font-medium">Business</span> (Red) are for you to sign/fill before sending.
-                        Fields for the <span className="text-emerald-500 font-medium">Contact</span> (Green) are for the recipient.
-                        Grey fields are currently unassigned.
-                    </p>
-                </div>
+                )}
 
                 {field.type === 'image' && (
                     <div className="mb-8">

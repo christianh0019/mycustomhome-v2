@@ -237,9 +237,8 @@ const RichTextEditor: React.FC<{
     }, [initialContent]);
 
     const exec = (command: string, value: string | undefined = undefined) => {
-        if (editorRef.current) {
-            editorRef.current.focus();
-        }
+        // Note: We don't call focus() here because onMouseDown(e.preventDefault()) on the button
+        // keeps the focus on the editor. Calling focus() manually might reset the selection.
         document.execCommand(command, false, value);
         if (editorRef.current && onChange) {
             onChange(editorRef.current.innerHTML);
@@ -274,8 +273,9 @@ const RichTextEditor: React.FC<{
                     prose prose-sm max-w-none
                     prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wide prose-headings:mb-2 prose-headings:border-b prose-headings:border-zinc-200 prose-headings:pb-1
                     prose-p:mb-4 prose-p:text-black
-                    prose-ul:list-disc prose-ul:pl-5 prose-ul:space-y-1 prose-ul:text-black
-                    prose-ol:list-decimal prose-ol:pl-5 prose-ol:space-y-1 prose-ol:text-black
+                    prose-ul:list-disc prose-ul:pl-5 prose-ul:space-y-1 prose-ul:text-black prose-ul:list-outside
+                    prose-ol:list-decimal prose-ol:pl-5 prose-ol:space-y-1 prose-ol:text-black prose-ol:list-outside
+                    prose-li:marker:text-black
                 `}
                 style={{ minHeight: '100%' }}
             />

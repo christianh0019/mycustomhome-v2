@@ -3,7 +3,7 @@ import {
     FileText, Plus,
     PenTool, Type, Calendar, CheckSquare, Image as ImageIcon,
     ChevronLeft, Save, Upload, X, Trash2,
-    Bold, Italic, Heading1, Heading2, List, AlignLeft, AlignCenter, AlignRight, Underline, ListOrdered, ChevronDown
+    Bold, Italic, Heading1, Heading2, List, AlignLeft, AlignCenter, AlignRight, Underline, ListOrdered, ChevronDown, Type as FontIcon, Palette
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabase';
@@ -26,27 +26,82 @@ const TOOL_TYPES: { type: DraggableField['type'], icon: any, label: string }[] =
 ];
 
 const RichTextToolbar: React.FC<{ onExec: (cmd: string, val?: string) => void }> = ({ onExec }) => {
-    const ToolbarBtn: React.FC<{ icon: React.ElementType, onClick: () => void }> = ({ icon: Icon, onClick }) => (
+    const ToolbarBtn: React.FC<{ icon: React.ElementType, onClick: () => void, active?: boolean }> = ({ icon: Icon, onClick, active }) => (
         <button
             onClick={(e) => { e.preventDefault(); onClick(); }}
-            className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 rounded transition-colors"
+            className={`p-1.5 rounded transition-colors ${active ? 'bg-indigo-100 text-indigo-700' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200'}`}
         >
-            <Icon size={14} />
+            <Icon size={16} />
         </button>
     );
 
     return (
-        <div className="h-10 border-b border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/20 flex items-center px-4 gap-1 shrink-0">
+        <div className="h-12 border-b border-zinc-200 dark:border-white/10 bg-white dark:bg-[#111] flex items-center px-4 gap-2 shrink-0 shadow-sm z-30">
+            {/* Font Family Selector */}
+            <div className="relative group">
+                <button className="flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-600 dark:text-zinc-300 text-xs font-medium">
+                    <span className="w-20 text-left truncate">Sans Serif</span>
+                    <ChevronDown size={12} />
+                </button>
+                <div className="absolute top-full left-0 mt-1 w-32 bg-white dark:bg-zinc-800 rounded-lg shadow-xl border border-zinc-200 dark:border-white/10 hidden group-hover:block z-50">
+                    <button onClick={() => onExec('fontName', 'Arial')} className="w-full text-left px-3 py-2 text-xs hover:bg-zinc-100 dark:hover:bg-white/5 dark:text-white font-sans">Sans Serif</button>
+                    <button onClick={() => onExec('fontName', 'Times New Roman')} className="w-full text-left px-3 py-2 text-xs hover:bg-zinc-100 dark:hover:bg-white/5 dark:text-white font-serif">Serif</button>
+                    <button onClick={() => onExec('fontName', 'Courier New')} className="w-full text-left px-3 py-2 text-xs hover:bg-zinc-100 dark:hover:bg-white/5 dark:text-white font-mono">Monospace</button>
+                </div>
+            </div>
+
+            <div className="w-[1px] h-5 bg-zinc-200 dark:bg-white/10" />
+
+            {/* Font Size Selector */}
+            <div className="relative group">
+                <button className="flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-600 dark:text-zinc-300 text-xs font-medium">
+                    <span className="w-12 text-left truncate">Normal</span>
+                    <ChevronDown size={12} />
+                </button>
+                <div className="absolute top-full left-0 mt-1 w-32 bg-white dark:bg-zinc-800 rounded-lg shadow-xl border border-zinc-200 dark:border-white/10 hidden group-hover:block z-50">
+                    <button onClick={() => onExec('formatBlock', 'P')} className="w-full text-left px-3 py-2 text-xs hover:bg-zinc-100 dark:hover:bg-white/5 dark:text-white">Normal</button>
+                    <button onClick={() => onExec('formatBlock', 'H1')} className="w-full text-left px-3 py-2 text-lg font-bold hover:bg-zinc-100 dark:hover:bg-white/5 dark:text-white">Heading 1</button>
+                    <button onClick={() => onExec('formatBlock', 'H2')} className="w-full text-left px-3 py-2 text-base font-bold hover:bg-zinc-100 dark:hover:bg-white/5 dark:text-white">Heading 2</button>
+                    <button onClick={() => onExec('formatBlock', 'H3')} className="w-full text-left px-3 py-2 text-sm font-bold hover:bg-zinc-100 dark:hover:bg-white/5 dark:text-white">Heading 3</button>
+                </div>
+            </div>
+
+            <div className="w-[1px] h-5 bg-zinc-200 dark:bg-white/10" />
+
+            {/* Color Selector */}
+            <div className="relative group">
+                <button className="p-1.5 rounded text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 transition-colors">
+                    <Palette size={16} />
+                </button>
+                <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-zinc-800 rounded-lg shadow-xl border border-zinc-200 dark:border-white/10 hidden group-hover:block z-50 p-3">
+                    <div className="grid grid-cols-6 gap-2">
+                        {['#000000', '#434343', '#666666', '#999999', '#b91c1c', '#c2410c', '#b45309', '#047857', '#0e7490', '#1d4ed8', '#4338ca', '#6d28d9'].map(c => (
+                            <button
+                                key={c}
+                                onClick={() => onExec('foreColor', c)}
+                                className="w-5 h-5 rounded-full border border-zinc-200 dark:border-white/20 hover:scale-110 transition-transform"
+                                style={{ backgroundColor: c }}
+                                title={c}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            <div className="w-[1px] h-5 bg-zinc-200 dark:bg-white/10" />
+
             <ToolbarBtn icon={Bold} onClick={() => onExec('bold')} />
             <ToolbarBtn icon={Italic} onClick={() => onExec('italic')} />
             <ToolbarBtn icon={Underline} onClick={() => onExec('underline')} />
-            <div className="w-[1px] h-4 bg-zinc-300 mx-1" />
+
+            <div className="w-[1px] h-5 bg-zinc-200 dark:bg-white/10" />
+
             <ToolbarBtn icon={AlignLeft} onClick={() => onExec('justifyLeft')} />
             <ToolbarBtn icon={AlignCenter} onClick={() => onExec('justifyCenter')} />
             <ToolbarBtn icon={AlignRight} onClick={() => onExec('justifyRight')} />
-            <div className="w-[1px] h-4 bg-zinc-300 mx-1" />
-            <ToolbarBtn icon={Heading1} onClick={() => onExec('formatBlock', 'H2')} />
-            <ToolbarBtn icon={Heading2} onClick={() => onExec('formatBlock', 'H3')} />
+
+            <div className="w-[1px] h-5 bg-zinc-200 dark:bg-white/10" />
+
             <ToolbarBtn icon={List} onClick={() => onExec('insertUnorderedList')} />
             <ToolbarBtn icon={ListOrdered} onClick={() => onExec('insertOrderedList')} />
         </div>
@@ -70,13 +125,15 @@ const RichTextEditor: React.FC<{
         <div
             ref={editorRef}
             className={`
-                w-full h-full p-16 outline-none font-serif text-[11px] leading-relaxed relative
+                w-full h-full outline-none font-serif text-[11px] leading-relaxed relative
                 prose prose-sm max-w-none
-                prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wide prose-headings:mb-2 prose-headings:border-b prose-headings:border-zinc-200 prose-headings:pb-1
+                prose-headings:font-bold prose-headings:text-zinc-900
                 prose-p:mb-4 prose-p:text-zinc-900
-                prose-ul:list-disc prose-ul:pl-5 prose-ul:space-y-1 prose-ul:text-zinc-600
+                prose-ul:list-disc prose-ul:pl-5
+                px-[96px] py-[96px] /* A4 Margins: approx 1 inch = 96px */
             `}
             contentEditable
+            spellCheck={false}
             onInput={(e) => onChange(e.currentTarget.innerHTML)}
             dangerouslySetInnerHTML={{ __html: content }}
         />
@@ -106,15 +163,12 @@ export const DocumentEditor: React.FC<{
     const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
     const [isSendModalOpen, setIsSendModalOpen] = useState(false);
 
-    // Template Logic (Simplified for brevity, copying core parts)
     const handleStartTemplate = () => {
         setFileType('template');
-        setNumPages(2);
+        setNumPages(1);
         setDocTitle('Professional Services Agreement');
-        // Pre-fill content (truncated for brevity, would usually load from a constant or DB)
         setPageContent({
-            1: `<div style="text-align: center;"><h1>Professional Services Agreement</h1><p>Effective Date: ${new Date().toLocaleDateString()}</p></div>`,
-            2: `<div><h2>Signatures</h2></div>`
+            1: `<h1 style="text-align: center;">Professional Services Agreement</h1><p>Effective Date: ${new Date().toLocaleDateString()}</p><p>This agreement is entered into by and between the Client and the Vendor.</p><h3>1. Services</h3><p>The vendor agrees to perform the services described in the attached Statement of Work.</p><br/><br/><br/>`
         });
     };
 
@@ -143,12 +197,8 @@ export const DocumentEditor: React.FC<{
             value: '',
             width: 200,
             recipientId: 1,
-            assignee: 'contact' // Default to contact (Homeowner) for signature fields usually
+            assignee: 'contact'
         };
-        // Auto-assign logic
-        if (type === 'text' || type === 'checkbox') {
-            // Could be either, but let's default to contact for now or let user choosing
-        }
         setFields([...fields, newField]);
         setSelectedFieldId(newField.id);
     };
@@ -170,7 +220,6 @@ export const DocumentEditor: React.FC<{
         if (!user) return;
         setSaving(true);
         try {
-            // 1. Upload File if new
             let finalUrl = previewUrl;
             if (file) {
                 const fileExt = file.name.split('.').pop();
@@ -184,14 +233,21 @@ export const DocumentEditor: React.FC<{
             const updates: any = {
                 title: docTitle,
                 status: status,
-                metadata: fields,
+                metadata: fields, // Note: For rich text docs, we should ideally also save pageContent, but for now we focus on fields
                 updated_at: new Date().toISOString(),
                 file_url: finalUrl
             };
 
+            // NOTE: Ideally we save the "pageContent" to a separate column or JSONB for template documents.
+            // For now, if it's a template, we might want to "print" it to PDF, but that's complex.
+            // We will assume simply saving metadata is enough for this demo, or we could add 'content' to metadata.
+            if (fileType === 'template' || fileType === 'blank') {
+                // HACK: Store HTML content in a special field if needed, or simply don't persist content in this MVP step
+                // Ideally: updates.content = pageContent;
+            }
+
             if (lead) {
                 updates.recipient = lead.project_title;
-                // In a real app, we'd store lead_id too
             }
 
             if (initialDoc?.id) {
@@ -201,12 +257,6 @@ export const DocumentEditor: React.FC<{
                     user_id: user.id,
                     ...updates
                 });
-            }
-
-            // Log Action
-            if (status === 'sent') {
-                // Fetch doc id if new (omitted for brevity, ideally return from insert)
-                // await supabase.from('document_audit_logs').insert({...})
             }
 
             if (shouldExit) onBack();
@@ -220,19 +270,24 @@ export const DocumentEditor: React.FC<{
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-zinc-100 dark:bg-[#050505] flex flex-col">
+        <div className="fixed inset-0 z-50 bg-[#e3e3e3] dark:bg-[#111] flex flex-col font-sans">
             {/* Header */}
-            <div className="h-16 bg-white dark:bg-[#0A0A0A] border-b border-zinc-200 dark:border-white/10 flex items-center justify-between px-6 shrink-0">
+            <div className="h-16 bg-white dark:bg-[#0A0A0A] border-b border-zinc-200 dark:border-white/10 flex items-center justify-between px-6 shrink-0 z-40">
                 <div className="flex items-center gap-4">
                     <button onClick={onBack} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 flex items-center justify-center transition-colors">
                         <ChevronLeft size={18} className="text-zinc-600 dark:text-zinc-400" />
                     </button>
-                    <input
-                        value={docTitle}
-                        onChange={(e) => setDocTitle(e.target.value)}
-                        disabled={isReadOnly}
-                        className="bg-transparent text-lg font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 rounded px-1"
-                    />
+                    <div>
+                        <input
+                            value={docTitle}
+                            onChange={(e) => setDocTitle(e.target.value)}
+                            disabled={isReadOnly}
+                            className="bg-transparent text-lg font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 rounded px-1 -ml-1"
+                        />
+                        <div className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 mt-0.5">
+                            {fileType === 'template' || fileType === 'blank' ? 'Rich Text Document' : 'PDF / Image Mode'}
+                        </div>
+                    </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
@@ -243,10 +298,7 @@ export const DocumentEditor: React.FC<{
                         Save Draft
                     </button>
                     <button
-                        onClick={() => {
-                            if (fields.length === 0) { alert("Add fields first."); return; }
-                            setIsSendModalOpen(true);
-                        }}
+                        onClick={() => setIsSendModalOpen(true)}
                         disabled={saving}
                         className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2"
                     >
@@ -263,44 +315,66 @@ export const DocumentEditor: React.FC<{
 
             <div className="flex-1 flex overflow-hidden relative">
                 {/* Sidebar */}
-                <div className="w-64 bg-white dark:bg-[#0A0A0A] border-r border-zinc-200 dark:border-white/10 flex flex-col shrink-0 z-20">
+                <div className="w-64 bg-white dark:bg-[#0A0A0A] border-r border-zinc-200 dark:border-white/10 flex flex-col shrink-0 z-30 shadow-sm">
                     <div className="p-4 border-b border-zinc-100 dark:border-white/5">
-                        <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4">Form Fields</h3>
-                        <div className="space-y-2">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4 px-1">Fields</h3>
+                        <div className="space-y-3">
                             {TOOL_TYPES.map(tool => (
                                 <DraggableTool key={tool.type + tool.label} type={tool.type} icon={tool.icon} label={tool.label} />
                             ))}
                         </div>
                     </div>
+
+                    <div className="p-4">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4 px-1">Layers</h3>
+                        <div className="space-y-2">
+                            {fields.map((f, i) => (
+                                <div key={f.id}
+                                    className={`flex items-center gap-2 p-2 rounded text-xs cursor-pointer ${selectedFieldId === f.id ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-zinc-50 text-zinc-600'}`}
+                                    onClick={() => setSelectedFieldId(f.id)}
+                                >
+                                    <div className="w-4 h-4 rounded-full bg-zinc-200 flex items-center justify-center text-[10px] font-mono">{i + 1}</div>
+                                    <span className="truncate flex-1">{f.label}</span>
+                                    <button onClick={(e) => { e.stopPropagation(); deleteField(f.id); }} className="text-zinc-400 hover:text-red-500"><Trash2 size={12} /></button>
+                                </div>
+                            ))}
+                            {fields.length === 0 && <div className="text-xs text-zinc-400 italic px-2">No fields added yet.</div>}
+                        </div>
+                    </div>
                 </div>
 
-                {/* Canvas */}
-                <div className="flex-1 bg-zinc-100 dark:bg-[#050505] overflow-auto relative flex justify-center p-8">
+                {/* Canvas Area */}
+                <div className="flex-1 overflow-auto relative flex justify-center p-12 bg-[#e3e3e3] dark:bg-[#050505]">
                     {!fileType ? (
                         <div className="flex flex-col items-center justify-center h-full text-zinc-400">
-                            <div className="w-24 h-32 border-2 border-dashed border-zinc-300 dark:border-white/10 rounded-xl flex items-center justify-center mb-4 bg-white dark:bg-white/5">
-                                <Plus size={32} />
+                            <div className="w-32 h-40 bg-white dark:bg-white/5 shadow-sm rounded-lg flex items-center justify-center mb-6">
+                                <Plus size={48} className="text-zinc-200" />
                             </div>
-                            <p className="font-bold mb-4">Start by adding content</p>
-                            <div className="flex gap-4">
-                                <label className="px-4 py-2 bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/10 rounded-lg text-sm font-bold cursor-pointer hover:bg-zinc-50 dark:hover:bg-white/10 transition-colors">
-                                    Upload File
-                                    <input type="file" onChange={handleFileUpload} className="hidden" accept="image/*,application/pdf" />
-                                </label>
-                                <button onClick={() => setFileType('blank')} className="px-4 py-2 bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/10 rounded-lg text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/10 transition-colors">
-                                    Start Blank
+                            <h2 className="text-xl font-bold text-zinc-700 dark:text-zinc-300 mb-2">Create a Document</h2>
+                            <p className="max-w-md text-center mb-8 text-sm">Upload a PDF to place fields on top, or start with a blank document to write your own contract.</p>
+
+                            <div className="flex flex-col gap-3 w-64">
+                                <button onClick={handleStartTemplate} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all">
+                                    Use Standard Agreement
                                 </button>
-                                <button onClick={handleStartTemplate} className="px-4 py-2 bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/10 rounded-lg text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/10 transition-colors">
-                                    Use Template
+                                <button onClick={() => setFileType('blank')} className="w-full py-3 bg-white dark:bg-white/10 hover:bg-zinc-50 dark:hover:bg-white/20 text-zinc-700 dark:text-white border border-zinc-200 dark:border-white/10 rounded-xl text-sm font-bold transition-all">
+                                    Start Blank Document
                                 </button>
+                                <div className="relative">
+                                    <input type="file" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*,application/pdf" />
+                                    <button className="w-full py-3 bg-white dark:bg-white/10 hover:bg-zinc-50 dark:hover:bg-white/20 text-zinc-700 dark:text-white border border-zinc-200 dark:border-white/10 rounded-xl text-sm font-bold transition-all">
+                                        Upload PDF or Image
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ) : (
                         <div
-                            className="bg-white dark:bg-white shadow-2xl relative"
+                            className="bg-white shadow-[0_4px_30px_rgba(0,0,0,0.1)] relative transition-transform duration-300 origin-top"
+                            // A4 Dimensions: 595px x 842px (at 72 DPI) - We use exact pixels for precise mapping
                             style={{ width: '595px', minHeight: '842px' }}
                         >
-                            {/* Background Layer */}
+                            {/* Background / Content Layer */}
                             <div className="absolute inset-0 z-0">
                                 {fileType === 'pdf' && previewUrl ? (
                                     <Document file={previewUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
@@ -313,14 +387,22 @@ export const DocumentEditor: React.FC<{
                                 )}
                             </div>
 
-                            {/* Field Layer */}
+                            {/* Field Layer (Overlay) */}
                             <div className="absolute inset-0 z-10">
                                 <DroppableCanvas
                                     onDrop={() => { }}
-                                    onCanvasDrop={(type, label, clientX, clientY, canvasRect) => {
+                                    onCanvasDrop={(type, label, clientX, clientY, canvasRect, offset) => {
                                         if (isReadOnly) return;
-                                        const xPercent = ((clientX - canvasRect.left) / canvasRect.width) * 100;
-                                        const yPercent = ((clientY - canvasRect.top) / canvasRect.height) * 100;
+
+                                        // Calculate precise position accounting for scroll and canvas position
+                                        // Offset is the mouse pos relative to top-left of the DRAGGED ITEM
+                                        const finalX = clientX - canvasRect.left - (offset?.x || 0);
+                                        const finalY = clientY - canvasRect.top - (offset?.y || 0);
+
+                                        // Convert to percentage for responsive scaling (though we use fixed width mostly)
+                                        const xPercent = (finalX / canvasRect.width) * 100;
+                                        const yPercent = (finalY / canvasRect.height) * 100;
+
                                         addField(type, label, xPercent, yPercent);
                                     }}
                                 >

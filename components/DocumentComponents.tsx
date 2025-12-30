@@ -50,7 +50,11 @@ export const DraggableTool: React.FC<{
     onDrop?: (type: DraggableField['type'], label: string, x: number, y: number) => void
 }> = ({ type, icon: Icon, label }) => {
     const handleDragStart = (e: React.DragEvent) => {
-        e.dataTransfer.setData('application/json', JSON.stringify({ type, label }));
+        const rect = (e.target as HTMLElement).getBoundingClientRect();
+        const offsetX = e.clientX - rect.left;
+        const offsetY = e.clientY - rect.top;
+
+        e.dataTransfer.setData('application/json', JSON.stringify({ type, label, offsetX, offsetY }));
         e.dataTransfer.effectAllowed = 'copy';
     };
 
@@ -70,7 +74,7 @@ export const DraggableTool: React.FC<{
 
 export const DroppableCanvas: React.FC<{
     onDrop: (type: DraggableField['type'], label: string, x: number, y: number) => void,
-    onCanvasDrop: (type: DraggableField['type'], label: string, clientX: number, clientY: number, canvasRect: DOMRect) => void,
+    onCanvasDrop: (type: DraggableField['type'], label: string, clientX: number, clientY: number, canvasRect: DOMRect, offset?: { x: number, y: number }) => void,
     children: React.ReactNode
 }> = ({ onDrop, onCanvasDrop, children }) => {
     const ref = useRef<HTMLDivElement>(null);
@@ -87,7 +91,14 @@ export const DroppableCanvas: React.FC<{
             try {
                 const parsed = JSON.parse(data);
                 if (ref.current) {
-                    onCanvasDrop(parsed.type, parsed.label, e.clientX, e.clientY, ref.current.getBoundingClientRect());
+                    onCanvasDrop(
+                        parsed.type,
+                        parsed.label,
+                        e.clientX,
+                        e.clientY,
+                        ref.current.getBoundingClientRect(),
+                        { x: parsed.offsetX || 0, y: parsed.offsetY || 0 }
+                    );
                 }
             } catch (e) {
                 console.error("Failed to parse drop data", e);

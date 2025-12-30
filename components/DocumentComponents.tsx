@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-    FileText, Plus, X, GripVertical, Type, Calendar, CheckSquare, PenTool, Hash, Image as ImageIcon
+    FileText, Plus, X, GripVertical, Type, Calendar, CheckSquare, PenTool, Hash, Image as ImageIcon,
+    Search, Send, Trash2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../services/supabase';
@@ -361,8 +362,8 @@ export const SendDocumentModal: React.FC<{
                                     key={lead.id}
                                     onClick={() => setSelectedLead(lead)}
                                     className={`p - 4 rounded - xl border cursor - pointer transition - all flex items - center justify - between ${selectedLead?.id === lead.id
-                                            ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-500 ring-1 ring-indigo-500'
-                                            : 'bg-white dark:bg-white/5 border-zinc-200 dark:border-white/10 hover:border-indigo-300'
+                                        ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-500 ring-1 ring-indigo-500'
+                                        : 'bg-white dark:bg-white/5 border-zinc-200 dark:border-white/10 hover:border-indigo-300'
                                         } `}
                                 >
                                     <div>
@@ -387,8 +388,8 @@ export const SendDocumentModal: React.FC<{
                         onClick={() => selectedLead && onSend(selectedLead)}
                         disabled={!selectedLead}
                         className={`w - full py - 3 rounded - xl font - bold flex items - center justify - center gap - 2 transition - all ${selectedLead
-                                ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
-                                : 'bg-zinc-200 dark:bg-white/5 text-zinc-400 cursor-not-allowed'
+                            ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                            : 'bg-zinc-200 dark:bg-white/5 text-zinc-400 cursor-not-allowed'
                             } `}
                     >
                         <Send size={18} />

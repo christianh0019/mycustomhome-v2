@@ -195,12 +195,11 @@ export const DocumentSigner: React.FC<{
                 <SignaturePadModal
                     isOpen={true}
                     onClose={() => setIsSignaturePadOpen(false)}
-                    onSign={(signatureData) => {
+                    onSave={(signatureData) => {
                         updateFieldValue(activeSigningFieldId, signatureData);
                         setIsSignaturePadOpen(false);
                         setActiveSigningFieldId(null);
                     }}
-                    documentTitle={initialDoc.title}
                 />
             )}
 

@@ -113,11 +113,13 @@ const RichTextEditor: React.FC<{
     onChange: (html: string) => void;
 }> = ({ content, onChange }) => {
     const editorRef = useRef<HTMLDivElement>(null);
+    const isInitializedString = useRef(false);
 
-    // Sync content updates
+    // Initial load only
     useEffect(() => {
-        if (editorRef.current && content && !editorRef.current.innerHTML) {
+        if (editorRef.current && content && !isInitializedString.current) {
             editorRef.current.innerHTML = content;
+            isInitializedString.current = true;
         }
     }, []);
 
@@ -133,9 +135,8 @@ const RichTextEditor: React.FC<{
                 px-[96px] py-[96px] /* A4 Margins: approx 1 inch = 96px */
             `}
             contentEditable
-            spellCheck={false}
+            suppressContentEditableWarning
             onInput={(e) => onChange(e.currentTarget.innerHTML)}
-            dangerouslySetInnerHTML={{ __html: content }}
         />
     );
 };
@@ -145,7 +146,8 @@ export const DocumentEditor: React.FC<{
     initialDoc: DocItem | null;
 }> = ({ onBack, initialDoc }) => {
     const { user } = useAuth();
-    const isReadOnly = initialDoc?.status !== 'draft';
+    // Fix: New docs (initialDoc is null) should NOT be read-only.
+    const isReadOnly = initialDoc ? initialDoc.status !== 'draft' : false;
 
     const [docTitle, setDocTitle] = useState(initialDoc?.title || 'Untitled Document');
     const [file, setFile] = useState<File | null>(null);

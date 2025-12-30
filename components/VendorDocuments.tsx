@@ -13,6 +13,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
 import { SignaturePadModal } from './SignaturePadModal';
+import { InputModal } from './InputModal';
 
 // ... (existing imports)
 
@@ -1034,7 +1035,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
 
             <div className="flex-1 flex overflow-hidden">
 
-                {!isReadOnly && (
+                {!isReadOnly && !isSigningMode && (
                     <div className="w-64 bg-white dark:bg-[#0A0A0A] border-r border-zinc-200 dark:border-white/10 flex flex-col z-10">
                         <div className="p-4 border-b border-zinc-200 dark:border-white/5">
                             <h3 className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-4">Standard Fields</h3>
@@ -1131,7 +1132,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                                     <div className="absolute inset-0 z-0">
                                         <RichTextEditor
                                             initialContent={pageContent[pageNum] || ''}
-                                            readOnly={isReadOnly}
+                                            readOnly={isReadOnly || isSigningMode}
                                         />
                                     </div>
                                 )}
@@ -1160,7 +1161,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                 </div>
 
                 {/* Right Sidebar */}
-                {selectedFieldId && !isReadOnly && (
+                {selectedFieldId && !isReadOnly && !isSigningMode && (
                     <SettingsSidebar
                         field={fields.find(f => f.id === selectedFieldId) || null}
                         onUpdateAssignee={updateFieldAssignee}
@@ -1203,6 +1204,15 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                 isOpen={isSignaturePadOpen}
                 onClose={() => setIsSignaturePadOpen(false)}
                 onSave={handleSignatureSave}
+            />
+
+            <InputModal
+                isOpen={inputModalState.isOpen}
+                onClose={() => setInputModalState(prev => ({ ...prev, isOpen: false }))}
+                onSave={handleInputModalSave}
+                title={`Enter ${inputModalState.label}`}
+                initialValue={inputModalState.value}
+                type={inputModalState.type}
             />
 
             <SendDocumentModal

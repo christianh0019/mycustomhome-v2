@@ -257,44 +257,30 @@ const RichTextEditor: React.FC<{
             // Should be text node
             if (node.nodeType === Node.TEXT_NODE && node.textContent) {
                 const text = node.textContent;
-                // Check if cursor is at end of "1." or "-"
                 const offset = range.startOffset;
                 const textBefore = text.slice(0, offset);
 
                 if (textBefore.endsWith('1.')) {
                     e.preventDefault();
-                    // Delete the "1."
-                    const newText = text.slice(0, offset - 2) + text.slice(offset);
-                    node.textContent = newText;
 
-                    // Restore cursor position
-                    const newRange = document.createRange();
-                    newRange.setStart(node, offset - 2);
-                    newRange.setEnd(node, offset - 2);
-                    selection.removeAllRanges();
-                    selection.addRange(newRange);
+                    // Select limits ("1." = 2 chars)
+                    const removalRange = document.createRange();
+                    removalRange.setStart(node, offset - 2);
+                    removalRange.setEnd(node, offset);
+                    removalRange.deleteContents();
 
-                    // Defer command to let DOM settle
-                    setTimeout(() => {
-                        exec('insertOrderedList');
-                    }, 0);
-
+                    // Now execute the command on the safe, existing range
+                    exec('insertOrderedList');
                 } else if (textBefore.endsWith('-')) {
                     e.preventDefault();
-                    // Delete the "-"
-                    const newText = text.slice(0, offset - 1) + text.slice(offset);
-                    node.textContent = newText;
 
-                    const newRange = document.createRange();
-                    newRange.setStart(node, offset - 1);
-                    newRange.setEnd(node, offset - 1);
-                    selection.removeAllRanges();
-                    selection.addRange(newRange);
+                    // Select limits ("-" = 1 char)
+                    const removalRange = document.createRange();
+                    removalRange.setStart(node, offset - 1);
+                    removalRange.setEnd(node, offset);
+                    removalRange.deleteContents();
 
-                    // Defer command to let DOM settle
-                    setTimeout(() => {
-                        exec('insertUnorderedList');
-                    }, 0);
+                    exec('insertUnorderedList');
                 }
             }
         }
@@ -922,6 +908,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                     <SettingsSidebar
                         field={fields.find(f => f.id === selectedFieldId) || null}
                         onUpdateAssignee={updateFieldAssignee}
+                        onUpdateValue={updateFieldValue}
                         onClose={() => setSelectedFieldId(null)}
                     />
                 )}
@@ -933,8 +920,18 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
 const SettingsSidebar: React.FC<{
     field: DraggableField | null,
     onUpdateAssignee: (id: string, assignee: 'business' | 'contact') => void,
+    onUpdateValue?: (id: string, value: string) => void,
     onClose: () => void
-}> = ({ field, onUpdateAssignee, onClose }) => {
+}> = ({ field, onUpdateAssignee, onUpdateValue, onClose }) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0] && field && onUpdateValue) {
+            const url = URL.createObjectURL(e.target.files[0]);
+            onUpdateValue(field.id, url);
+        }
+    };
+
     if (!field) return (
         <div className="w-80 bg-white dark:bg-[#0A0A0A] border-l border-zinc-200 dark:border-white/10 flex flex-col p-6">
             <div className="text-center text-zinc-500 mt-10">
@@ -996,6 +993,37 @@ const SettingsSidebar: React.FC<{
                         Grey fields are currently unassigned.
                     </p>
                 </div>
+
+                {field.type === 'image' && (
+                    <div className="mb-8">
+                        <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4">Image Content</label>
+                        <div className="p-4 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/5">
+                            {field.value ? (
+                                <div className="mb-4">
+                                    <img src={field.value} alt="Field content" className="w-full h-32 object-contain bg-white dark:bg-black rounded-lg border border-zinc-200 dark:border-white/10" />
+                                </div>
+                            ) : (
+                                <div className="mb-4 h-32 flex items-center justify-center bg-zinc-100 dark:bg-white/5 rounded-lg border-2 border-dashed border-zinc-200 dark:border-white/10 text-zinc-400">
+                                    <ImageIcon size={24} />
+                                </div>
+                            )}
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-full py-2 px-3 bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/10 rounded-lg text-sm font-bold text-zinc-700 dark:text-white hover:bg-zinc-50 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <Upload size={14} />
+                                {field.value ? 'Replace Image' : 'Upload Image'}
+                            </button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleImageUpload}
+                                accept="image/*"
+                                className="hidden"
+                            />
+                        </div>
+                    </div>
+                )}
 
                 <div className="mb-8">
                     <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">Field Type</label>

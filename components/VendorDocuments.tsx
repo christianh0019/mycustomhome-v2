@@ -357,8 +357,8 @@ const StatusBadge: React.FC<{ status: DocumentStatus, isSigning?: boolean }> = (
         case 'sent':
             // Display as PUBLISHED when sent
             return (
-                <div className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                <div className="inline-flex px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 text-[10px] font-bold uppercase tracking-widest items-center gap-2 whitespace-nowrap">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
                     PUBLISHED
                 </div>
             );
@@ -1671,9 +1671,9 @@ const DraggableFieldOnCanvas: React.FC<{
 
                 {/* Always show content if filled */}
                 {isFilled ? (
-                    <div className="w-full h-full flex items-center justify-center">
+                    <div className="w-full h-full flex items-center justify-center overflow-hidden">
                         {field.type === 'signature' || field.type === 'initials' ? (
-                            <img src={field.value} alt="Signature" className="h-full w-auto object-contain" />
+                            <img src={field.value} alt="Signature" className="max-w-full max-h-full object-contain" />
                         ) : field.type === 'image' ? (
                             <img src={field.value} alt="Content" className="w-full h-full object-cover rounded" />
                         ) : field.type === 'checkbox' ? (

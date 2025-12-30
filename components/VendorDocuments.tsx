@@ -896,7 +896,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                     {!isReadOnly ? (
                         <div className="flex items-center gap-3">
                             <button
-                                onClick={handleSave}
+                                onClick={() => handleSave('draft')}
                                 disabled={saving}
                                 className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2"
                             >

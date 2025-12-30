@@ -620,6 +620,23 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialDoc, onBa
             </div>
 
 
+
+            {isSendModalOpen && (
+                <SendDocumentModal
+                    isOpen={isSendModalOpen}
+                    onClose={() => setIsSendModalOpen(false)}
+                    onSend={(lead) => {
+                        if (confirm(`Are you sure you want to sign and send this document to ${lead.name}? This document will be locked for editing.`)) {
+                            handleSave('draft', false, lead).then(async (savedDocId) => {
+                                setIsSendModalOpen(false);
+                                if (savedDocId && onStartSigning) {
+                                    onStartSigning(savedDocId);
+                                }
+                            });
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 };

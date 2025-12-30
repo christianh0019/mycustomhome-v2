@@ -111,17 +111,35 @@ const RichTextToolbar: React.FC<{ onExec: (cmd: string, val?: string) => void }>
 const RichTextEditor: React.FC<{
     content: string;
     onChange: (html: string) => void;
-}> = ({ content, onChange }) => {
+    onOverflow?: (content: string) => void;
+}> = ({ content, onChange, onOverflow }) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const isInitializedString = useRef(false);
 
     // Initial load only
     useEffect(() => {
-        if (editorRef.current && content && !isInitializedString.current) {
+        if (editorRef.current && content !== undefined && !isInitializedString.current) {
             editorRef.current.innerHTML = content;
             isInitializedString.current = true;
         }
-    }, []);
+    }, []); // Only run once on mount
+
+    const checkOverflow = () => {
+        if (editorRef.current && onOverflow) {
+            const element = editorRef.current;
+            // 842px height - (96px * 2 padding) = 650px content area
+            // However, we can just check if scrollHeight > clientHeight because overflow is hidden/auto
+            if (element.scrollHeight > element.clientHeight) {
+                const lastChild = element.lastElementChild;
+                if (lastChild) {
+                    const html = lastChild.outerHTML;
+                    lastChild.remove();
+                    onChange(element.innerHTML);
+                    onOverflow(html);
+                }
+            }
+        }
+    };
 
     return (
         <div
@@ -136,7 +154,10 @@ const RichTextEditor: React.FC<{
             `}
             contentEditable
             suppressContentEditableWarning
-            onInput={(e) => onChange(e.currentTarget.innerHTML)}
+            onInput={(e) => {
+                onChange(e.currentTarget.innerHTML);
+                checkOverflow();
+            }}
         />
     );
 };
@@ -187,19 +208,34 @@ export const DocumentEditor: React.FC<{
         }
     };
 
+    const handlePageOverflow = (pageNum: number, overflowContent: string) => {
+        const nextPageNum = pageNum + 1;
+        setPageContent(prev => {
+            const currentNextContent = prev[nextPageNum] || '';
+            return {
+                ...prev,
+                [nextPageNum]: overflowContent + currentNextContent
+            };
+        });
+
+        if (nextPageNum > numPages) {
+            setNumPages(nextPageNum);
+        }
+    };
+
     // Field Management
-    const addField = (type: DraggableField['type'], label: string, x: number, y: number) => {
+    const addField = (type: DraggableField['type'], label: string, x: number, y: number, pageNumber: number) => {
         const newField: DraggableField = {
             id: Date.now().toString(),
             type,
             label,
             x,
             y,
-            pageNumber: 1,
+            pageNumber,
             value: '',
             width: 200,
-            recipientId: 1,
-            assignee: 'contact'
+            height: 40,
+            assignee: 'contact' // Default to contact for now
         };
         setFields([...fields, newField]);
         setSelectedFieldId(newField.id);
@@ -213,8 +249,8 @@ export const DocumentEditor: React.FC<{
         setFields(fields.map(f => f.id === id ? { ...f, width, height } : f));
     };
 
-    const updateFieldValue = (id: string, value: string) => {
-        setFields(fields.map(f => f.id === id ? { ...f, value } : f));
+    const updateFieldValue = (id: string, val: string) => {
+        setFields(fields.map(f => f.id === id ? { ...f, value: val } : f));
     };
 
     const updateFieldAssignee = (id: string, assignee: 'business' | 'contact') => {
@@ -379,55 +415,63 @@ export const DocumentEditor: React.FC<{
                             </div>
                         </div>
                     ) : (
-                        <div
-                            className="bg-white shadow-[0_4px_30px_rgba(0,0,0,0.1)] relative transition-transform duration-300 origin-top"
-                            // A4 Dimensions: 595px x 842px (at 72 DPI) - We use exact pixels for precise mapping
-                            style={{ width: '595px', minHeight: '842px' }}
-                        >
-                            <DroppableCanvas
-                                onDrop={() => { }}
-                                onCanvasDrop={(type, label, clientX, clientY, canvasRect, offset) => {
-                                    if (isReadOnly) return;
+                        <div className="flex flex-col gap-8 pb-32">
+                            {Array.from({ length: numPages }).map((_, i) => {
+                                const pageNum = i + 1;
+                                return (
+                                    <div
+                                        key={pageNum}
+                                        className="bg-white shadow-[0_4px_30px_rgba(0,0,0,0.1)] relative transition-transform duration-300 origin-top"
+                                        style={{ width: '595px', height: '842px', minHeight: '842px' }}
+                                    >
+                                        <DroppableCanvas
+                                            onDrop={() => { }}
+                                            onCanvasDrop={(type, label, clientX, clientY, canvasRect, offset) => {
+                                                if (isReadOnly) return;
 
-                                    // Calculate precise position accounting for scroll and canvas position
-                                    // Offset is the mouse pos relative to top-left of the DRAGGED ITEM
-                                    const finalX = clientX - canvasRect.left - (offset?.x || 0);
-                                    const finalY = clientY - canvasRect.top - (offset?.y || 0);
+                                                const finalX = clientX - canvasRect.left - (offset?.x || 0);
+                                                const finalY = clientY - canvasRect.top - (offset?.y || 0);
 
-                                    // Convert to percentage for responsive scaling (though we use fixed width mostly)
-                                    const xPercent = (finalX / canvasRect.width) * 100;
-                                    const yPercent = (finalY / canvasRect.height) * 100;
+                                                const xPercent = (finalX / canvasRect.width) * 100;
+                                                const yPercent = (finalY / canvasRect.height) * 100;
 
-                                    addField(type, label, xPercent, yPercent);
-                                }}
-                            >
-                                {/* Background / Content Layer - Now acts as the "canvas board" */}
-                                <div className="absolute inset-0 z-0 select-text">
-                                    {fileType === 'pdf' && previewUrl ? (
-                                        <Document file={previewUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
-                                            <Page pageNumber={1} width={595} renderTextLayer={false} renderAnnotationLayer={false} />
-                                        </Document>
-                                    ) : (fileType === 'template' || fileType === 'blank') ? (
-                                        <RichTextEditor content={pageContent[1] || ''} onChange={(html) => setPageContent({ ...pageContent, 1: html })} />
-                                    ) : (
-                                        <img src={previewUrl || ''} className="w-full h-full object-contain" />
-                                    )}
-                                </div>
+                                                addField(type, label, xPercent, yPercent, pageNum);
+                                            }}
+                                        >
+                                            {/* Content Layer */}
+                                            <div className="absolute inset-0 z-0 select-text">
+                                                {fileType === 'pdf' && previewUrl ? (
+                                                    <Document file={previewUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
+                                                        <Page pageNumber={pageNum} width={595} renderTextLayer={false} renderAnnotationLayer={false} />
+                                                    </Document>
+                                                ) : (fileType === 'template' || fileType === 'blank') ? (
+                                                    <RichTextEditor
+                                                        content={pageContent[pageNum] || ''}
+                                                        onChange={(html) => setPageContent(prev => ({ ...prev, [pageNum]: html }))}
+                                                        onOverflow={(overflow) => handlePageOverflow(pageNum, overflow)}
+                                                    />
+                                                ) : (
+                                                    pageNum === 1 ? <img src={previewUrl || ''} className="w-full h-full object-contain" /> : null
+                                                )}
+                                            </div>
 
-                                {/* Field Layer (Overlay) - Fields are siblings in the same relative container */}
-                                {fields.map(field => (
-                                    <DraggableFieldOnCanvas
-                                        key={field.id}
-                                        field={field}
-                                        isSelected={selectedFieldId === field.id}
-                                        onSelect={() => setSelectedFieldId(field.id)}
-                                        onUpdatePos={updateFieldPosition}
-                                        onUpdateSize={updateFieldSize}
-                                        onUpdateValue={updateFieldValue}
-                                        onDelete={() => deleteField(field.id)}
-                                    />
-                                ))}
-                            </DroppableCanvas>
+                                            {/* Field Layer */}
+                                            {fields.filter(f => f.pageNumber === pageNum).map(field => (
+                                                <DraggableFieldOnCanvas
+                                                    key={field.id}
+                                                    field={field}
+                                                    isSelected={selectedFieldId === field.id}
+                                                    onSelect={() => setSelectedFieldId(field.id)}
+                                                    onUpdatePos={updateFieldPosition}
+                                                    onUpdateSize={updateFieldSize}
+                                                    onUpdateValue={updateFieldValue}
+                                                    onDelete={() => deleteField(field.id)}
+                                                />
+                                            ))}
+                                        </DroppableCanvas>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>

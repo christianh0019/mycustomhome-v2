@@ -263,37 +263,43 @@ const RichTextEditor: React.FC<{
                 if (textBefore.endsWith('1.')) {
                     e.preventDefault();
 
-                    // Create range covering the "1."
-                    const deleteRange = document.createRange();
-                    deleteRange.setStart(node, offset - 2);
-                    deleteRange.setEnd(node, offset);
-
-                    // Select it
-                    selection.removeAllRanges();
-                    selection.addRange(deleteRange);
-
-                    // Execute delete (preserves history/focus)
-                    document.execCommand('delete');
-
-                    // Insert list
+                    // 1. Insert Ordered List FIRST
                     exec('insertOrderedList');
+
+                    // 2. Re-acquire selection to safely delete the "1."
+                    const newSel = window.getSelection();
+                    if (newSel && newSel.rangeCount) {
+                        const newRange = newSel.getRangeAt(0);
+                        const newNode = newRange.startContainer;
+                        if (newNode.nodeType === Node.TEXT_NODE) {
+                            const deleteRange = document.createRange();
+                            // Delete the last 2 characters ("1.") relative to new cursor
+                            const currentOffset = newRange.startOffset;
+                            deleteRange.setStart(newNode, Math.max(0, currentOffset - 2));
+                            deleteRange.setEnd(newNode, currentOffset);
+                            deleteRange.deleteContents();
+                        }
+                    }
                 } else if (textBefore.endsWith('-')) {
                     e.preventDefault();
 
-                    // Create range covering the "-"
-                    const deleteRange = document.createRange();
-                    deleteRange.setStart(node, offset - 1);
-                    deleteRange.setEnd(node, offset);
-
-                    // Select it
-                    selection.removeAllRanges();
-                    selection.addRange(deleteRange);
-
-                    // Execute delete
-                    document.execCommand('delete');
-
-                    // Insert list
+                    // 1. Insert Unordered List FIRST
                     exec('insertUnorderedList');
+
+                    // 2. Re-acquire selection to safely delete the "-"
+                    const newSel = window.getSelection();
+                    if (newSel && newSel.rangeCount) {
+                        const newRange = newSel.getRangeAt(0);
+                        const newNode = newRange.startContainer;
+                        if (newNode.nodeType === Node.TEXT_NODE) {
+                            const deleteRange = document.createRange();
+                            // Delete the last 1 character ("-") relative to new cursor
+                            const currentOffset = newRange.startOffset;
+                            deleteRange.setStart(newNode, Math.max(0, currentOffset - 1));
+                            deleteRange.setEnd(newNode, currentOffset);
+                            deleteRange.deleteContents();
+                        }
+                    }
                 }
             }
         }

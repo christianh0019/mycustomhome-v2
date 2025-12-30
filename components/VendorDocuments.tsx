@@ -20,7 +20,6 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/$
 
 // --- Interfaces & Types ---
 
-// Inside DocumentCreator component:
 type DocumentStatus = 'draft' | 'sent' | 'completed';
 
 export interface DocItem {
@@ -247,13 +246,10 @@ const ToolbarSelect: React.FC<{
     </div>
 );
 
-
-
 const RichTextEditor: React.FC<{
     content: string;
     onChange: (html: string) => void;
-    isReadOnly?: boolean;
-}> = ({ content, onChange, isReadOnly }) => {
+}> = ({ content, onChange }) => {
     const editorRef = useRef<HTMLDivElement>(null);
 
     // Sync content updates
@@ -263,11 +259,24 @@ const RichTextEditor: React.FC<{
         }
     }, []);
 
-    const exec = (command: string, value: string = '') => {
-        document.execCommand(command, false, value);
-        if (editorRef.current) onChange(editorRef.current.innerHTML);
-    };
+    return (
+        <div
+            ref={editorRef}
+            className={`
+                w-full h-full p-16 outline-none font-serif text-[11px] leading-relaxed relative
+                prose prose-sm max-w-none
+                prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wide prose-headings:mb-2 prose-headings:border-b prose-headings:border-zinc-200 prose-headings:pb-1
+                prose-p:mb-4 prose-p:text-zinc-900
+                prose-ul:list-disc prose-ul:pl-5 prose-ul:space-y-1 prose-ul:text-zinc-600
+            `}
+            contentEditable
+            onInput={(e) => onChange(e.currentTarget.innerHTML)}
+            dangerouslySetInnerHTML={{ __html: content }}
+        />
+    );
+};
 
+const RichTextToolbar: React.FC<{ onExec: (cmd: string, val?: string) => void }> = ({ onExec }) => {
     const ToolbarBtn: React.FC<{ icon: React.ElementType, onClick: () => void }> = ({ icon: Icon, onClick }) => (
         <button
             onClick={(e) => { e.preventDefault(); onClick(); }}
@@ -278,38 +287,169 @@ const RichTextEditor: React.FC<{
     );
 
     return (
-        <div className="h-full flex flex-col relative w-full">
-            {!isReadOnly && (
-                <div className="flex flex-wrap items-center gap-1 p-2 border-b border-zinc-100 bg-zinc-50/50 sticky top-0 z-20">
-                    <ToolbarBtn icon={Bold} onClick={() => exec('bold')} />
-                    <ToolbarBtn icon={Italic} onClick={() => exec('italic')} />
-                    <ToolbarBtn icon={Underline} onClick={() => exec('underline')} />
-                    <div className="w-[1px] h-4 bg-zinc-300 mx-1" />
-                    <ToolbarBtn icon={AlignLeft} onClick={() => exec('justifyLeft')} />
-                    <ToolbarBtn icon={AlignCenter} onClick={() => exec('justifyCenter')} />
-                    <ToolbarBtn icon={AlignRight} onClick={() => exec('justifyRight')} />
-                    <div className="w-[1px] h-4 bg-zinc-300 mx-1" />
-                    <ToolbarBtn icon={Heading1} onClick={() => exec('formatBlock', 'H2')} />
-                    <ToolbarBtn icon={Heading2} onClick={() => exec('formatBlock', 'H3')} />
-                    <ToolbarBtn icon={List} onClick={() => exec('insertUnorderedList')} />
-                    <ToolbarBtn icon={ListOrdered} onClick={() => exec('insertOrderedList')} />
+        <div className="h-10 border-b border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/20 flex items-center px-4 gap-1 shrink-0">
+            <ToolbarBtn icon={Bold} onClick={() => onExec('bold')} />
+            <ToolbarBtn icon={Italic} onClick={() => onExec('italic')} />
+            <ToolbarBtn icon={Underline} onClick={() => onExec('underline')} />
+            <div className="w-[1px] h-4 bg-zinc-300 mx-1" />
+            <ToolbarBtn icon={AlignLeft} onClick={() => onExec('justifyLeft')} />
+            <ToolbarBtn icon={AlignCenter} onClick={() => onExec('justifyCenter')} />
+            <ToolbarBtn icon={AlignRight} onClick={() => onExec('justifyRight')} />
+            <div className="w-[1px] h-4 bg-zinc-300 mx-1" />
+            <ToolbarBtn icon={Heading1} onClick={() => onExec('formatBlock', 'H2')} />
+            <ToolbarBtn icon={Heading2} onClick={() => onExec('formatBlock', 'H3')} />
+            <ToolbarBtn icon={List} onClick={() => onExec('insertUnorderedList')} />
+            <ToolbarBtn icon={ListOrdered} onClick={() => onExec('insertOrderedList')} />
+        </div>
+    );
+};
+
+// --- Helper Components (Defined Upfront) ---
+
+const DraggableTool: React.FC<{
+    type: DraggableField['type'],
+    icon: React.ElementType,
+    label: string,
+    onDrop?: (type: DraggableField['type'], label: string, x: number, y: number) => void
+}> = ({ type, icon: Icon, label }) => {
+    const handleDragStart = (e: React.DragEvent) => {
+        e.dataTransfer.setData('application/json', JSON.stringify({ type, label }));
+        e.dataTransfer.effectAllowed = 'copy';
+    };
+
+    return (
+        <div
+            draggable
+            onDragStart={handleDragStart}
+            className="w-full flex items-center gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500/50 cursor-grab active:cursor-grabbing transition-all group"
+        >
+            <div className="w-8 h-8 rounded bg-white dark:bg-white/10 flex items-center justify-center text-zinc-500 group-hover:text-indigo-600 transition-colors">
+                <Icon size={16} />
+            </div>
+            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{label}</span>
+        </div>
+    );
+};
+
+const DroppableCanvas: React.FC<{
+    onDrop: (type: DraggableField['type'], label: string, x: number, y: number) => void,
+    onCanvasDrop: (type: DraggableField['type'], label: string, clientX: number, clientY: number, canvasRect: DOMRect) => void,
+    children: React.ReactNode
+}> = ({ onDrop, onCanvasDrop, children }) => {
+    const ref = useRef<HTMLDivElement>(null);
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        const data = e.dataTransfer.getData('application/json');
+        if (data) {
+            try {
+                const parsed = JSON.parse(data);
+                if (ref.current) {
+                    onCanvasDrop(parsed.type, parsed.label, e.clientX, e.clientY, ref.current.getBoundingClientRect());
+                }
+            } catch (e) {
+                console.error("Failed to parse drop data", e);
+            }
+        }
+    };
+
+    return (
+        <div
+            ref={ref}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            className="w-full h-full relative"
+        >
+            {children}
+        </div>
+    );
+};
+
+const DraggableFieldOnCanvas: React.FC<{
+    field: DraggableField,
+    isSelected: boolean,
+    onSelect: () => void,
+    onUpdatePos: (id: string, x: number, y: number) => void,
+    onUpdateValue?: (id: string, val: string) => void,
+    isReadOnly?: boolean,
+    isSigningMode?: boolean,
+    onSigningClick?: () => void,
+    isBusiness?: boolean,
+    isContact?: boolean,
+    currentUserRole?: 'business' | 'contact'
+}> = ({ field, isSelected, onSelect, onUpdatePos, isReadOnly, isSigningMode, onSigningClick, currentUserRole }) => {
+    const [isDragging, setIsDragging] = useState(false);
+    const elementRef = useRef<HTMLDivElement>(null);
+
+    // Simple pointer drag logic
+    const handlePointerDown = (e: React.PointerEvent) => {
+        if (isReadOnly || isSigningMode) return;
+        e.stopPropagation();
+        onSelect();
+        // Drag implementation placeholder
+    };
+
+    const style: React.CSSProperties = {
+        position: 'absolute',
+        left: `${field.x}%`,
+        top: `${field.y}%`,
+        transform: 'translate(-50%, -50%)',
+        width: field.width || 200,
+        height: field.height || 40,
+    };
+
+    if (field.type === 'initials') {
+        style.width = 60;
+        style.height = 40;
+    } else if (field.type === 'checkbox') {
+        style.width = 30;
+        style.height = 30;
+    }
+
+    const isAssignedToUser = field.assignee === currentUserRole;
+    const canSign = isSigningMode && isAssignedToUser;
+
+    const getStatusColor = () => {
+        if (field.value) return 'bg-emerald-500/10 border-emerald-500 text-emerald-600';
+        if (canSign) return 'bg-indigo-500/10 border-indigo-500 text-indigo-600 animate-pulse';
+        if (!isSigningMode && field.assignee === 'contact') return 'bg-amber-500/10 border-amber-500 text-amber-600';
+        return 'bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100';
+    };
+
+    return (
+        <div
+            ref={elementRef}
+            style={style}
+            onPointerDown={handlePointerDown}
+            onClick={(e) => {
+                if (canSign && onSigningClick) {
+                    e.stopPropagation();
+                    onSigningClick();
+                }
+            }}
+            className={`
+                group absolute flex items-center px-2 border rounded cursor-pointer transition-all select-none overflow-hidden
+                ${getStatusColor()}
+                ${isSelected && !isSigningMode ? 'ring-2 ring-indigo-500 z-50' : 'z-10 hover:z-50'}
+                ${isSigningMode && !isAssignedToUser ? 'opacity-50 pointer-events-none' : ''}
+            `}
+        >
+            {field.type === 'signature' && (
+                <div className="w-full flex items-center justify-center pointer-events-none">
+                    {field.value ? <img src={field.value} className="h-full max-h-8 object-contain" /> : <span className="text-xs font-serif italic text-opacity-50">Signature</span>}
                 </div>
             )}
-
-            <div
-                ref={editorRef}
-                className={`
-                    flex-1 p-16 outline-none font-serif text-[11px] leading-relaxed relative
-                    prose prose-sm max-w-none
-                    prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wide prose-headings:mb-2 prose-headings:border-b prose-headings:border-zinc-200 prose-headings:pb-1
-                    prose-p:mb-4 prose-p:text-zinc-900
-                    prose-ul:list-disc prose-ul:pl-5 prose-ul:space-y-1 prose-ul:text-zinc-600
-                `}
-                contentEditable={!isReadOnly}
-                onInput={(e) => onChange(e.currentTarget.innerHTML)}
-                style={{ minHeight: '100%' }}
-                dangerouslySetInnerHTML={{ __html: content }}
-            />
+            {field.type === 'text' && (
+                <div className="w-full truncate text-xs pointer-events-none">{field.value || field.label}</div>
+            )}
+            {field.type === 'date' && (
+                <div className="w-full truncate text-xs font-mono pointer-events-none">{field.value || 'DD/MM/YYYY'}</div>
+            )}
         </div>
     );
 };
@@ -703,14 +843,24 @@ export const DocumentCreator: React.FC<{
                 </div>
             </div>
 
+            {/* Toolbar - Only visible in EDITOR mode (not signing/preview) */}
+            {!isSigningSession && (fileType === 'blank' || fileType === 'template') && (
+                <RichTextToolbar onExec={(cmd, val) => document.execCommand(cmd, false, val)} />
+            )}
+
             <div className="flex-1 flex overflow-hidden relative">
 
-                {/* Tools Sidebar - Hide in Signing Mode */}
+                {/* Tools Sidebar - Only visible in EDITOR mode */}
                 {!isSigningSession && (
-                    <div className="w-16 bg-white dark:bg-[#0A0A0A] border-r border-zinc-200 dark:border-white/10 flex flex-col items-center py-4 gap-4 shrink-0 z-20">
-                        {TOOL_TYPES.map(tool => (
-                            <DraggableTool key={tool.type} type={tool.type} icon={tool.icon} label={tool.label} />
-                        ))}
+                    <div className="w-64 bg-white dark:bg-[#0A0A0A] border-r border-zinc-200 dark:border-white/10 flex flex-col shrink-0 z-20">
+                        <div className="p-4 border-b border-zinc-100 dark:border-white/5">
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4">Form Fields</h3>
+                            <div className="space-y-2">
+                                {TOOL_TYPES.map(tool => (
+                                    <DraggableTool key={tool.type || 'tool-' + tool.label} type={tool.type} icon={tool.icon} label={tool.label} />
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -767,7 +917,6 @@ export const DocumentCreator: React.FC<{
                                         <RichTextEditor
                                             content={pageContent[1] || ''}
                                             onChange={(html) => setPageContent({ ...pageContent, 1: html })}
-                                            isReadOnly={isReadOnly}
                                         />
                                     ) : (
                                         <img src={previewUrl || ''} className="w-full h-full object-contain" alt="Document" />
@@ -780,12 +929,7 @@ export const DocumentCreator: React.FC<{
                             <div className="absolute inset-0 z-10">
                                 <DroppableCanvas
                                     onDrop={(type, label, x, y) => {
-                                        // Calculate percentage position
-                                        // x and y are absolute screen coordinates
-                                        // We need to convert to percentage relative to the canvas (595px width)
-                                        // But the DroppableCanvas component handles the drop event itself?
-                                        // No, the DraggableTool calls onDrop with clientX/clientY
-                                        // We need to pass the canvas rect to calculate percentage
+                                        // Drop logic
                                     }}
                                     onCanvasDrop={(type, label, clientX, clientY, canvasRect) => {
                                         if (isReadOnly || isSigningSession) return;
@@ -799,29 +943,13 @@ export const DocumentCreator: React.FC<{
                                             key={field.id}
                                             field={field}
                                             isSelected={selectedFieldId === field.id}
-                                            onSelect={() => setSelectedFieldId(field.id)}
-                                            onUpdatePos={(id, absX, absY) => {
-                                                if (isReadOnly || isSigningSession) return;
-                                                // Convert back to percentage
-                                                // We need ref to canvas to know size. 
-                                                // For now, assuming standard size or finding element
-                                                // Ideally, pass a ref or context.
-                                                // Simplification: We rely on the child to calculate relative if possible?
-                                                // Recalculating here:
-                                                const canvas = document.querySelector('.bg-white.shadow-2xl');
-                                                if (canvas) {
-                                                    const rect = canvas.getBoundingClientRect();
-                                                    const xPer = ((absX - rect.left) / rect.width) * 100;
-                                                    const yPer = ((absY - rect.top) / rect.height) * 100;
-                                                    updateFieldPosition(id, xPer, yPer);
-                                                }
-                                            }}
+                                            onSelect={() => !isSigningSession && setSelectedFieldId(field.id)}
+                                            onUpdatePos={updateFieldPosition}
+                                            onUpdateValue={updateFieldValue}
                                             isReadOnly={isReadOnly}
-                                            isSigningMode={isSigningMode}
+                                            isSigningMode={isSigningSession}
+                                            currentUserRole={currentUserRole}
                                             onSigningClick={() => handleSigningFieldClick(field)}
-                                            isBusiness={field.assignee === 'business'}
-                                            isContact={field.assignee === 'contact'}
-                                            activeSigningFieldId={activeSigningFieldId}
                                         />
                                     ))}
                                 </DroppableCanvas>
@@ -829,396 +957,46 @@ export const DocumentCreator: React.FC<{
                         </div>
                     )}
                 </div>
-
-                {/* Settings Sidebar - Hide in Signing Mode */}
-                {!isSigningSession && (
-                    <div className="w-80 bg-white dark:bg-[#0A0A0A] border-l border-zinc-200 dark:border-white/10 overflow-y-auto shrink-0 z-20">
-                        {selectedFieldId ? (
-                            <div className="p-6">
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2">
-                                    <Settings size={14} /> Field Settings
-                                </h3>
-
-                                {fields.find(f => f.id === selectedFieldId) && (
-                                    <>
-                                        {(() => {
-                                            const f = fields.find(f => f.id === selectedFieldId)!;
-                                            return (
-                                                <div className="space-y-6">
-                                                    <div>
-                                                        <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">Label</label>
-                                                        <input
-                                                            value={f.label}
-                                                            onChange={(e) => setFields(fields.map(field => field.id === f.id ? { ...field, label: e.target.value } : field))}
-                                                            className="w-full bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500 dark:text-white"
-                                                        />
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">Assignee</label>
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={() => updateFieldAssignee(f.id, 'business')}
-                                                                className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border border-zinc-200 dark:border-white/10 transition-all ${f.assignee === 'business'
-                                                                    ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'
-                                                                    : 'bg-white dark:bg-white/5 text-zinc-500 hover:bg-zinc-50'
-                                                                    }`}
-                                                            >
-                                                                Vendor (You)
-                                                            </button>
-                                                            <button
-                                                                onClick={() => updateFieldAssignee(f.id, 'contact')}
-                                                                className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border border-zinc-200 dark:border-white/10 transition-all ${f.assignee === 'contact'
-                                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
-                                                                    : 'bg-white dark:bg-white/5 text-zinc-500 hover:bg-zinc-50'
-                                                                    }`}
-                                                            >
-                                                                Client (Lead)
-                                                            </button>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="pt-6 border-t border-zinc-200 dark:border-white/10">
-                                                        <button
-                                                            onClick={() => deleteField(f.id)}
-                                                            className="w-full py-2 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
-                                                        >
-                                                            <Trash2 size={16} /> Delete Field
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })()}
-                                    </>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="p-6 text-center text-zinc-400 mt-10">
-                                <p className="text-xs uppercase tracking-widest">No field selected</p>
-                            </div>
-                        )}
-                    </div>
-                )}
             </div>
 
-            {/* Send Modal */}
-            <SendDocumentModal
-                isOpen={isSendModalOpen}
-                onClose={() => setIsSendModalOpen(false)}
-                onSend={async (lead) => {
-                    await handleSave('sent', true, lead);
-                    setIsSendModalOpen(false);
-                }}
-            />
-
-            {/* Pre-Publish Warning Modal */}
-            {
-                showPublishWarning && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <motion.div
-                            initial={{ scale: 0.9 }}
-                            animate={{ scale: 1 }}
-                            className="bg-white dark:bg-[#111] max-w-sm w-full rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10"
-                        >
-                            <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Ready to Sign?</h3>
-                            <p className="text-sm text-zinc-500 mb-6">
-                                Once you enter signing mode, the document structure will be locked. You won't be able to move or add fields.
-                            </p>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setShowPublishWarning(false)}
-                                    className="flex-1 py-3 rounded-xl font-bold bg-zinc-100 dark:bg-white/5 text-zinc-600 dark:text-zinc-400"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmPublish}
-                                    className="flex-1 py-3 rounded-xl font-bold bg-indigo-600 text-white"
-                                >
-                                    Start Signing
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )
-            }
-        </div >
-    );
-};
-
-// --- Helper Components ---
-
-const DraggableTool: React.FC<{
-    type: DraggableField['type'],
-    icon: React.ElementType,
-    label: string,
-    color?: string,
-    onDrop: (type: DraggableField['type'], label: string, x: number, y: number) => void
-}> = ({ type, icon: Icon, label, color, onDrop }) => {
-    const ref = useRef<HTMLDivElement>(null);
-
-    // Basic drag implementation using HTML5 Drag and Drop for simplicity to start with, 
-    // or we can use the same PointerEvent logic if the canvas accepts it.
-    // For "Dropping onto Canvas", HTML5 DnD is often easier.
-
-    // Actually, let's use a simpler "Click to Add" or "Drag" approach.
-    // We'll stick to HTML5 draggable for the toolbar items.
-
-    const handleDragStart = (e: React.DragEvent) => {
-        e.dataTransfer.setData('application/json', JSON.stringify({ type, label }));
-        e.dataTransfer.effectAllowed = 'copy';
-    };
-
-    return (
-        <div
-            draggable
-            onDragStart={handleDragStart}
-            className="w-10 h-10 flex items-center justify-center bg-zinc-100 dark:bg-white/5 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/10 cursor-grab active:cursor-grabbing transition-colors relative group"
-            title={label}
-        >
-            <Icon size={20} />
-            <div className="absolute left-full ml-3 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
-                {label}
-            </div>
-        </div>
-    );
-};
-
-const DroppableCanvas: React.FC<{
-    onDrop: (type: DraggableField['type'], label: string, x: number, y: number) => void,
-    onCanvasDrop: (type: DraggableField['type'], label: string, clientX: number, clientY: number, canvasRect: DOMRect) => void,
-    children: React.ReactNode
-}> = ({ onDrop, onCanvasDrop, children }) => {
-    const ref = useRef<HTMLDivElement>(null);
-
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        const data = e.dataTransfer.getData('application/json');
-        if (data) {
-            const parsed = JSON.parse(data);
-            if (ref.current) {
-                onCanvasDrop(parsed.type, parsed.label, e.clientX, e.clientY, ref.current.getBoundingClientRect());
-            }
-        }
-    };
-
-    return (
-        <div
-            ref={ref}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            className="w-full h-full relative"
-        >
-            {children}
-        </div>
-    );
-};
-
-const DraggableFieldOnCanvas: React.FC<{
-    field: DraggableField,
-    isSelected: boolean,
-    onSelect: () => void,
-    onUpdatePos: (id: string, x: number, y: number) => void,
-    onUpdateValue?: (id: string, val: string) => void,
-    isReadOnly?: boolean,
-    isSigningMode?: boolean,
-    onSigningClick?: () => void,
-    isBusiness?: boolean,
-    isContact?: boolean,
-    activeSigningFieldId?: string | null
-}> = ({ field, isSelected, onSelect, onUpdatePos, onUpdateValue, isReadOnly, isSigningMode, onSigningClick, isBusiness, isContact, activeSigningFieldId }) => {
-    const [isDragging, setIsDragging] = useState(false);
-    const dragStart = useRef<{ x: number, y: number, initialLeft: number, initialTop: number } | null>(null);
-    const elementRef = useRef<HTMLDivElement>(null);
-
-    // Resize state
-    const [isResizing, setIsResizing] = useState(false);
-
-    const handlePointerDown = (e: React.PointerEvent) => {
-        if (isReadOnly) {
-            if (isSigningMode && onSigningClick) {
-                onSigningClick();
-            }
-            return;
-        }
-
-        e.preventDefault();
-        e.stopPropagation();
-        onSelect();
-
-        const el = elementRef.current;
-        if (!el || !el.offsetParent) return;
-
-        setIsDragging(true);
-
-        const rect = el.getBoundingClientRect();
-        const parentRect = el.offsetParent.getBoundingClientRect();
-
-        dragStart.current = {
-            x: e.clientX,
-            y: e.clientY,
-            initialLeft: e.clientX - parentRect.left, // This is relative to parent, but strictly logic is: 
-            // Actually, we want the current offsetLeft/Top?
-            // Let's rely on the visual position.
-            // Simplified: The element is positioned by %.
-            // We need to track pixel deltas.
-            initialTop: e.clientY - parentRect.top
-        };
-
-        // We need to capture the STARTING pixel position relative to the container
-        // computed from the percentage
-        const computedLeft = el.offsetLeft;
-        const computedTop = el.offsetTop;
-
-        dragStart.current = {
-            x: e.clientX,
-            y: e.clientY,
-            initialLeft: computedLeft,
-            initialTop: computedTop
-        };
-
-        const handlePointerMove = (moveEvent: PointerEvent) => {
-            moveEvent.preventDefault();
-            if (!dragStart.current || !el || !el.offsetParent) return;
-
-            const deltaX = moveEvent.clientX - dragStart.current.x;
-            const deltaY = moveEvent.clientY - dragStart.current.y;
-
-            // Apply translation directly for performance
-            el.style.transform = `translate(${deltaX}px, ${deltaY}px) translate(-50%, -50%)`;
-        };
-
-        const handlePointerUp = (upEvent: PointerEvent) => {
-            document.removeEventListener('pointermove', handlePointerMove);
-            document.removeEventListener('pointerup', handlePointerUp);
-
-            if (!dragStart.current || !el || !el.offsetParent) {
-                setIsDragging(false);
-                return;
-            }
-
-            const deltaX = upEvent.clientX - dragStart.current.x;
-            const deltaY = upEvent.clientY - dragStart.current.y;
-
-            const parentRect = el.offsetParent.getBoundingClientRect();
-
-            // Calculate final position in pixels
-            const finalPixelX = dragStart.current.initialLeft + deltaX;
-            const finalPixelY = dragStart.current.initialTop + deltaY;
-
-            // Reset style transform and update state
-            el.style.transform = 'translate(-50%, -50%)';
-            setIsDragging(false);
-            dragStart.current = null;
-
-            // Pass Absolute Screen Coordinates (Center) to match updateFieldPosition expectation
-            onUpdatePos(field.id, parentRect.left + finalPixelX, parentRect.top + finalPixelY);
-        };
-
-        document.addEventListener('pointermove', handlePointerMove);
-        document.addEventListener('pointerup', handlePointerUp);
-    };
-
-    const handleResizeStart = (e: React.PointerEvent) => {
-        if (isReadOnly) return;
-        e.preventDefault();
-        e.stopPropagation();
-
-        const el = elementRef.current;
-        if (!el) return;
-
-        setIsResizing(true);
-        // Implement resize logic if needed (similar to drag but updating width/height)
-        // For now, skipping full implementation to keep it simple, just stopping propogation
-    };
-
-    // Style logic
-    const style: React.CSSProperties = {
-        position: 'absolute',
-        left: `${field.x}%`,
-        top: `${field.y}%`,
-        width: field.width ? `${field.width}px` : undefined,
-        height: field.height ? `${field.height}px` : undefined,
-        // Default size for signature if not set
-        ...((field.type === 'signature' || field.type === 'initials') && !field.width ? { width: '200px', height: '100px' } : {}),
-        transform: 'translate(-50%, -50%)',
-        cursor: isReadOnly ? (isSigningMode && (isBusiness || isContact) ? 'pointer' : 'default') : (isDragging ? 'grabbing' : 'grab'),
-        zIndex: isDragging || isResizing || isSelected ? 50 : 10,
-        touchAction: 'none'
-    };
-
-    const isActive = activeSigningFieldId === field.id;
-    const isCompleted = !!field.value;
-    const showPulse = isSigningMode && !isCompleted && ((isBusiness && field.assignee === 'business') || (isContact && field.assignee === 'contact'));
-
-    return (
-        <div
-            ref={elementRef}
-            style={style}
-            onPointerDown={handlePointerDown}
-            className={`
-                group
-                flex flex-col
-                ${isSelected && !isReadOnly ? 'ring-2 ring-indigo-500' : ''}
-                ${showPulse ? 'animate-pulse ring-2 ring-emerald-400 ring-offset-2' : ''}
-                ${isCompleted && isSigningMode ? 'opacity-80' : ''}
-            `}
-        >
-            {/* Field Body */}
-            <div className={`
-                relative flex-1 rounded-lg border-2 flex items-center justify-center overflow-hidden bg-white dark:bg-black/80
-                ${field.assignee === 'business'
-                    ? 'border-red-200 bg-red-50/50 dark:border-red-500/30'
-                    : 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-500/30'}
-                ${isSigningMode && isActive ? 'ring-2 ring-blue-500' : ''}
-             `}>
-                {/* Resize Handle - Only in Edit Mode */}
-                {!isReadOnly && isSelected && (
-                    <div
-                        onPointerDown={handleResizeStart}
-                        className="absolute bottom-0 right-0 w-4 h-4 bg-indigo-500 cursor-nwse-resize z-50 rounded-tl"
-                    />
-                )}
-
-                {/* Content or Placeholder */}
-                {field.value ? (
-                    <div className="w-full h-full p-1 flex items-center justify-center">
-                        {field.type === 'signature' || field.type === 'initials' || field.type === 'image' ? (
-                            <img src={field.value} alt="Content" className="w-full h-full object-contain rounded" />
-                        ) : field.type === 'checkbox' ? (
-                            field.value === 'true' ? <CheckSquare size={24} className="text-zinc-900 dark:text-white" /> : <div className="w-6 h-6 border-2 border-zinc-400 rounded" />
-                        ) : (
-                            <span className="font-serif text-lg text-zinc-900 dark:text-white whitespace-pre-wrap leading-tight">
-                                {field.value}
-                            </span>
-                        )}
-                    </div>
-                ) : (
-                    /* Empty State Label */
-                    <div className="flex flex-col items-center justify-center p-2 text-center">
-                        {field.type === 'signature' && <PenTool size={16} className="text-zinc-400 mb-1 opacity-50" />}
-                        <span className={`text-[10px] font-bold uppercase tracking-widest truncate max-w-full
-                            ${field.assignee === 'business' ? 'text-red-500' : 'text-emerald-500'}
-                        `}>
-                            {field.label}
-                        </span>
-                    </div>
-                )}
-            </div>
-
-            {/* Assignee Label (Outside) */}
-            {!isReadOnly && (
-                <div className={`
-                    absolute -top-5 left-0 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded
-                    ${field.assignee === 'business' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}
-                `}>
-                    {field.assignee === 'business' ? 'Vendor' : 'Client'}
+            {showPublishWarning && (
+                <div className="absolute inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+                    <motion.div
+                        initial={{ scale: 0.95, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="bg-white dark:bg-[#111] max-w-sm w-full rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10"
+                    >
+                        <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Ready to Sign?</h3>
+                        <p className="text-zinc-500 dark:text-zinc-400 mb-6 font-medium">
+                            Entering signing mode will lock the document structure. You won't be able to add or move fields.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowPublishWarning(false)}
+                                className="flex-1 py-3 rounded-xl font-bold bg-zinc-100 dark:bg-white/5 text-zinc-900 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/10"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmPublish}
+                                className="flex-1 py-3 rounded-xl font-bold bg-indigo-600 text-white"
+                            >
+                                Start Signing
+                            </button>
+                        </div>
+                    </motion.div>
                 </div>
+            )}
+
+            {isSendModalOpen && (
+                <SendDocumentModal
+                    isOpen={isSendModalOpen}
+                    onClose={() => setIsSendModalOpen(false)}
+                    onSend={(lead) => {
+                        handleSave('sent', true, lead);
+                        setIsSendModalOpen(false);
+                    }}
+                />
             )}
         </div>
     );
@@ -1228,17 +1006,17 @@ export const VendorDocuments: React.FC = () => {
     const { user } = useAuth();
     const [view, setView] = useState<'list' | 'create'>('list');
     const [docs, setDocs] = useState<DocItem[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [selectedDoc, setSelectedDoc] = useState<DocItem | null>(null);
 
     useEffect(() => {
-        if (view === 'list') {
+        if (user) {
             fetchDocuments();
-            setSelectedDoc(null);
         }
-    }, [view]);
+    }, [user]);
 
     const fetchDocuments = async () => {
+        if (!user) return;
         setLoading(true);
         const { data, error } = await supabase
             .from('documents')
@@ -1246,16 +1024,7 @@ export const VendorDocuments: React.FC = () => {
             .order('created_at', { ascending: false });
 
         if (data) {
-            setDocs(data.map(d => ({
-                id: d.id,
-                title: d.title,
-                recipient: d.recipient_name || '-',
-                recipient_email: d.recipient_email,
-                date: new Date(d.created_at).toLocaleDateString(),
-                status: d.status as DocumentStatus,
-                file_url: d.file_url,
-                metadata: d.metadata || []
-            })));
+            setDocs(data as DocItem[]);
         }
         setLoading(false);
     };
@@ -1275,77 +1044,66 @@ export const VendorDocuments: React.FC = () => {
         if (!confirm('Are you sure you want to delete this document?')) return;
 
         const { error } = await supabase.from('documents').delete().eq('id', id);
-        if (error) {
-            alert('Error deleting document');
-        } else {
-            fetchDocuments();
+        if (!error) {
+            setDocs(docs.filter(d => d.id !== id));
         }
     };
 
     if (view === 'create') {
-        return <DocumentCreator onBack={() => setView('list')} initialDoc={selectedDoc} />;
+        return (
+            <DocumentCreator
+                onBack={() => {
+                    setView('list');
+                    fetchDocuments();
+                }}
+                initialDoc={selectedDoc}
+            />
+        );
     }
 
     return (
-        <div className="p-12 h-full flex flex-col">
-            <div className="flex justify-between items-end mb-8">
+        <div className="p-8 h-full overflow-y-auto">
+            <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h2 className="text-4xl font-serif text-zinc-900 dark:text-white mb-2">Documents</h2>
-                    <p className="text-zinc-500 dark:text-zinc-400 text-sm">Manage contracts, proposals, and e-signatures.</p>
+                    <h1 className="text-2xl font-serif font-bold text-zinc-900 dark:text-white mb-2">Documents</h1>
+                    <p className="text-zinc-500">Manage your contracts and templates.</p>
                 </div>
                 <button
                     onClick={handleCreateNew}
-                    className="bg-zinc-900 dark:bg-white text-white dark:text-black px-6 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center gap-2 hover:scale-105 transition-transform shadow-lg"
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2"
                 >
-                    <Plus size={16} /> New Document
+                    <Plus size={18} />
+                    New Document
                 </button>
             </div>
 
-            {/* Filter / Search Bar */}
-            <div className="flex gap-4 mb-8">
-                <div className="flex-1 relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-                    <input
-                        className="w-full bg-white dark:bg-[#080808] border border-zinc-200 dark:border-white/10 rounded-xl py-3 pl-12 pr-4 text-zinc-900 dark:text-white focus:outline-none focus:border-zinc-400 dark:focus:border-white/20 transition-colors"
-                        placeholder="Search documents..."
-                    />
-                </div>
-                <div className="flex gap-2">
-                    {['All', 'Sent', 'Completed', 'Drafts'].map(filter => (
-                        <button key={filter} className="px-5 py-3 rounded-xl border border-zinc-200 dark:border-white/10 text-xs font-bold uppercase tracking-widest hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors text-zinc-600 dark:text-zinc-400">
-                            {filter}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* Document List */}
-            <div className="bg-white dark:bg-[#080808] border border-zinc-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm dark:shadow-none flex-1">
+            <div className="bg-white dark:bg-[#0A0A0A] rounded-2xl border border-zinc-200 dark:border-white/10 overflow-hidden">
                 {loading ? (
-                    <div className="p-12 text-center text-zinc-500">Loading documents...</div>
+                    <div className="p-8 text-center text-zinc-400">Loading documents...</div>
                 ) : docs.length === 0 ? (
-                    <div className="p-12 text-center text-zinc-500">No documents found. Create one to get started.</div>
+                    <div className="p-16 text-center text-zinc-400">
+                        <FileText size={48} className="mx-auto mb-4 opacity-20" />
+                        <p>No documents found. Create one to get started.</p>
+                    </div>
                 ) : (
-                    <table className="w-full text-left">
-                        <thead className="bg-zinc-50 dark:bg-white/5 border-b border-zinc-200 dark:border-white/5">
+                    <table className="w-full">
+                        <thead className="bg-zinc-50 dark:bg-white/5 border-b border-zinc-200 dark:border-white/10">
                             <tr>
-                                <th className="px-8 py-4 text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-bold">Document Name</th>
-                                <th className="px-8 py-4 text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-bold">Recipient</th>
-                                <th className="px-8 py-4 text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-bold">Status</th>
-                                <th className="px-8 py-4 text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-bold">Date</th>
-                                <th className="px-8 py-4"></th>
+                                <th className="text-left px-8 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Document</th>
+                                <th className="text-left px-8 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Recipient</th>
+                                <th className="text-left px-8 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Status</th>
+                                <th className="text-left px-8 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Date</th>
+                                <th className="text-right px-8 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-100 dark:divide-white/5">
                             {docs.map(doc => (
                                 <tr
                                     key={doc.id}
-                                    className="group hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors"
+                                    onClick={() => handleOpenDoc(doc)}
+                                    className="group hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
                                 >
-                                    <td
-                                        onClick={() => handleOpenDoc(doc)}
-                                        className="px-8 py-4 cursor-pointer"
-                                    >
+                                    <td className="px-8 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
                                                 <FileText size={18} />
@@ -1357,7 +1115,7 @@ export const VendorDocuments: React.FC = () => {
                                     <td className="px-8 py-4 cursor-default">
                                         <StatusBadge status={doc.status} />
                                     </td>
-                                    <td className="px-8 py-4 text-zinc-500 text-sm cursor-default">{doc.date}</td>
+                                    <td className="px-8 py-4 text-zinc-500 text-sm cursor-default">{new Date(doc.date).toLocaleDateString()}</td>
                                     <td className="px-8 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                             {doc.status === 'draft' ? (

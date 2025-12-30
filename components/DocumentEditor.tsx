@@ -431,6 +431,63 @@ export const DocumentEditor: React.FC<{
                         </div>
                     )}
                 </div>
+
+                {/* Right Sidebar - Properties */}
+                <div className="w-64 bg-white dark:bg-[#0A0A0A] border-l border-zinc-200 dark:border-white/10 flex flex-col shrink-0 z-30 shadow-sm relative">
+                    <div className="p-4 border-b border-zinc-100 dark:border-white/5">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-1">Properties</h3>
+                    </div>
+
+                    <div className="p-4">
+                        {selectedFieldId ? (
+                            <div className="space-y-6">
+                                {/* Selected Field Info */}
+                                <div>
+                                    <label className="text-xs font-medium text-zinc-500 block mb-2">Selected Field</label>
+                                    <div className="text-sm font-bold text-zinc-800 dark:text-white bg-zinc-50 dark:bg-white/5 p-2 rounded border border-zinc-200 dark:border-white/10">
+                                        {fields.find(f => f.id === selectedFieldId)?.label || 'Unknown Field'}
+                                    </div>
+                                </div>
+
+                                {/* Assignee Selector */}
+                                <div>
+                                    <label className="text-xs font-bold text-zinc-900 dark:text-white block mb-3">Who will sign this?</label>
+                                    <div className="space-y-2">
+                                        <button
+                                            onClick={() => updateFieldAssignee(selectedFieldId, 'business')}
+                                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${fields.find(f => f.id === selectedFieldId)?.assignee === 'business'
+                                                ? 'bg-red-50 border-red-500 text-red-700'
+                                                : 'bg-white dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-600 hover:border-red-200'
+                                                }`}
+                                        >
+                                            <span className="text-sm font-medium">Business Owner</span>
+                                            {fields.find(f => f.id === selectedFieldId)?.assignee === 'business' && <div className="w-2 h-2 rounded-full bg-red-500" />}
+                                        </button>
+
+                                        <button
+                                            onClick={() => updateFieldAssignee(selectedFieldId, 'contact')}
+                                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${fields.find(f => f.id === selectedFieldId)?.assignee === 'contact'
+                                                ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
+                                                : 'bg-white dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-600 hover:border-emerald-200'
+                                                }`}
+                                        >
+                                            <span className="text-sm font-medium">Contact (Client)</span>
+                                            {fields.find(f => f.id === selectedFieldId)?.assignee === 'contact' && <div className="w-2 h-2 rounded-full bg-emerald-500" />}
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-zinc-400 mt-2 leading-relaxed">
+                                        Assigning a field determines who is required to fill it out during the signing process.
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-12 text-zinc-400 text-center">
+                                <FileText size={32} className="mb-3 opacity-20" />
+                                <p className="text-sm">Select a field on the canvas to edit its properties.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
 
             {isSendModalOpen && (

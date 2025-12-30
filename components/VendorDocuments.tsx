@@ -723,9 +723,18 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                 status: status
             };
 
-            // Sanitize fields to ensure no circular structures (DOM nodes)
+            // Aggressive Sanitize fields to ensure no circular structures or React internals
             docData.metadata = docData.metadata.map((f: any) => ({
-                ...f,
+                id: f.id,
+                type: f.type,
+                label: f.label,
+                x: f.x,
+                y: f.y,
+                width: f.width,
+                height: f.height,
+                pageNumber: f.pageNumber,
+                recipientId: f.recipientId,
+                assignee: f.assignee,
                 value: typeof f.value === 'string' ? f.value : undefined
             }));
 

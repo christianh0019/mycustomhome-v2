@@ -17,6 +17,8 @@ import { SignaturePadModal } from './SignaturePadModal';
 // ... (existing imports)
 
 // Inside DocumentCreator component:
+type DocumentStatus = 'draft' | 'sent' | 'completed';
+
 interface DocItem {
     id: string;
     title: string;
@@ -523,6 +525,24 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
 
     const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
 
+    const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+
+    // Signing Mode State
+    const [isSigningMode, setIsSigningMode] = useState(false);
+    const [showPublishWarning, setShowPublishWarning] = useState(false);
+    const [activeSigningFieldId, setActiveSigningFieldId] = useState<string | null>(null);
+    const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false);
+
+
+    const handleSendClick = () => {
+        // 1. Initial Validation: Ensure fields exist
+        if (fields.filter(f => f.assignee === 'business').length === 0 && fields.filter(f => f.assignee === 'contact').length === 0) {
+            alert("Please add at least one field before sending.");
+            return;
+        }
+        setShowPublishWarning(true);
+    };
+
 
     // Inside DocumentCreator component:
 
@@ -829,22 +849,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
         }
     };
 
-    const handleSendClick = () => {
-        // 1. Validate Business Fields
-        const businessFields = fields.filter(f => f.assignee === 'business');
-        // Check if value is present (and not just empty string)
-        // Some fields like checkbox might have 'true'/'false' or nothing.
-        // For Image, value is URL.
-        const emptyFields = businessFields.filter(f => !f.value || f.value.trim() === '');
 
-        if (emptyFields.length > 0) {
-            alert(`Please fill in all ${emptyFields.length} fields assigned to "My Business" before sending.`);
-            return;
-        }
-
-        // 2. Open Modal
-        setIsSendModalOpen(true);
-    };
 
     const handleConfirmSend = async (lead: Lead) => {
         // 3. Update status and recipient

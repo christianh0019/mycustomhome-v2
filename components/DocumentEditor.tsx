@@ -217,6 +217,10 @@ export const DocumentEditor: React.FC<{
         setFields(fields.map(f => f.id === id ? { ...f, value } : f));
     };
 
+    const updateFieldAssignee = (id: string, assignee: 'business' | 'contact') => {
+        setFields(fields.map(f => f.id === id ? { ...f, assignee } : f));
+    };
+
     const deleteField = (id: string) => {
         setFields(fields.filter(f => f.id !== id));
         if (selectedFieldId === id) setSelectedFieldId(null);

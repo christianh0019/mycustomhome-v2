@@ -201,10 +201,19 @@ export const DraggableFieldOnCanvas: React.FC<{
     const canSign = isSigningMode && isAssignedToUser;
 
     const getStatusColor = () => {
-        if (field.value) return 'bg-emerald-500/10 border-emerald-500 text-emerald-600';
-        if (canSign) return 'bg-indigo-500/10 border-indigo-500 text-indigo-600 animate-pulse';
-        if (!isSigningMode && field.assignee === 'contact') return 'bg-amber-500/10 border-amber-500 text-amber-600';
-        return 'bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100';
+        // Signing Mode (Homeowner view) logic
+        if (isSigningMode) {
+            if (field.value) return 'bg-emerald-500/10 border-emerald-500 text-emerald-600';
+            if (canSign) return 'bg-indigo-500/10 border-indigo-500 text-indigo-600 animate-pulse';
+            return 'bg-zinc-50 border-zinc-200 text-zinc-400 opacity-50';
+        }
+
+        // Editor Mode logic (Vendor view)
+        if (field.assignee === 'business') return 'bg-red-500/10 border-red-500 text-red-600';
+        if (field.assignee === 'contact') return 'bg-emerald-500/10 border-emerald-500 text-emerald-600';
+
+        // Default / Unassigned
+        return 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400';
     };
 
     return (

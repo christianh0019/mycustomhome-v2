@@ -1089,6 +1089,12 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                     />
                 )}
             </div>
+
+            <SendDocumentModal
+                isOpen={isSendModalOpen}
+                onClose={() => setIsSendModalOpen(false)}
+                onSend={handleConfirmSend}
+            />
         </div>
     );
 };
@@ -1211,11 +1217,6 @@ const SettingsSidebar: React.FC<{
                 </div>
             </div>
 
-            <SendDocumentModal
-                isOpen={isSendModalOpen}
-                onClose={() => setIsSendModalOpen(false)}
-                onSend={handleConfirmSend}
-            />
         </div>
     );
 };

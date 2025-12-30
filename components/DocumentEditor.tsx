@@ -304,7 +304,7 @@ export const DocumentEditor: React.FC<{
                 await supabase.from('documents').update(updates).eq('id', initialDoc.id);
             } else {
                 await supabase.from('documents').insert({
-                    user_id: user.id,
+                    vendor_id: user.id,
                     ...updates
                 });
             }

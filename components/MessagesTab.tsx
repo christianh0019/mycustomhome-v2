@@ -76,40 +76,60 @@ export const MessagesTab: React.FC = () => {
       const fetchData = async () => {
          setLoading(true);
 
-         const { data: leads, error: leadsError } = await supabase
-            .from('leads')
-            .select('*')
+         // 1. Fetch Matches (where user is either homeowner or vendor)
+         const { data: matches, error: matchesError } = await supabase
+            .from('matches')
+            .select(`
+               id,
+               status,
+               created_at,
+               homeowner:homeowner_id (id, full_name, avatar_url, role),
+               vendor:vendor_id (id, full_name, avatar_url, role)
+            `)
+            .or(`homeowner_id.eq.${user.id},vendor_id.eq.${user.id}`)
             .order('created_at', { ascending: false });
 
-         if (leadsError || !leads) {
+         if (matchesError || !matches) {
+            console.error('Error fetching matches:', matchesError);
             setThreads([]);
             setLoading(false);
             return;
          }
 
-         const leadIds = leads.map(l => l.id);
-         if (leadIds.length === 0) {
+         if (matches.length === 0) {
             setThreads([]);
             setLoading(false);
             return;
          }
 
+         const matchIds = matches.map(m => m.id);
+
+         // 2. Fetch Messages for these matches
          const { data: messages, error: messagesError } = await supabase
             .from('messages')
             .select('*')
-            .in('thread_id', leadIds)
+            .in('thread_id', matchIds)
             .order('created_at', { ascending: true });
 
-         const builtThreads: Thread[] = leads.map(lead => {
+         // 3. Build Thread Objects
+         const builtThreads: Thread[] = matches.map((match: any) => {
+            // Determine "Partner" (the other person in the match)
+            const isHomeowner = match.homeowner?.id === user.id;
+            const partnerProfile = isHomeowner ? match.vendor : match.homeowner;
+
+            // Fallbacks for missing profile data
+            const partnerName = partnerProfile?.full_name || (isHomeowner ? 'Vendor' : 'Homeowner');
+            const partnerAvatar = partnerProfile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(partnerName)}&background=random`;
+
             const leadConf = {
-               id: lead.id,
-               name: lead.project_title || 'Untitled Project',
-               avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(lead.project_title || 'L')}&background=random&color=fff`,
+               id: partnerProfile?.id || 'unknown',
+               name: partnerName,
+               avatar: partnerAvatar,
                status: 'online' as const
             };
 
             const threadMessages: ChatMessage[] = (messages || [])
-               .filter(m => m.thread_id === lead.id)
+               .filter(m => m.thread_id === match.id)
                .map(m => ({
                   id: m.id,
                   senderId: m.sender_id === 'me' || m.sender_id === user.id ? 'me' : m.sender_id,
@@ -122,16 +142,17 @@ export const MessagesTab: React.FC = () => {
                }));
 
             return {
-               id: lead.id,
+               id: match.id, // Thread ID is now Match ID
                partner: leadConf,
                messages: threadMessages,
                unreadCount: threadMessages.filter(m => m.senderId !== 'me' && !m.isRead).length
             };
          });
 
+         // Sort by last message time
          builtThreads.sort((a, b) => {
-            const lastMsgA = a.messages[a.messages.length - 1]?.createdAt || '';
-            const lastMsgB = b.messages[b.messages.length - 1]?.createdAt || '';
+            const lastMsgA = a.messages[a.messages.length - 1]?.createdAt || a.messages[0]?.createdAt || '';
+            const lastMsgB = b.messages[b.messages.length - 1]?.createdAt || b.messages[0]?.createdAt || '';
             return lastMsgB.localeCompare(lastMsgA);
          });
 

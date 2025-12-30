@@ -6,7 +6,8 @@ import { markFeatureAsSeen } from './NewBadge';
 import { FileText, CheckCircle2 } from 'lucide-react';
 import { useUI } from '../contexts/UIContext';
 import { supabase } from '../services/supabase';
-import { DocumentCreator, DocItem } from './VendorDocuments'; // Import reusable component
+import { DocumentSigner } from './DocumentSigner';
+import { DocItem } from './DocumentComponents';
 
 // --- Types ---
 interface ChatUser {
@@ -227,12 +228,11 @@ export const MessagesTab: React.FC = () => {
    if (signingDoc) {
       return (
          <div className="fixed inset-0 z-50 bg-white dark:bg-black">
-            <DocumentCreator
+            <DocumentSigner
                initialDoc={signingDoc}
                onBack={() => setSigningDoc(null)}
-               isSigningSession={true}
-               currentUserRole="contact" // Simulate Lead View
                onSigningComplete={handleSignatureComplete}
+               currentUserRole="contact"
             />
          </div>
       );

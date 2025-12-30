@@ -3,7 +3,7 @@ import {
     FileText, Plus, Search,
     PenTool, Type, Calendar, CheckSquare, Image as ImageIcon,
     Users, Send, ChevronLeft, Save, GripVertical, Settings, Upload, X, Trash2, Eye, Pencil, File, FileSignature,
-    Bold, Italic, Heading1, Heading2, List, AlignLeft, AlignCenter, AlignRight, Underline
+    Bold, Italic, Heading1, Heading2, List, AlignLeft, AlignCenter, AlignRight, Underline, ListOrdered, Indent, Outdent, Minus, ChevronDown
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabase';
@@ -252,6 +252,16 @@ const RichTextEditor: React.FC<{
         }
     };
 
+    // Auto-focus on mount if not read-only
+    useEffect(() => {
+        if (!readOnly && editorRef.current) {
+            // Small timeout to ensure it runs after layout
+            setTimeout(() => {
+                editorRef.current?.focus();
+            }, 100);
+        }
+    }, [readOnly]);
+
     return (
         <div className="h-full flex flex-col relative w-full">
 
@@ -265,6 +275,7 @@ const RichTextEditor: React.FC<{
                     prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wide prose-headings:mb-2 prose-headings:border-b prose-headings:border-zinc-200 prose-headings:pb-1
                     prose-p:mb-4 prose-p:text-zinc-900
                     prose-ul:list-disc prose-ul:pl-5 prose-ul:space-y-1 prose-ul:text-zinc-600
+                    prose-ol:list-decimal prose-ol:pl-5 prose-ol:space-y-1 prose-ol:text-zinc-600
                 `}
                 style={{ minHeight: '100%' }}
             />
@@ -283,6 +294,28 @@ const ToolbarBtn: React.FC<{ icon: React.ElementType, onClick: () => void, label
     >
         <Icon size={14} />
     </button>
+);
+
+const ToolbarSelect: React.FC<{
+    value: string,
+    onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void,
+    options: { label: string, value: string }[],
+    width?: string
+}> = ({ value, onChange, options, width = 'w-32' }) => (
+    <div className={`relative ${width} h-8 bg-zinc-100 rounded flex items-center px-2`}>
+        <select
+            value={value}
+            onChange={onChange}
+            className="w-full h-full bg-transparent text-xs text-zinc-700 outline-none appearance-none cursor-pointer"
+        >
+            {options.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+        </select>
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
+            <ChevronDown size={12} />
+        </div>
+    </div>
 );
 
 
@@ -642,7 +675,34 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
 
                 {/* Second Row: Toolbar (Only if not read-only and is editable type) */}
                 {!isReadOnly && (fileType === 'blank' || fileType === 'template') && (
-                    <div className="h-12 flex items-center gap-1 px-6 bg-zinc-50/50 dark:bg-white/5">
+                    <div className="h-12 flex items-center gap-1 px-6 bg-zinc-50/50 dark:bg-white/5 overflow-x-auto no-scrollbar">
+                        <ToolbarSelect
+                            value="Serif"
+                            onChange={(e) => exec('fontName', e.target.value)}
+                            options={[
+                                { label: 'Serif', value: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif' },
+                                { label: 'Sans', value: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' },
+                                { label: 'Mono', value: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }
+                            ]}
+                        />
+                        <div className="w-[1px] h-4 bg-zinc-300 mx-2" />
+                        <ToolbarBtn icon={Minus} label="Decrease Size" onClick={() => exec('fontSize', '3')} />
+                        {/* Note: execCommand fontSize is 1-7. We might want exact px but execCommand is limited. 
+                             Let's stick to standard buttons for now or a select if we want specific sizes.
+                             Actually, let's use a Select for sizing 1-7.
+                          */}
+                        <ToolbarSelect
+                            value="3"
+                            onChange={(e) => exec('fontSize', e.target.value)}
+                            options={[
+                                { label: 'Small', value: '2' },
+                                { label: 'Normal', value: '3' },
+                                { label: 'Large', value: '4' },
+                                { label: 'Huge', value: '5' }
+                            ]}
+                            width="w-24"
+                        />
+                        <div className="w-[1px] h-4 bg-zinc-300 mx-2" />
                         <ToolbarBtn icon={Bold} label="Bold" onClick={() => exec('bold')} />
                         <ToolbarBtn icon={Italic} label="Italic" onClick={() => exec('italic')} />
                         <ToolbarBtn icon={Underline} label="Underline" onClick={() => exec('underline')} />
@@ -651,14 +711,16 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                         <ToolbarBtn icon={AlignCenter} label="Align Center" onClick={() => exec('justifyCenter')} />
                         <ToolbarBtn icon={AlignRight} label="Align Right" onClick={() => exec('justifyRight')} />
                         <div className="w-[1px] h-4 bg-zinc-300 mx-2" />
-                        <ToolbarBtn icon={Heading1} label="Heading 1" onClick={() => exec('formatBlock', 'H2')} />
-                        <ToolbarBtn icon={Heading2} label="Heading 2" onClick={() => exec('formatBlock', 'H3')} />
-                        <ToolbarBtn icon={List} label="List" onClick={() => exec('insertUnorderedList')} />
+                        <ToolbarBtn icon={List} label="Bullet List" onClick={() => exec('insertUnorderedList')} />
+                        <ToolbarBtn icon={ListOrdered} label="Numbered List" onClick={() => exec('insertOrderedList')} />
+                        <ToolbarBtn icon={Indent} label="Indent" onClick={() => exec('indent')} />
+                        <ToolbarBtn icon={Outdent} label="Outdent" onClick={() => exec('outdent')} />
                     </div>
                 )}
             </div>
 
             <div className="flex-1 flex overflow-hidden">
+
                 {!isReadOnly && (
                     <div className="w-64 bg-white dark:bg-[#0A0A0A] border-r border-zinc-200 dark:border-white/10 flex flex-col z-10">
                         <div className="p-4 border-b border-zinc-200 dark:border-white/5">
@@ -827,8 +889,9 @@ const DraggableFieldOnCanvas: React.FC<{
     onRemove: (id: string) => void,
     onUpdatePos: (id: string, x: number, y: number) => void,
     onUpdateValue?: (id: string, value: string) => void,
+    onUpdateSize?: (id: string, width: number, height: number) => void,
     isReadOnly?: boolean
-}> = ({ field, onRemove, onUpdatePos, onUpdateValue, isReadOnly }) => {
+}> = ({ field, onRemove, onUpdatePos, onUpdateValue, onUpdateSize, isReadOnly }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const elementRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);

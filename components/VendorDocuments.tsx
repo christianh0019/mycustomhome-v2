@@ -39,6 +39,7 @@ interface DraggableField {
     recipientId?: number; // 1 = Primary
     width?: number; // For resizeable items
     height?: number;
+    assignee?: 'business' | 'contact';
 }
 
 export const VendorDocuments: React.FC = () => {
@@ -385,6 +386,8 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     const [recipientName, setRecipientName] = useState(initialDoc?.recipient || 'Christian Hostetler');
     const [recipientEmail, setRecipientEmail] = useState(initialDoc?.recipient_email || 'client@example.com');
 
+    const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+
     const pageRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -668,6 +671,17 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
         setFields(prev => prev.map(f => f.id === id ? { ...f, width, height } : f));
     }
 
+    const updateFieldAssignee = (id: string, assignee: 'business' | 'contact') => {
+        setFields(prev => prev.map(f => f.id === id ? { ...f, assignee } : f));
+    }
+
+    // Clear selection when clicking empty space
+    const handleCanvasClick = (e: React.MouseEvent) => {
+        if (e.target === e.currentTarget) {
+            setSelectedFieldId(null);
+        }
+    }
+
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         setNumPages(numPages);
     }
@@ -788,7 +802,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                     </div>
                 )}
 
-                <div className="flex-1 bg-zinc-100 dark:bg-[#050505] overflow-auto p-12 flex justify-center relative">
+                <div className="flex-1 bg-zinc-100 dark:bg-[#050505] overflow-auto p-12 flex justify-center relative" onClick={handleCanvasClick}>
                     <div className="flex flex-col gap-8 pb-32">
                         {!fileType && (
                             <div className="flex flex-col items-center justify-center min-h-[500px]">
@@ -883,6 +897,8 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                                         onUpdateValue={updateFieldValue}
                                         onUpdateSize={updateFieldSize}
                                         isReadOnly={isReadOnly}
+                                        isSelected={selectedFieldId === field.id}
+                                        onSelect={(id) => setSelectedFieldId(id)}
                                     />
                                 ))}
 
@@ -891,6 +907,93 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+
+                {/* Right Sidebar */}
+                {selectedFieldId && !isReadOnly && (
+                    <SettingsSidebar
+                        field={fields.find(f => f.id === selectedFieldId) || null}
+                        onUpdateAssignee={updateFieldAssignee}
+                        onClose={() => setSelectedFieldId(null)}
+                    />
+                )}
+            </div>
+        </div>
+    );
+};
+
+const SettingsSidebar: React.FC<{
+    field: DraggableField | null,
+    onUpdateAssignee: (id: string, assignee: 'business' | 'contact') => void,
+    onClose: () => void
+}> = ({ field, onUpdateAssignee, onClose }) => {
+    if (!field) return (
+        <div className="w-80 bg-white dark:bg-[#0A0A0A] border-l border-zinc-200 dark:border-white/10 flex flex-col p-6">
+            <div className="text-center text-zinc-500 mt-10">
+                <p className="text-sm">Select a field to configure settings.</p>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="w-80 bg-white dark:bg-[#0A0A0A] border-l border-zinc-200 dark:border-white/10 flex flex-col z-20 shadow-xl">
+            <div className="p-6 border-b border-zinc-200 dark:border-white/5 flex justify-between items-center">
+                <h3 className="font-serif text-lg font-bold text-zinc-900 dark:text-white">Field Settings</h3>
+                <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-full text-zinc-500">
+                    <X size={16} />
+                </button>
+            </div>
+
+            <div className="p-6 flex-1 overflow-y-auto">
+                <div className="mb-8">
+                    <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4">Who fills this out?</label>
+
+                    <div className="space-y-3">
+                        <button
+                            onClick={() => onUpdateAssignee(field.id, 'business')}
+                            className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center justify-between
+                                ${field.assignee === 'business'
+                                    ? 'border-red-500 bg-red-50 dark:bg-red-900/10'
+                                    : 'border-zinc-200 dark:border-white/10 hover:border-red-200 hover:bg-zinc-50'
+                                }
+                            `}
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className={`w-3 h-3 rounded-full ${field.assignee === 'business' ? 'bg-red-500' : 'bg-zinc-300'}`} />
+                                <span className={`font-medium text-sm ${field.assignee === 'business' ? 'text-red-700 dark:text-red-400' : 'text-zinc-600 dark:text-zinc-400'}`}>My Business</span>
+                            </div>
+                            {field.assignee === 'business' && <CheckSquare size={16} className="text-red-500" />}
+                        </button>
+
+                        <button
+                            onClick={() => onUpdateAssignee(field.id, 'contact')}
+                            className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center justify-between
+                                ${field.assignee === 'contact'
+                                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10'
+                                    : 'border-zinc-200 dark:border-white/10 hover:border-emerald-200 hover:bg-zinc-50'
+                                }
+                            `}
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className={`w-3 h-3 rounded-full ${field.assignee === 'contact' ? 'bg-emerald-500' : 'bg-zinc-300'}`} />
+                                <span className={`font-medium text-sm ${field.assignee === 'contact' ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-600 dark:text-zinc-400'}`}>Contact</span>
+                            </div>
+                            {field.assignee === 'contact' && <CheckSquare size={16} className="text-emerald-500" />}
+                        </button>
+                    </div>
+                    {/* Visual Key Help */}
+                    <p className="mt-4 text-xs text-zinc-400 leading-relaxed">
+                        Fields assigned to <span className="text-red-500 font-medium">Business</span> (Red) are for you to sign/fill before sending.
+                        Fields for the <span className="text-emerald-500 font-medium">Contact</span> (Green) are for the recipient.
+                        Grey fields are currently unassigned.
+                    </p>
+                </div>
+
+                <div className="mb-8">
+                    <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">Field Type</label>
+                    <div className="p-3 bg-zinc-100 dark:bg-white/5 rounded-lg border border-zinc-200 dark:border-white/5 text-sm text-zinc-600 dark:text-zinc-300 font-mono capitalize">
+                        {field.type}
                     </div>
                 </div>
             </div>
@@ -941,8 +1044,10 @@ const DraggableFieldOnCanvas: React.FC<{
     onUpdatePos: (id: string, x: number, y: number) => void,
     onUpdateValue?: (id: string, value: string) => void,
     onUpdateSize?: (id: string, width: number, height: number) => void,
+    isSelected?: boolean,
+    onSelect?: (id: string) => void,
     isReadOnly?: boolean
-}> = ({ field, onRemove, onUpdatePos, onUpdateValue, onUpdateSize, isReadOnly }) => {
+}> = ({ field, onRemove, onUpdatePos, onUpdateValue, onUpdateSize, isSelected, onSelect, isReadOnly }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const elementRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -956,6 +1061,12 @@ const DraggableFieldOnCanvas: React.FC<{
 
     const handlePointerDown = (e: React.PointerEvent) => {
         if (isReadOnly) return;
+
+        // Select logic
+        if (onSelect) {
+            onSelect(field.id);
+        }
+
         // Don't start drag if clicking resize handle
         // @ts-ignore
         if (e.target.dataset.resizeHandle) return;
@@ -1081,6 +1192,25 @@ const DraggableFieldOnCanvas: React.FC<{
         }
     };
 
+    // Determine Colors
+    let borderColor = 'border-zinc-300';
+    let bgColor = 'bg-zinc-100';
+    let textColor = 'text-zinc-600';
+
+    if (field.assignee === 'business') {
+        borderColor = 'border-red-500';
+        bgColor = 'bg-red-500/10';
+        textColor = 'text-red-600';
+    } else if (field.assignee === 'contact') {
+        borderColor = 'border-emerald-500';
+        bgColor = 'bg-emerald-500/10';
+        textColor = 'text-emerald-600';
+    }
+
+    if (isSelected) {
+        borderColor = 'border-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.3)] ' + borderColor;
+    }
+
     return (
         <div
             ref={elementRef}
@@ -1093,16 +1223,16 @@ const DraggableFieldOnCanvas: React.FC<{
                 height: field.height ? `${field.height}px` : undefined,
                 transform: 'translate(-50%, -50%)',
                 cursor: isReadOnly ? 'default' : (isDragging ? 'grabbing' : 'grab'),
-                zIndex: isDragging || isResizing ? 50 : 10,
+                zIndex: isDragging || isResizing || isSelected ? 50 : 10,
                 touchAction: 'none'
             }}
             className="group"
         >
             {field.type === 'image' ? (
-                <div className="relative group/image w-full h-full">
+                <div className={`relative group/image w-full h-full border-2 ${isSelected ? 'border-blue-500' : 'border-transparent'}`}>
                     {field.value ? (
                         <div className="relative w-full h-full">
-                            <img src={field.value} alt="Logo" className="w-full h-full object-contain border border-transparent hover:border-blue-500 rounded select-none pointer-events-none" />
+                            <img src={field.value} alt="Logo" className="w-full h-full object-contain pointer-events-none select-none" />
                             {!isReadOnly && (
                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded cursor-pointer pointer-events-auto" onPointerDown={(e) => e.stopPropagation()} onClick={() => fileInputRef.current?.click()}>
                                     <Pencil size={12} className="text-white" />
@@ -1120,8 +1250,8 @@ const DraggableFieldOnCanvas: React.FC<{
                     <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                 </div>
             ) : (
-                <div className={`w-full h-full p-2 rounded border-2 shadow-sm flex items-center justify-center text-center gap-2 select-none overflow-hidden
-                    ${field.type === 'signature' ? 'bg-blue-500/10 border-blue-500 text-blue-600' : 'bg-yellow-500/10 border-yellow-500 text-yellow-600'}
+                <div className={`w-full h-full p-2 rounded border-2 shadow-sm flex items-center justify-center text-center gap-2 select-none overflow-hidden transition-colors
+                    ${borderColor} ${bgColor} ${textColor}
                 `}>
                     <span className="text-[10px] font-bold uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis">{field.label}</span>
                 </div>
@@ -1139,7 +1269,7 @@ const DraggableFieldOnCanvas: React.FC<{
                     <div
                         onPointerDown={handleResizeStart}
                         data-resize-handle="true"
-                        className="absolute -bottom-1 -right-1 w-3 h-3 bg-white border border-zinc-400 rounded-full cursor-nwse-resize opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                        className={`absolute -bottom-1 -right-1 w-3 h-3 bg-white border border-zinc-400 rounded-full cursor-nwse-resize opacity-0 group-hover:opacity-100 transition-opacity z-20 ${isSelected ? 'opacity-100' : ''}`}
                     />
                 </>
             )}

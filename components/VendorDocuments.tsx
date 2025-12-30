@@ -258,13 +258,8 @@ const RichTextEditor: React.FC<{
 
     // Sync content updates
     useEffect(() => {
-        if (editorRef.current && content !== editorRef.current.innerHTML) {
-            // Only update if significantly different to avoid cursor jumps?
-            // Simple approach: Only initial or if empty. 
-            // Better: relying on onInput to update state, and this effect to set initial.
-            if (editorRef.current.innerHTML === '' && content) {
-                editorRef.current.innerHTML = content;
-            }
+        if (editorRef.current && content && !editorRef.current.innerHTML) {
+            editorRef.current.innerHTML = content;
         }
     }, []);
 
@@ -273,50 +268,46 @@ const RichTextEditor: React.FC<{
         if (editorRef.current) onChange(editorRef.current.innerHTML);
     };
 
+    const ToolbarBtn: React.FC<{ icon: React.ElementType, onClick: () => void }> = ({ icon: Icon, onClick }) => (
+        <button
+            onClick={(e) => { e.preventDefault(); onClick(); }}
+            className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200 rounded transition-colors"
+        >
+            <Icon size={14} />
+        </button>
+    );
+
     return (
-        <div className="w-full h-full flex flex-col relative z-0">
-            {/* Toolbar */}
+        <div className="h-full flex flex-col relative w-full">
             {!isReadOnly && (
-                <div className="sticky top-0 z-10 flex flex-wrap gap-1 p-2 bg-zinc-50 border-b border-zinc-200 dark:bg-zinc-900 dark:border-white/10 rounded-t-lg">
-                    <div className="flex bg-white dark:bg-white/5 rounded border border-zinc-200 dark:border-white/10">
-                        <IconButton icon={Bold} onClick={() => exec('bold')} title="Bold" />
-                        <IconButton icon={Italic} onClick={() => exec('italic')} title="Italic" />
-                        <IconButton icon={Underline} onClick={() => exec('underline')} title="Underline" />
-                    </div>
-                    <div className="w-px h-8 bg-zinc-200 dark:bg-white/10 mx-1" />
-                    <div className="flex bg-white dark:bg-white/5 rounded border border-zinc-200 dark:border-white/10">
-                        <IconButton icon={AlignLeft} onClick={() => exec('justifyLeft')} title="Align Left" />
-                        <IconButton icon={AlignCenter} onClick={() => exec('justifyCenter')} title="Align Center" />
-                        <IconButton icon={AlignRight} onClick={() => exec('justifyRight')} title="Align Right" />
-                    </div>
-                    <div className="w-px h-8 bg-zinc-200 dark:bg-white/10 mx-1" />
-                    <div className="flex bg-white dark:bg-white/5 rounded border border-zinc-200 dark:border-white/10">
-                        <IconButton icon={List} onClick={() => exec('insertUnorderedList')} title="Bullet List" />
-                        <IconButton icon={ListOrdered} onClick={() => exec('insertOrderedList')} title="Numbered List" />
-                    </div>
-                    <div className="w-px h-8 bg-zinc-200 dark:bg-white/10 mx-1" />
-                    <div className="flex bg-white dark:bg-white/5 rounded border border-zinc-200 dark:border-white/10">
-                        <ToolbarSelect
-                            value="p"
-                            onChange={(e) => exec('formatBlock', e.target.value)}
-                            options={[
-                                { label: 'Paragraph', value: 'p' },
-                                { label: 'Heading 1', value: 'H1' },
-                                { label: 'Heading 2', value: 'H2' },
-                                { label: 'Heading 3', value: 'H3' }
-                            ]}
-                        />
-                    </div>
+                <div className="flex flex-wrap items-center gap-1 p-2 border-b border-zinc-100 bg-zinc-50/50 sticky top-0 z-20">
+                    <ToolbarBtn icon={Bold} onClick={() => exec('bold')} />
+                    <ToolbarBtn icon={Italic} onClick={() => exec('italic')} />
+                    <ToolbarBtn icon={Underline} onClick={() => exec('underline')} />
+                    <div className="w-[1px] h-4 bg-zinc-300 mx-1" />
+                    <ToolbarBtn icon={AlignLeft} onClick={() => exec('justifyLeft')} />
+                    <ToolbarBtn icon={AlignCenter} onClick={() => exec('justifyCenter')} />
+                    <ToolbarBtn icon={AlignRight} onClick={() => exec('justifyRight')} />
+                    <div className="w-[1px] h-4 bg-zinc-300 mx-1" />
+                    <ToolbarBtn icon={Heading1} onClick={() => exec('formatBlock', 'H2')} />
+                    <ToolbarBtn icon={Heading2} onClick={() => exec('formatBlock', 'H3')} />
+                    <ToolbarBtn icon={List} onClick={() => exec('insertUnorderedList')} />
+                    <ToolbarBtn icon={ListOrdered} onClick={() => exec('insertOrderedList')} />
                 </div>
             )}
 
-            {/* Editor Area */}
             <div
                 ref={editorRef}
-                className="flex-1 p-12 outline-none focus:ring-0 prose dark:prose-invert max-w-none text-zinc-900 dark:text-white"
+                className={`
+                    flex-1 p-16 outline-none font-serif text-[11px] leading-relaxed relative
+                    prose prose-sm max-w-none
+                    prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wide prose-headings:mb-2 prose-headings:border-b prose-headings:border-zinc-200 prose-headings:pb-1
+                    prose-p:mb-4 prose-p:text-zinc-900
+                    prose-ul:list-disc prose-ul:pl-5 prose-ul:space-y-1 prose-ul:text-zinc-600
+                `}
                 contentEditable={!isReadOnly}
                 onInput={(e) => onChange(e.currentTarget.innerHTML)}
-                style={{ minHeight: '800px' }}
+                style={{ minHeight: '100%' }}
                 dangerouslySetInnerHTML={{ __html: content }}
             />
         </div>
@@ -348,6 +339,82 @@ export const DocumentCreator: React.FC<{
     const [pageContent, setPageContent] = useState<{ [page: number]: string }>({});
     const [fields, setFields] = useState<DraggableField[]>(initialDoc?.metadata || []);
     const [saving, setSaving] = useState(false);
+
+    const initializeTemplate = (recipName: string) => {
+        // Pre-fill content
+        const page1 = `
+            <div style="margin-bottom: 3rem; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e5e7eb; padding-bottom: 2rem;">
+                <div>
+                     <div style="font-size: 1.875rem; font-weight: 700; margin-bottom: 0.5rem;">BuildCorp Inc.</div>
+                     <div style="color: #71717a;">123 Construction Ave, Suite 100<br/>New York, NY 10001</div>
+                </div>
+                <div style="width: 4rem; height: 4rem; background-color: #18181b; color: white; border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.25rem;">BC</div>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 3rem;">
+                <h1 style="font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;">Professional Services Agreement</h1>
+                <p style="color: #71717a; font-style: italic;">Effective Date: ${new Date().toLocaleDateString()}</p>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 2rem;">
+                <section>
+                    <h2>1. The Parties</h2>
+                    <p>This Professional Services Agreement ("Agreement") is entered into between <strong>BuildCorp Inc.</strong> ("Service Provider") and <strong>${recipName || 'Client'}</strong> ("Client"). The Service Provider and Client may be referred to individually as a "Party" or collectively as the "Parties".</p>
+                </section>
+
+                <section>
+                    <h2>2. Scope of Work</h2>
+                    <p style="margin-bottom: 0.5rem;">The Service Provider agrees to perform the following services for the Client:</p>
+                    <ul>
+                        <li>Custom home design and architectural planning.</li>
+                        <li>Permit acquisition and regulatory compliance consultation.</li>
+                        <li>Material selection and vendor coordination.</li>
+                        <li>On-site project management and quality assurance.</li>
+                    </ul>
+                    <p style="margin-top: 0.5rem;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                </section>
+            </div>
+        `;
+
+        const page2 = `
+            <div style="display: flex; flex-direction: column; height: 100%;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 2rem;">
+                    <section>
+                        <h2>3. Compensation</h2>
+                        <p>Client agrees to pay Service Provider a total fee of <strong>$0.00</strong> (TBD) for the Services.</p>
+                    </section>
+                    <section>
+                        <h2>4. Term and Termination</h2>
+                        <p>This Agreement shall commence on the Effective Date and shall continue until the completion of the Services. Either Party may terminate this Agreement upon written notice if the other Party materially breaches any provision.</p>
+                    </section>
+                </div>
+                
+                <div style="margin-top: 4rem; padding-top: 2rem; border-top: 2px solid #18181b;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;">
+                        <div>
+                            <h4 style="font-weight: 700; margin-bottom: 2rem;">IN WITNESS WHEREOF, the Parties have executed this Agreement.</h4>
+                            <div style="display: flex; flex-direction: column; gap: 2rem;">
+                                <div><div style="height: 3rem; border-bottom: 1px solid #d4d4d8; margin-bottom: 0.5rem;"></div><p style="font-weight: 700;">BuildCorp Inc.</p></div>
+                                <div><div style="height: 3rem; border-bottom: 1px solid #d4d4d8; margin-bottom: 0.5rem;"></div><p style="font-weight: 700;">Date</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        setPageContent({
+            1: page1,
+            2: page2
+        });
+    };
+
+    const handleStartTemplate = () => {
+        setFileType('template');
+        setNumPages(2);
+        setDocTitle('Professional Services Agreement');
+        initializeTemplate(recipientName);
+    };
 
     const [recipientName, setRecipientName] = useState(initialDoc?.recipient || '');
     const [recipientEmail, setRecipientEmail] = useState(initialDoc?.recipient_email || '');
@@ -663,18 +730,22 @@ export const DocumentCreator: React.FC<{
                                 <button onClick={() => setFileType('blank')} className="px-4 py-2 bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/10 rounded-lg text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/10 transition-colors">
                                     Start Blank
                                 </button>
+                                <button onClick={handleStartTemplate} className="px-4 py-2 bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/10 rounded-lg text-sm font-bold hover:bg-zinc-50 dark:hover:bg-white/10 transition-colors">
+                                    Use Template
+                                </button>
                             </div>
                         </div>
                     ) : (
                         <div
                             className="bg-white dark:bg-white shadow-2xl relative min-h-[842px]"
+
                             style={{
                                 width: '595px', // A4 width
                                 minHeight: '842px', // A4 height
                             }}
                         >
                             {/* Document Content Layer */}
-                            {(previewUrl || fileType === 'blank') && (
+                            {(previewUrl || fileType === 'blank' || fileType === 'template') && (
                                 <div className="absolute inset-0 z-0">
                                     {fileType === 'pdf' ? (
                                         <Document
@@ -692,7 +763,7 @@ export const DocumentCreator: React.FC<{
                                                 />
                                             ))}
                                         </Document>
-                                    ) : fileType === 'blank' ? (
+                                    ) : (fileType === 'blank' || fileType === 'template') ? (
                                         <RichTextEditor
                                             content={pageContent[1] || ''}
                                             onChange={(html) => setPageContent({ ...pageContent, 1: html })}
@@ -841,35 +912,37 @@ export const DocumentCreator: React.FC<{
             />
 
             {/* Pre-Publish Warning Modal */}
-            {showPublishWarning && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <motion.div
-                        initial={{ scale: 0.9 }}
-                        animate={{ scale: 1 }}
-                        className="bg-white dark:bg-[#111] max-w-sm w-full rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10"
-                    >
-                        <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Ready to Sign?</h3>
-                        <p className="text-sm text-zinc-500 mb-6">
-                            Once you enter signing mode, the document structure will be locked. You won't be able to move or add fields.
-                        </p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setShowPublishWarning(false)}
-                                className="flex-1 py-3 rounded-xl font-bold bg-zinc-100 dark:bg-white/5 text-zinc-600 dark:text-zinc-400"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmPublish}
-                                className="flex-1 py-3 rounded-xl font-bold bg-indigo-600 text-white"
-                            >
-                                Start Signing
-                            </button>
-                        </div>
-                    </motion.div>
-                </div>
-            )}
-        </div>
+            {
+                showPublishWarning && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ scale: 0.9 }}
+                            animate={{ scale: 1 }}
+                            className="bg-white dark:bg-[#111] max-w-sm w-full rounded-2xl p-6 shadow-2xl border border-zinc-200 dark:border-white/10"
+                        >
+                            <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Ready to Sign?</h3>
+                            <p className="text-sm text-zinc-500 mb-6">
+                                Once you enter signing mode, the document structure will be locked. You won't be able to move or add fields.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowPublishWarning(false)}
+                                    className="flex-1 py-3 rounded-xl font-bold bg-zinc-100 dark:bg-white/5 text-zinc-600 dark:text-zinc-400"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmPublish}
+                                    className="flex-1 py-3 rounded-xl font-bold bg-indigo-600 text-white"
+                                >
+                                    Start Signing
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )
+            }
+        </div >
     );
 };
 

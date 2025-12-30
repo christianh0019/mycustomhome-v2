@@ -723,20 +723,21 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                 status: status
             };
 
-            // Aggressive Sanitize fields to ensure no circular structures or React internals
-            docData.metadata = docData.metadata.map((f: any) => ({
-                id: f.id,
-                type: f.type,
-                label: f.label,
-                x: f.x,
-                y: f.y,
-                width: f.width,
-                height: f.height,
-                pageNumber: f.pageNumber,
-                recipientId: f.recipientId,
-                assignee: f.assignee,
-                value: typeof f.value === 'string' ? f.value : undefined
-            }));
+            // Nuclear Option: Deep clone and sanitization
+            // This ensures NO references to DOM nodes or circular structures survive
+            docData.metadata = JSON.parse(JSON.stringify(docData.metadata.map((f: any) => ({
+                id: String(f.id),
+                type: String(f.type),
+                label: String(f.label || ''),
+                x: Number(f.x || 0),
+                y: Number(f.y || 0),
+                width: f.width ? Number(f.width) : undefined,
+                height: f.height ? Number(f.height) : undefined,
+                pageNumber: Number(f.pageNumber || 1),
+                recipientId: Number(f.recipientId || 1),
+                assignee: f.assignee ? String(f.assignee) : undefined,
+                value: (f.value && typeof f.value === 'string') ? f.value : undefined
+            }))));
 
             const query = initialDoc?.id
                 ? supabase.from('documents').update(docData).eq('id', initialDoc.id)

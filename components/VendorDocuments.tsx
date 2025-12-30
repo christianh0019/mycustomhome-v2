@@ -247,7 +247,7 @@ const RichTextEditor: React.FC<{
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (e.key === ' ' && !readOnly) {
+        if (false && e.key === ' ' && !readOnly) {
             const selection = window.getSelection();
             if (!selection || !selection.rangeCount) return;
 

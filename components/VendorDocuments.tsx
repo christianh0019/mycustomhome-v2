@@ -723,6 +723,12 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                 status: status
             };
 
+            // Sanitize fields to ensure no circular structures (DOM nodes)
+            docData.metadata = docData.metadata.map((f: any) => ({
+                ...f,
+                value: typeof f.value === 'string' ? f.value : undefined
+            }));
+
             const query = initialDoc?.id
                 ? supabase.from('documents').update(docData).eq('id', initialDoc.id)
                 : supabase.from('documents').insert({ ...docData, vendor_id: user.id });
@@ -1175,6 +1181,46 @@ const SettingsSidebar: React.FC<{
                             Fields for the <span className="text-emerald-500 font-medium">Contact</span> (Green) are for the recipient.
                             Grey fields are currently unassigned.
                         </p>
+                    </div>
+                )}
+
+                {/* Value Input for Business Fields (Fix for Blocking Issue) */}
+                {field.assignee === 'business' && field.type !== 'image' && onUpdateValue && (
+                    <div className="mb-8">
+                        <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4">Field Content</label>
+                        <div className="p-4 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/5">
+                            {(field.type === 'text' || field.type === 'date' || field.type === 'initials') && (
+                                <input
+                                    type="text"
+                                    value={field.value || ''}
+                                    placeholder="Enter value..."
+                                    onChange={(e) => onUpdateValue(field.id, e.target.value)}
+                                    className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-lg p-2 text-sm"
+                                />
+                            )}
+                            {field.type === 'checkbox' && (
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={field.value === 'true'}
+                                        onChange={(e) => onUpdateValue(field.id, e.target.checked ? 'true' : 'false')}
+                                        className="w-5 h-5 rounded border-zinc-300 text-blue-600"
+                                    />
+                                    <span className="text-sm">Checked</span>
+                                </div>
+                            )}
+                            {field.type === 'signature' && (
+                                <button
+                                    onClick={() => onUpdateValue(field.id, 'Signed')}
+                                    className={`w-full py-2 px-3 rounded-lg text-sm font-bold border transition-colors flex items-center justify-center gap-2
+                                        ${field.value ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50'}
+                                    `}
+                                >
+                                    <PenTool size={14} />
+                                    {field.value ? 'Signed' : 'Sign Now'}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
 

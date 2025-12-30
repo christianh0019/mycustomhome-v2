@@ -12,11 +12,11 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-// Initialize PDF Worker
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+import { SignaturePadModal } from './SignaturePadModal';
 
-type DocumentStatus = 'draft' | 'sent' | 'completed';
+// ... (existing imports)
 
+// Inside DocumentCreator component:
 interface DocItem {
     id: string;
     title: string;
@@ -522,7 +522,72 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     const [recipientEmail, setRecipientEmail] = useState(initialDoc?.recipient_email || 'client@example.com');
 
     const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
-    const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+
+
+    // Inside DocumentCreator component:
+
+
+
+    const confirmPublish = () => {
+        setShowPublishWarning(false);
+        setIsSigningMode(true);
+        // Force save to lock content? optional.
+        handleSave('draft', true);
+    };
+
+    const handleSigningFieldClick = (field: DraggableField) => {
+        if (!isSigningMode || field.assignee !== 'business') return;
+
+        setActiveSigningFieldId(field.id);
+
+        if (field.type === 'signature' || field.type === 'initials') {
+            setIsSignaturePadOpen(true);
+        } else {
+            // For text/date/checkbox, we can assume standard input or toggle
+            // For simplicity, we can reuse the existing updateFieldValue but focus it?
+            // Or better: prompt value.
+            if (field.type === 'checkbox') {
+                updateFieldValue(field.id, field.value === 'true' ? 'false' : 'true');
+            } else {
+                const newVal = prompt(`Enter value for ${field.label}:`, field.value || '');
+                if (newVal !== null) {
+                    updateFieldValue(field.id, newVal);
+                }
+            }
+        }
+    };
+
+    const handleSignatureSave = (dataUrl: string) => {
+        if (activeSigningFieldId) {
+            updateFieldValue(activeSigningFieldId, dataUrl);
+            setActiveSigningFieldId(null);
+        }
+    };
+
+    const finalizeAndSend = () => {
+        // Validate all business fields are filled
+        const businessFields = fields.filter(f => f.assignee === 'business');
+        const emptyFields = businessFields.filter(f => !f.value || f.value.trim() === '');
+
+        if (emptyFields.length > 0) {
+            alert(`Please sign/fill all ${emptyFields.length} business fields.`);
+            return;
+        }
+
+        setIsSendModalOpen(true);
+    };
+
+    // ... (rest of component)
+
+    // In Render:
+
+
+
+    {/* Update Toolbar/Header Logic */ }
+    {/* If isSigningMode, show "Finish Signing" instead of "Send" */ }
+
+    {/* Pass handleSigningFieldClick to DraggableFieldOnCanvas onClick if isSigningMode */ }
+
 
     const pageRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -903,12 +968,12 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                                 {saving ? 'Saving...' : <><Save size={14} /> Save</>}
                             </button>
                             <button
-                                onClick={handleSendClick}
+                                onClick={isSigningMode ? finalizeAndSend : handleSendClick}
                                 disabled={fields.length === 0}
                                 className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-colors shadow-lg
                                      ${fields.length > 0 ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20' : 'bg-zinc-200 dark:bg-white/10 text-zinc-400 cursor-not-allowed'}`}
                             >
-                                <Send size={14} /> Send
+                                <Send size={14} /> {isSigningMode ? "Finish Signing" : "Send"}
                             </button>
                         </div>
                     ) : (
@@ -1081,9 +1146,10 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                                         onUpdatePos={updateFieldPosition}
                                         onUpdateValue={updateFieldValue}
                                         onUpdateSize={updateFieldSize}
-                                        isReadOnly={isReadOnly}
+                                        isReadOnly={isReadOnly || isSigningMode}
                                         isSelected={selectedFieldId === field.id}
                                         onSelect={(id) => setSelectedFieldId(id)}
+                                        onClick={isSigningMode ? () => handleSigningFieldClick(field) : undefined}
                                     />
                                 ))}
 
@@ -1105,6 +1171,41 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                     />
                 )}
             </div>
+
+            {/* Publish Warning Modal */}
+            {showPublishWarning && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-[#0A0A0A] rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+                        <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <FileSignature size={24} />
+                        </div>
+                        <h3 className="font-serif text-xl font-bold text-zinc-900 dark:text-white mb-2">Ready to Sign?</h3>
+                        <p className="text-sm text-zinc-500 mb-6">
+                            Confirming will <strong>lock the document content</strong>. You will then be prompted to sign your fields before sending to the lead.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowPublishWarning(false)}
+                                className="flex-1 py-3 rounded-xl border border-zinc-200 dark:border-white/10 font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmPublish}
+                                className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-500/20"
+                            >
+                                Confirm & Sign
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <SignaturePadModal
+                isOpen={isSignaturePadOpen}
+                onClose={() => setIsSignaturePadOpen(false)}
+                onSave={handleSignatureSave}
+            />
 
             <SendDocumentModal
                 isOpen={isSendModalOpen}
@@ -1322,8 +1423,9 @@ const DraggableFieldOnCanvas: React.FC<{
     onUpdateSize?: (id: string, width: number, height: number) => void,
     isSelected?: boolean,
     onSelect?: (id: string) => void,
-    isReadOnly?: boolean
-}> = ({ field, onRemove, onUpdatePos, onUpdateValue, onUpdateSize, isSelected, onSelect, isReadOnly }) => {
+    isReadOnly?: boolean,
+    onClick?: () => void
+}> = ({ field, onRemove, onUpdatePos, onUpdateValue, onUpdateSize, isSelected, onSelect, isReadOnly, onClick }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const elementRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -1336,6 +1438,12 @@ const DraggableFieldOnCanvas: React.FC<{
     const dragStart = useRef<{ x: number, y: number, initialLeft: number, initialTop: number } | null>(null);
 
     const handlePointerDown = (e: React.PointerEvent) => {
+        if (onClick) {
+            e.stopPropagation();
+            onClick();
+            return;
+        }
+
         if (isReadOnly) return;
 
         // Select logic

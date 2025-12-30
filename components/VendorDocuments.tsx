@@ -245,6 +245,53 @@ const RichTextEditor: React.FC<{
         }
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === ' ' && !readOnly) {
+            const selection = window.getSelection();
+            if (!selection || !selection.rangeCount) return;
+
+            const range = selection.getRangeAt(0);
+            const node = range.startContainer;
+
+            // Should be text node
+            if (node.nodeType === Node.TEXT_NODE && node.textContent) {
+                const text = node.textContent;
+                // Check if cursor is at end of "1." or "-"
+                const offset = range.startOffset;
+                const textBefore = text.slice(0, offset);
+
+                if (textBefore.endsWith('1.')) {
+                    e.preventDefault();
+                    // Delete the "1."
+                    const newText = text.slice(0, offset - 2) + text.slice(offset);
+                    node.textContent = newText;
+
+                    // Restore cursor position
+                    const newRange = document.createRange();
+                    newRange.setStart(node, offset - 2);
+                    newRange.setEnd(node, offset - 2);
+                    selection.removeAllRanges();
+                    selection.addRange(newRange);
+
+                    exec('insertOrderedList');
+                } else if (textBefore.endsWith('-')) {
+                    e.preventDefault();
+                    // Delete the "-"
+                    const newText = text.slice(0, offset - 1) + text.slice(offset);
+                    node.textContent = newText;
+
+                    const newRange = document.createRange();
+                    newRange.setStart(node, offset - 1);
+                    newRange.setEnd(node, offset - 1);
+                    selection.removeAllRanges();
+                    selection.addRange(newRange);
+
+                    exec('insertUnorderedList');
+                }
+            }
+        }
+    };
+
     const handleInput = () => {
         if (editorRef.current && onChange) {
             onChange(editorRef.current.innerHTML);
@@ -268,6 +315,7 @@ const RichTextEditor: React.FC<{
                 ref={editorRef}
                 contentEditable={!readOnly}
                 onInput={handleInput}
+                onKeyDown={handleKeyDown}
                 className={`
                     flex-1 p-16 outline-none font-serif text-[11px] leading-relaxed relative text-black
                     prose prose-sm max-w-none
@@ -716,8 +764,6 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                         <ToolbarBtn icon={AlignCenter} label="Align Center" onClick={() => exec('justifyCenter')} />
                         <ToolbarBtn icon={AlignRight} label="Align Right" onClick={() => exec('justifyRight')} />
                         <div className="w-[1px] h-4 bg-zinc-300 mx-2" />
-                        <ToolbarBtn icon={List} label="Bullet List" onClick={() => exec('insertUnorderedList')} />
-                        <ToolbarBtn icon={ListOrdered} label="Numbered List" onClick={() => exec('insertOrderedList')} />
                         <ToolbarBtn icon={Indent} label="Indent" onClick={() => exec('indent')} />
                         <ToolbarBtn icon={Outdent} label="Outdent" onClick={() => exec('outdent')} />
                     </div>

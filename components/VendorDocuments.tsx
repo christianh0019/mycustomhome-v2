@@ -257,13 +257,17 @@ export const DocumentCreator: React.FC<{
     onSigningComplete?: (docId: string, signedUrl?: string) => void; // New: Callback when verified
 }> = ({ onBack, initialDoc, isSigningSession = false, currentUserRole = 'business', onSigningComplete }) => {
     const { user } = useAuth();
-    const isReadOnly = initialDoc ? initialDoc.status !== 'draft' && !isSigningSession : false;
+    const isReadOnly = initialDoc ? (initialDoc.status !== 'draft' || isSigningSession) : false;
 
     const [docTitle, setDocTitle] = useState(initialDoc?.title || 'Untitled Document');
     const [file, setFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(initialDoc?.file_url || null); // Load valid URL if exists
 
-    const [fileType, setFileType] = useState<'image' | 'pdf' | 'blank' | 'template' | null>(initialDoc?.file_url ? (initialDoc.file_url.endsWith('.pdf') ? 'pdf' : 'image') : null);
+    const [fileType, setFileType] = useState<'image' | 'pdf' | 'blank' | 'template' | null>(
+        initialDoc?.file_url
+            ? (initialDoc.file_url.toLowerCase().includes('.pdf') ? 'pdf' : 'image')
+            : null
+    );
     const [numPages, setNumPages] = useState<number>(1);
 
     const [pageContent, setPageContent] = useState<{ [page: number]: string }>({});

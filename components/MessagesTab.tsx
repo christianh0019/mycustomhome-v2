@@ -205,6 +205,9 @@ export const MessagesTab: React.FC = () => {
          .eq('id', signingMessageId);
 
       if (!msgError) {
+         // CRITICAL FIX: Also update the document status in the documents table
+         await supabase.from('documents').update({ status: 'completed' }).eq('id', docId);
+
          await supabase.from('messages').insert({
             thread_id: activeThreadId,
             sender_id: user.id,

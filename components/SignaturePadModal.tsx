@@ -58,6 +58,10 @@ export const SignaturePadModal: React.FC<SignaturePadModalProps> = ({ isOpen, on
         if (ctx) {
             ctx.beginPath();
             ctx.moveTo(x, y);
+            // Draw a dot immediately for clicks
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            setHasSignature(true);
         }
     };
 

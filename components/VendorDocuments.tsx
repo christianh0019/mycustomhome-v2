@@ -900,11 +900,15 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
             }
         });
 
-        if (error) console.error('Error sending message:', error);
+        if (error) {
+            console.error('Error sending message:', error);
+            alert(`Document sent, but failed to notify in chat: ${error.message}`);
+        } else {
+            // Only alert success if everything worked
+            alert(`Document successfully sent to ${lead.project_title}! Check the Messages tab.`);
+        }
 
         setIsSendModalOpen(false);
-        // Alert removed in favor of direct feedback via messages/toast, or keep if user wants explicit confirmation
-        alert(`Document successfully sent to ${lead.project_title}! Check the Messages tab.`);
     };
 
     const handleFieldDrop = (type: DraggableField['type'], label: string, clientX: number, clientY: number) => {
@@ -1641,8 +1645,9 @@ const DraggableFieldOnCanvas: React.FC<{
         position: 'absolute',
         left: `${field.x}%`,
         top: `${field.y}%`,
-        width: field.width ? `${field.width}px` : undefined,
-        height: field.height ? `${field.height}px` : undefined,
+        // Fix: Enforce default dimensions for signatures if not explicitly resized
+        width: field.width ? `${field.width}px` : (field.type === 'signature' || field.type === 'initials' ? '200px' : undefined),
+        height: field.height ? `${field.height}px` : (field.type === 'signature' || field.type === 'initials' ? '100px' : undefined),
         transform: 'translate(-50%, -50%)',
         cursor: isReadOnly ? (onClick ? 'pointer' : 'default') : (isDragging ? 'grabbing' : 'grab'),
         zIndex: isDragging || isResizing || isSelected ? 50 : 10,

@@ -380,60 +380,62 @@ export const DocumentEditor: React.FC<{
                             // A4 Dimensions: 595px x 842px (at 72 DPI) - We use exact pixels for precise mapping
                             style={{ width: '595px', minHeight: '842px' }}
                         >
-                            {/* Background / Content Layer */}
-                            <div className="absolute inset-0 z-0">
-                                {fileType === 'pdf' && previewUrl ? (
-                                    <Document file={previewUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
-                                        <Page pageNumber={1} width={595} renderTextLayer={false} renderAnnotationLayer={false} />
-                                    </Document>
-                                ) : (fileType === 'template' || fileType === 'blank') ? (
-                                    <RichTextEditor content={pageContent[1] || ''} onChange={(html) => setPageContent({ ...pageContent, 1: html })} />
-                                ) : (
-                                    <img src={previewUrl || ''} className="w-full h-full object-contain" />
-                                )}
-                            </div>
+                            <DroppableCanvas
+                                onDrop={() => { }}
+                                onCanvasDrop={(type, label, clientX, clientY, canvasRect, offset) => {
+                                    if (isReadOnly) return;
 
-                            {/* Field Layer (Overlay) */}
-                            <div className="absolute inset-0 z-10">
-                                <DroppableCanvas
-                                    onDrop={() => { }}
-                                    onCanvasDrop={(type, label, clientX, clientY, canvasRect, offset) => {
-                                        if (isReadOnly) return;
+                                    // Calculate precise position accounting for scroll and canvas position
+                                    // Offset is the mouse pos relative to top-left of the DRAGGED ITEM
+                                    const finalX = clientX - canvasRect.left - (offset?.x || 0);
+                                    const finalY = clientY - canvasRect.top - (offset?.y || 0);
 
-                                        // Calculate precise position accounting for scroll and canvas position
-                                        // Offset is the mouse pos relative to top-left of the DRAGGED ITEM
-                                        const finalX = clientX - canvasRect.left - (offset?.x || 0);
-                                        const finalY = clientY - canvasRect.top - (offset?.y || 0);
+                                    // Convert to percentage for responsive scaling (though we use fixed width mostly)
+                                    const xPercent = (finalX / canvasRect.width) * 100;
+                                    const yPercent = (finalY / canvasRect.height) * 100;
 
-                                        // Convert to percentage for responsive scaling (though we use fixed width mostly)
-                                        const xPercent = (finalX / canvasRect.width) * 100;
-                                        const yPercent = (finalY / canvasRect.height) * 100;
+                                    addField(type, label, xPercent, yPercent);
+                                }}
+                            >
+                                {/* Background / Content Layer - Now acts as the "canvas board" */}
+                                <div className="absolute inset-0 z-0 select-text">
+                                    {fileType === 'pdf' && previewUrl ? (
+                                        <Document file={previewUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
+                                            <Page pageNumber={1} width={595} renderTextLayer={false} renderAnnotationLayer={false} />
+                                        </Document>
+                                    ) : (fileType === 'template' || fileType === 'blank') ? (
+                                        <RichTextEditor content={pageContent[1] || ''} onChange={(html) => setPageContent({ ...pageContent, 1: html })} />
+                                    ) : (
+                                        <img src={previewUrl || ''} className="w-full h-full object-contain" />
+                                    )}
+                                </div>
 
-                                        addField(type, label, xPercent, yPercent);
-                                    }}
-                                >
-                                    {fields.map(field => (
-                                        <div key={field.id} className="relative">
-                                            <DraggableFieldOnCanvas
-                                                field={field}
-                                                isSelected={selectedFieldId === field.id}
-                                                onSelect={() => setSelectedFieldId(field.id)}
-                                                onUpdatePos={updateFieldPosition}
-                                                onUpdateSize={updateFieldSize}
-                                                onUpdateValue={updateFieldValue}
-                                            />
-                                            {selectedFieldId === field.id && (
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); deleteField(field.id); }}
-                                                    className="absolute -top-3 -right-3 z-[60] bg-red-500 text-white rounded-full p-1 shadow-sm hover:scale-110 transition-transform"
-                                                >
-                                                    <Trash2 size={10} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </DroppableCanvas>
-                            </div>
+                                {/* Field Layer (Overlay) - Fields are siblings in the same relative container */}
+                                {fields.map(field => (
+                                    <div key={field.id} className="relative z-10">
+                                        <DraggableFieldOnCanvas
+                                            field={field}
+                                            isSelected={selectedFieldId === field.id}
+                                            onSelect={() => setSelectedFieldId(field.id)}
+                                            onUpdatePos={updateFieldPosition}
+                                            onUpdateSize={updateFieldSize}
+                                            onUpdateValue={updateFieldValue}
+                                        />
+                                        {selectedFieldId === field.id && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); deleteField(field.id); }}
+                                                className="absolute -top-3 -right-3 z-[60] bg-red-500 text-white rounded-full p-1 shadow-sm hover:scale-110 transition-transform"
+                                                style={{
+                                                    top: `calc(${field.y}% - 12px)`, // Adjust delete button position to follow field
+                                                    left: `calc(${field.x}% + ${field.width || 200}px - 12px)`
+                                                }}
+                                            >
+                                                <Trash2 size={10} />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </DroppableCanvas>
                         </div>
                     )}
                 </div>

@@ -449,36 +449,83 @@ export const DocumentEditor: React.FC<{
                                     </div>
                                 </div>
 
-                                {/* Assignee Selector */}
-                                <div>
-                                    <label className="text-xs font-bold text-zinc-900 dark:text-white block mb-3">Who will sign this?</label>
-                                    <div className="space-y-2">
-                                        <button
-                                            onClick={() => updateFieldAssignee(selectedFieldId, 'business')}
-                                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${fields.find(f => f.id === selectedFieldId)?.assignee === 'business'
-                                                ? 'bg-red-50 border-red-500 text-red-700'
-                                                : 'bg-white dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-600 hover:border-red-200'
-                                                }`}
-                                        >
-                                            <span className="text-sm font-medium">Business Owner</span>
-                                            {fields.find(f => f.id === selectedFieldId)?.assignee === 'business' && <div className="w-2 h-2 rounded-full bg-red-500" />}
-                                        </button>
+                                {/* Properties based on Type */}
+                                {fields.find(f => f.id === selectedFieldId)?.type === 'image' ? (
+                                    <div>
+                                        <label className="text-xs font-bold text-zinc-900 dark:text-white block mb-3">Image Source</label>
 
-                                        <button
-                                            onClick={() => updateFieldAssignee(selectedFieldId, 'contact')}
-                                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${fields.find(f => f.id === selectedFieldId)?.assignee === 'contact'
-                                                ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
-                                                : 'bg-white dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-600 hover:border-emerald-200'
-                                                }`}
-                                        >
-                                            <span className="text-sm font-medium">Contact (Client)</span>
-                                            {fields.find(f => f.id === selectedFieldId)?.assignee === 'contact' && <div className="w-2 h-2 rounded-full bg-emerald-500" />}
-                                        </button>
+                                        {fields.find(f => f.id === selectedFieldId)?.value ? (
+                                            <div className="mb-3">
+                                                <div className="w-full h-32 bg-zinc-100 rounded-lg overflow-hidden border border-zinc-200 mb-2">
+                                                    <img src={fields.find(f => f.id === selectedFieldId)?.value} className="w-full h-full object-contain" />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="w-full h-32 bg-zinc-50 dark:bg-white/5 rounded-lg border-2 border-dashed border-zinc-200 dark:border-white/10 flex flex-col items-center justify-center text-zinc-400 mb-3">
+                                                <ImageIcon size={24} className="mb-2 opacity-50" />
+                                                <span className="text-xs">No image set</span>
+                                            </div>
+                                        )}
+
+                                        <div className="relative">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file && selectedFieldId) {
+                                                        const reader = new FileReader();
+                                                        reader.onload = (ev) => {
+                                                            if (ev.target?.result) {
+                                                                updateFieldValue(selectedFieldId, ev.target.result as string);
+                                                            }
+                                                        };
+                                                        reader.readAsDataURL(file);
+                                                    }
+                                                }}
+                                            />
+                                            <button className="w-full py-2 bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/10 hover:border-indigo-500 text-zinc-700 dark:text-white rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2">
+                                                <Upload size={14} />
+                                                {fields.find(f => f.id === selectedFieldId)?.value ? 'Replace Image' : 'Upload Image'}
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] text-zinc-400 mt-2 leading-relaxed">
+                                            Upload an image to display in this field. It will be embedded in the document.
+                                        </p>
                                     </div>
-                                    <p className="text-[10px] text-zinc-400 mt-2 leading-relaxed">
-                                        Assigning a field determines who is required to fill it out during the signing process.
-                                    </p>
-                                </div>
+                                ) : (
+                                    /* Assignee Selector for other fields */
+                                    <div>
+                                        <label className="text-xs font-bold text-zinc-900 dark:text-white block mb-3">Who will sign this?</label>
+                                        <div className="space-y-2">
+                                            <button
+                                                onClick={() => updateFieldAssignee(selectedFieldId!, 'business')}
+                                                className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${fields.find(f => f.id === selectedFieldId)?.assignee === 'business'
+                                                    ? 'bg-red-50 border-red-500 text-red-700'
+                                                    : 'bg-white dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-600 hover:border-red-200'
+                                                    }`}
+                                            >
+                                                <span className="text-sm font-medium">Business Owner</span>
+                                                {fields.find(f => f.id === selectedFieldId)?.assignee === 'business' && <div className="w-2 h-2 rounded-full bg-red-500" />}
+                                            </button>
+
+                                            <button
+                                                onClick={() => updateFieldAssignee(selectedFieldId!, 'contact')}
+                                                className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${fields.find(f => f.id === selectedFieldId)?.assignee === 'contact'
+                                                    ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
+                                                    : 'bg-white dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-600 hover:border-emerald-200'
+                                                    }`}
+                                            >
+                                                <span className="text-sm font-medium">Contact (Client)</span>
+                                                {fields.find(f => f.id === selectedFieldId)?.assignee === 'contact' && <div className="w-2 h-2 rounded-full bg-emerald-500" />}
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] text-zinc-400 mt-2 leading-relaxed">
+                                            Assigning a field determines who is required to fill it out during the signing process.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center py-12 text-zinc-400 text-center">

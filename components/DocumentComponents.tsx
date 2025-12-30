@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-    X, CheckSquare, Search, Send, Trash2
+    FileText, Plus, X, GripVertical, Type, Calendar, CheckSquare, PenTool, Hash, Image as ImageIcon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../services/supabase';
@@ -182,8 +182,8 @@ export const DraggableFieldOnCanvas: React.FC<{
 
     const style: React.CSSProperties = {
         position: 'absolute',
-        left: `${field.x}%`,
-        top: `${field.y}%`,
+        left: `${field.x}% `,
+        top: `${field.y}% `,
         transform: 'translate(-50%, -50%)',
         width: field.width || 200,
         height: field.height || 40,
@@ -228,12 +228,25 @@ export const DraggableFieldOnCanvas: React.FC<{
                 }
             }}
             className={`
-                group absolute flex items-center px-2 border rounded cursor-pointer transition-all select-none overflow-hidden
+                group absolute flex items - center px - 2 border rounded cursor - pointer transition - all select - none overflow - hidden
                 ${getStatusColor()}
                 ${isSelected && !isSigningMode ? 'ring-2 ring-indigo-500 z-50' : 'z-10 hover:z-50'}
                 ${isSigningMode && !isAssignedToUser ? 'opacity-50 pointer-events-none' : ''}
-            `}
+`}
         >
+            {field.type === 'image' && (
+                <div className="w-full h-full flex items-center justify-center pointer-events-none overflow-hidden">
+                    {field.value ? (
+                        <img src={field.value} className="w-full h-full object-cover" alt="Field Content" />
+                    ) : (
+                        <div className="flex flex-col items-center justify-center text-zinc-300">
+                            <ImageIcon size={16} />
+                            <span className="text-[10px] mt-1">Image</span>
+                        </div>
+                    )}
+                </div>
+            )}
+
             {field.type === 'signature' && (
                 <div className="w-full flex items-center justify-center pointer-events-none">
                     {field.value ? <img src={field.value} className="h-full max-h-8 object-contain" /> : <span className="text-xs font-serif italic text-opacity-50">Signature</span>}
@@ -347,10 +360,10 @@ export const SendDocumentModal: React.FC<{
                                 <div
                                     key={lead.id}
                                     onClick={() => setSelectedLead(lead)}
-                                    className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${selectedLead?.id === lead.id
-                                        ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-500 ring-1 ring-indigo-500'
-                                        : 'bg-white dark:bg-white/5 border-zinc-200 dark:border-white/10 hover:border-indigo-300'
-                                        }`}
+                                    className={`p - 4 rounded - xl border cursor - pointer transition - all flex items - center justify - between ${selectedLead?.id === lead.id
+                                            ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-500 ring-1 ring-indigo-500'
+                                            : 'bg-white dark:bg-white/5 border-zinc-200 dark:border-white/10 hover:border-indigo-300'
+                                        } `}
                                 >
                                     <div>
                                         <h4 className="font-bold text-zinc-900 dark:text-white">{lead.project_title}</h4>
@@ -373,10 +386,10 @@ export const SendDocumentModal: React.FC<{
                     <button
                         onClick={() => selectedLead && onSend(selectedLead)}
                         disabled={!selectedLead}
-                        className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${selectedLead
-                            ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
-                            : 'bg-zinc-200 dark:bg-white/5 text-zinc-400 cursor-not-allowed'
-                            }`}
+                        className={`w - full py - 3 rounded - xl font - bold flex items - center justify - center gap - 2 transition - all ${selectedLead
+                                ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                                : 'bg-zinc-200 dark:bg-white/5 text-zinc-400 cursor-not-allowed'
+                            } `}
                     >
                         <Send size={18} />
                         Send Document

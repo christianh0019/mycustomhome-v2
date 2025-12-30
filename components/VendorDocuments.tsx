@@ -886,8 +886,25 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     const handleConfirmSend = async (lead: Lead) => {
         // 3. Update status and recipient
         await handleSave('sent', true, { name: lead.project_title, id: lead.id });
+
+        // 4. Send Message to Lead (Thread)
+        const { error } = await supabase.from('messages').insert({
+            thread_id: lead.id,
+            sender_id: 'me', // Since we are the user
+            text: `Please review and sign the attached document: ${docTitle}`,
+            type: 'signature_request',
+            metadata: {
+                documentTitle: docTitle,
+                documentId: initialDoc.id,
+                status: 'pending'
+            }
+        });
+
+        if (error) console.error('Error sending message:', error);
+
         setIsSendModalOpen(false);
-        alert(`Document successfully sent to ${lead.project_title}!`);
+        // Alert removed in favor of direct feedback via messages/toast, or keep if user wants explicit confirmation
+        alert(`Document successfully sent to ${lead.project_title}! Check the Messages tab.`);
     };
 
     const handleFieldDrop = (type: DraggableField['type'], label: string, clientX: number, clientY: number) => {

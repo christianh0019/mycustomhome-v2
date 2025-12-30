@@ -354,7 +354,14 @@ const StatusBadge: React.FC<{ status: DocumentStatus, isSigning?: boolean }> = (
 
     switch (status) {
         case 'completed': return <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-[10px] uppercase tracking-widest font-bold">Signed</span>;
-        case 'sent': return <span className="px-3 py-1 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-full text-[10px] uppercase tracking-widest font-bold">Sent</span>;
+        case 'sent':
+            // Display as PUBLISHED when sent
+            return (
+                <div className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    PUBLISHED
+                </div>
+            );
         case 'draft': return <span className="px-3 py-1 bg-zinc-500/10 text-zinc-500 border border-zinc-500/20 rounded-full text-[10px] uppercase tracking-widest font-bold">Draft</span>;
         default: return <span className="px-3 py-1 bg-zinc-500/10 text-zinc-500 border border-zinc-500/20 rounded-full text-[10px] uppercase tracking-widest font-bold">Draft</span>;
     }
@@ -990,13 +997,15 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                     </div>
                     {!isReadOnly ? (
                         <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => handleSave('draft')}
-                                disabled={saving}
-                                className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2"
-                            >
-                                {saving ? 'Saving...' : <><Save size={14} /> Save</>}
-                            </button>
+                            {!isSigningMode && (
+                                <button
+                                    onClick={() => handleSave('draft')}
+                                    disabled={saving}
+                                    className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                                >
+                                    {saving ? 'Saving...' : <><Save size={14} /> Save</>}
+                                </button>
+                            )}
                             <button
                                 onClick={isSigningMode ? finalizeAndSend : handleSendClick}
                                 disabled={fields.length === 0}
@@ -1016,7 +1025,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
                 </div>
 
                 {/* Second Row: Toolbar (Only if not read-only and is editable type) */}
-                {!isReadOnly && (fileType === 'blank' || fileType === 'template') && (
+                {!isReadOnly && !isSigningMode && (fileType === 'blank' || fileType === 'template') && (
                     <div className="h-12 flex items-center gap-1 px-6 bg-zinc-50/50 dark:bg-white/5 overflow-x-auto no-scrollbar">
                         <ToolbarSelect
                             value="Serif"

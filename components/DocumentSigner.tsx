@@ -7,6 +7,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
 import { DocItem, DraggableField, DroppableCanvas, DraggableFieldOnCanvas } from './DocumentComponents';
+import { RichTextEditor } from './DocumentEditor';
 import { SignaturePadModal } from './SignaturePadModal';
 import { InputModal } from './InputModal';
 
@@ -22,8 +23,13 @@ export const DocumentSigner: React.FC<{
     const { user } = useAuth();
 
     // State
-    const [numPages, setNumPages] = useState<number>(1);
-    const [fields, setFields] = useState<DraggableField[]>(initialDoc.metadata || []);
+    const [numPages, setNumPages] = useState<number>(initialDoc.metadata?.numPages || 1);
+    const [pageContent, setPageContent] = useState<{ [page: number]: string }>(initialDoc.metadata?.content || {});
+    const [fields, setFields] = useState<DraggableField[]>(
+        Array.isArray(initialDoc.metadata)
+            ? initialDoc.metadata
+            : (initialDoc.metadata?.fields || [])
+    );
     const [activeSigningFieldId, setActiveSigningFieldId] = useState<string | null>(null);
     const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false);
 
@@ -42,9 +48,11 @@ export const DocumentSigner: React.FC<{
         type: 'text'
     });
 
-    const fileType = initialDoc.file_url
-        ? (initialDoc.file_url.toLowerCase().includes('.pdf') ? 'pdf' : 'image')
-        : 'image'; // Fallback
+    const fileType = initialDoc.metadata?.type || (
+        initialDoc.file_url
+            ? (initialDoc.file_url.toLowerCase().includes('.pdf') ? 'pdf' : 'image')
+            : (initialDoc.metadata?.type || 'image') // Default fallback
+    );
 
     const requiredFields = fields.filter(f => f.assignee === currentUserRole);
     const completedFields = requiredFields.filter(f => !!f.value);
@@ -137,8 +145,8 @@ export const DocumentSigner: React.FC<{
                         onClick={handleFinish}
                         disabled={!isComplete}
                         className={`px-6 py-2 rounded-lg text-sm font-bold shadow-lg transition-all flex items-center gap-2 ${isComplete
-                                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20 animate-pulse'
-                                : 'bg-zinc-200 dark:bg-white/5 text-zinc-400 cursor-not-allowed'
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20 animate-pulse'
+                            : 'bg-zinc-200 dark:bg-white/5 text-zinc-400 cursor-not-allowed'
                             }`}
                     >
                         <CheckCircle2 size={18} />
@@ -149,37 +157,51 @@ export const DocumentSigner: React.FC<{
 
             {/* Content Area */}
             <div className="flex-1 overflow-auto relative flex justify-center p-8 bg-zinc-100 dark:bg-[#050505]">
-                <div
-                    className="bg-white dark:bg-white shadow-2xl relative transition-transform duration-300"
-                    style={{ width: '595px', minHeight: '842px' }}
-                >
-                    {/* Document Layer */}
-                    <div className="absolute inset-0 z-0">
-                        {fileType === 'pdf' && initialDoc.file_url ? (
-                            <Document file={initialDoc.file_url} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
-                                <Page pageNumber={1} width={595} renderTextLayer={false} renderAnnotationLayer={false} />
-                            </Document>
-                        ) : (
-                            <img src={initialDoc.file_url || ''} className="w-full h-full object-contain" />
-                        )}
-                    </div>
+                <div className="flex flex-col gap-8 pb-32">
+                    {Array.from({ length: numPages }).map((_, i) => {
+                        const pageNum = i + 1;
+                        return (
+                            <div
+                                key={pageNum}
+                                className="bg-white dark:bg-white shadow-2xl relative transition-transform duration-300"
+                                style={{ width: '595px', height: '842px', minHeight: '842px' }}
+                            >
+                                {/* Document Layer */}
+                                <div className="absolute inset-0 z-0 pointer-events-none">
+                                    {(fileType === 'pdf' && initialDoc.file_url) ? (
+                                        <Document file={initialDoc.file_url} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
+                                            <Page pageNumber={pageNum} width={595} renderTextLayer={false} renderAnnotationLayer={false} />
+                                        </Document>
+                                    ) : (fileType === 'template' || fileType === 'blank') ? (
+                                        <RichTextEditor
+                                            content={pageContent[pageNum] || ''}
+                                            onChange={() => { }}
+                                            readOnly={true}
+                                        />
+                                    ) : (
+                                        pageNum === 1 ? <img src={initialDoc.file_url || ''} className="w-full h-full object-contain" /> : null
+                                    )}
+                                </div>
 
-                    {/* Interactive Layer */}
-                    <div className="absolute inset-0 z-10">
-                        {fields.map(field => (
-                            <DraggableFieldOnCanvas
-                                key={field.id}
-                                field={field}
-                                isSelected={false}
-                                onSelect={() => { }}
-                                onUpdatePos={() => { }}
-                                isReadOnly={false}
-                                isSigningMode={true}
-                                currentUserRole={currentUserRole}
-                                onSigningClick={() => handleFieldClick(field)}
-                            />
-                        ))}
-                    </div>
+                                {/* Interactive Layer */}
+                                <div className="absolute inset-0 z-10">
+                                    {fields.filter(f => (f.pageNumber === pageNum) || (!f.pageNumber && pageNum === 1)).map(field => (
+                                        <DraggableFieldOnCanvas
+                                            key={field.id}
+                                            field={field}
+                                            isSelected={false}
+                                            onSelect={() => { }}
+                                            onUpdatePos={() => { }}
+                                            isReadOnly={false}
+                                            isSigningMode={true}
+                                            currentUserRole={currentUserRole}
+                                            onSigningClick={() => handleFieldClick(field)}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 

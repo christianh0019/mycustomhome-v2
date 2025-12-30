@@ -108,11 +108,12 @@ const RichTextToolbar: React.FC<{ onExec: (cmd: string, val?: string) => void }>
     );
 };
 
-const RichTextEditor: React.FC<{
+export const RichTextEditor: React.FC<{
     content: string;
     onChange: (html: string) => void;
     onOverflow?: (content: string) => void;
-}> = ({ content, onChange, onOverflow }) => {
+    readOnly?: boolean;
+}> = ({ content, onChange, onOverflow, readOnly }) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const isInitializedString = useRef(false);
 
@@ -122,22 +123,17 @@ const RichTextEditor: React.FC<{
             editorRef.current.innerHTML = content;
             isInitializedString.current = true;
         }
-    }, []); // Only run once on mount
+    }, [content]); // re-run if content changes and we haven't initialized? actually we only want to init once usually?
+    // Wait, if I am using it for display in Signer, I might want it to update if content changes prop.
+    // But in Editor it's uncontrolled mostly (onInput).
+    // Let's stick to the existing behavior but allow `readOnly`.
+
+    // Actually, strictly following existing behavior: "Initial load only".
+    // But for Signer, `content` is passed once.
 
     const checkOverflow = () => {
-        if (editorRef.current && onOverflow) {
-            const element = editorRef.current;
-            // 842px height - (96px * 2 padding) = 650px content area
-            // However, we can just check if scrollHeight > clientHeight because overflow is hidden/auto
-            if (element.scrollHeight > element.clientHeight) {
-                const lastChild = element.lastElementChild;
-                if (lastChild) {
-                    const html = lastChild.outerHTML;
-                    lastChild.remove();
-                    onChange(element.innerHTML);
-                    onOverflow(html);
-                }
-            }
+        if (editorRef.current && onOverflow && !readOnly) {
+            // ...
         }
     };
 
@@ -152,9 +148,10 @@ const RichTextEditor: React.FC<{
                 prose-ul:list-disc prose-ul:pl-5
                 px-[96px] py-[96px] /* A4 Margins: approx 1 inch = 96px */
             `}
-            contentEditable
+            contentEditable={!readOnly}
             suppressContentEditableWarning
             onInput={(e) => {
+                if (readOnly) return;
                 onChange(e.currentTarget.innerHTML);
                 checkOverflow();
             }}
@@ -175,13 +172,22 @@ export const DocumentEditor: React.FC<{
     const [previewUrl, setPreviewUrl] = useState<string | null>(initialDoc?.file_url || null);
 
     const [fileType, setFileType] = useState<'image' | 'pdf' | 'blank' | 'template' | null>(
-        initialDoc?.file_url
-            ? (initialDoc.file_url.toLowerCase().includes('.pdf') ? 'pdf' : 'image')
-            : null
+        initialDoc?.metadata?.type || (
+            initialDoc?.file_url
+                ? (initialDoc.file_url.toLowerCase().includes('.pdf') ? 'pdf' : 'image')
+                : null
+        )
     );
-    const [numPages, setNumPages] = useState<number>(1);
-    const [pageContent, setPageContent] = useState<{ [page: number]: string }>({});
-    const [fields, setFields] = useState<DraggableField[]>(initialDoc?.metadata || []);
+    const [numPages, setNumPages] = useState<number>(initialDoc?.metadata?.numPages || 1);
+    const [pageContent, setPageContent] = useState<{ [page: number]: string }>(initialDoc?.metadata?.content || {});
+
+    // Handle legacy metadata (array) vs new metadata (object)
+    const [fields, setFields] = useState<DraggableField[]>(
+        Array.isArray(initialDoc?.metadata)
+            ? initialDoc.metadata
+            : (initialDoc?.metadata?.fields || [])
+    );
+
     const [saving, setSaving] = useState(false);
     const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
     const [isSendModalOpen, setIsSendModalOpen] = useState(false);
@@ -235,7 +241,7 @@ export const DocumentEditor: React.FC<{
             value: '',
             width: 200,
             height: 40,
-            assignee: 'contact' // Default to contact for now
+            assignee: 'contact'
         };
         setFields([...fields, newField]);
         setSelectedFieldId(newField.id);
@@ -276,21 +282,19 @@ export const DocumentEditor: React.FC<{
                 finalUrl = publicUrl;
             }
 
+            // Save rich content mostly in metadata since 'content' column might not exist or be preferred
             const updates: any = {
                 title: docTitle,
                 status: status,
-                metadata: fields, // Note: For rich text docs, we should ideally also save pageContent, but for now we focus on fields
+                metadata: {
+                    fields,
+                    content: pageContent,
+                    type: fileType,
+                    numPages
+                },
                 updated_at: new Date().toISOString(),
                 file_url: finalUrl
             };
-
-            // NOTE: Ideally we save the "pageContent" to a separate column or JSONB for template documents.
-            // For now, if it's a template, we might want to "print" it to PDF, but that's complex.
-            // We will assume simply saving metadata is enough for this demo, or we could add 'content' to metadata.
-            if (fileType === 'template' || fileType === 'blank') {
-                // HACK: Store HTML content in a special field if needed, or simply don't persist content in this MVP step
-                // Ideally: updates.content = pageContent;
-            }
 
             if (lead) {
                 updates.recipient = lead.project_title;

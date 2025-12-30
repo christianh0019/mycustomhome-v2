@@ -39,7 +39,7 @@ export interface DocItem {
     date: string;
     status: DocumentStatus;
     file_url?: string;
-    metadata?: DraggableField[];
+    metadata?: any; // DraggableField[] | { fields: DraggableField[], content: Record<number, string>, type: string }
 }
 
 // --- Components ---

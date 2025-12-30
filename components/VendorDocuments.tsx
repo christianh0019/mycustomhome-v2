@@ -274,7 +274,11 @@ const RichTextEditor: React.FC<{
                     selection.removeAllRanges();
                     selection.addRange(newRange);
 
-                    exec('insertOrderedList');
+                    // Defer command to let DOM settle
+                    setTimeout(() => {
+                        exec('insertOrderedList');
+                    }, 0);
+
                 } else if (textBefore.endsWith('-')) {
                     e.preventDefault();
                     // Delete the "-"
@@ -287,7 +291,10 @@ const RichTextEditor: React.FC<{
                     selection.removeAllRanges();
                     selection.addRange(newRange);
 
-                    exec('insertUnorderedList');
+                    // Defer command to let DOM settle
+                    setTimeout(() => {
+                        exec('insertUnorderedList');
+                    }, 0);
                 }
             }
         }
@@ -1233,21 +1240,14 @@ const DraggableFieldOnCanvas: React.FC<{
                     {field.value ? (
                         <div className="relative w-full h-full">
                             <img src={field.value} alt="Logo" className="w-full h-full object-contain pointer-events-none select-none" />
-                            {!isReadOnly && (
-                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded cursor-pointer pointer-events-auto" onPointerDown={(e) => e.stopPropagation()} onClick={() => fileInputRef.current?.click()}>
-                                    <Pencil size={12} className="text-white" />
-                                </div>
-                            )}
                         </div>
                     ) : (
                         <div
-                            onClick={() => !isReadOnly && fileInputRef.current?.click()}
-                            className="w-full h-full min-w-[64px] min-h-[64px] bg-zinc-100 border-2 border-dashed border-zinc-300 rounded flex items-center justify-center cursor-pointer hover:bg-zinc-200 hover:border-zinc-400 transition-colors"
+                            className="w-full h-full min-w-[64px] min-h-[64px] bg-zinc-100 border-2 border-dashed border-zinc-300 rounded flex items-center justify-center cursor-default"
                         >
                             <ImageIcon size={20} className="text-zinc-400" />
                         </div>
                     )}
-                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                 </div>
             ) : (
                 <div className={`w-full h-full p-2 rounded border-2 shadow-sm flex items-center justify-center text-center gap-2 select-none overflow-hidden transition-colors

@@ -534,6 +534,27 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     const [activeSigningFieldId, setActiveSigningFieldId] = useState<string | null>(null);
     const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false);
 
+    // Input Modal State
+    const [inputModalState, setInputModalState] = useState<{
+        isOpen: boolean;
+        fieldId: string | null;
+        label: string;
+        value: string;
+        type: 'text' | 'date';
+    }>({
+        isOpen: false,
+        fieldId: null,
+        label: '',
+        value: '',
+        type: 'text'
+    });
+
+    const handleInputModalSave = (val: string) => {
+        if (inputModalState.fieldId) {
+            updateFieldValue(inputModalState.fieldId, val);
+        }
+    };
+
 
     const handleSendClick = () => {
         // 1. Initial Validation: Ensure fields exist

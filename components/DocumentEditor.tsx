@@ -36,7 +36,7 @@ const RichTextToolbar: React.FC<{ onExec: (cmd: string, val?: string) => void }>
     );
 
     return (
-        <div className="h-12 border-b border-zinc-200 dark:border-white/10 bg-white dark:bg-[#111] flex items-center px-4 gap-2 shrink-0 shadow-sm z-30">
+        <div className="h-12 border-b border-zinc-200 dark:border-white/10 bg-white dark:bg-[#111] flex items-center px-4 gap-2 shrink-0 shadow-sm z-[60]">
             {/* Font Family Selector */}
             <div className="relative group">
                 <button className="flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-600 dark:text-zinc-300 text-xs font-medium">
@@ -207,6 +207,10 @@ export const DocumentEditor: React.FC<{
 
     const updateFieldPosition = (id: string, x: number, y: number) => {
         setFields(fields.map(f => f.id === id ? { ...f, x, y } : f));
+    };
+
+    const updateFieldSize = (id: string, width: number, height: number) => {
+        setFields(fields.map(f => f.id === id ? { ...f, width, height } : f));
     };
 
     const updateFieldValue = (id: string, value: string) => {
@@ -415,6 +419,7 @@ export const DocumentEditor: React.FC<{
                                                 isSelected={selectedFieldId === field.id}
                                                 onSelect={() => setSelectedFieldId(field.id)}
                                                 onUpdatePos={updateFieldPosition}
+                                                onUpdateSize={updateFieldSize}
                                                 onUpdateValue={updateFieldValue}
                                             />
                                             {selectedFieldId === field.id && (

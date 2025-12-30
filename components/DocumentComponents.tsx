@@ -123,6 +123,7 @@ export const DraggableFieldOnCanvas: React.FC<{
     isSelected: boolean,
     onSelect: () => void,
     onUpdatePos: (id: string, x: number, y: number) => void,
+    onUpdateSize?: (id: string, width: number, height: number) => void,
     onUpdateValue?: (id: string, val: string) => void,
     isReadOnly?: boolean,
     isSigningMode?: boolean,
@@ -130,16 +131,52 @@ export const DraggableFieldOnCanvas: React.FC<{
     isBusiness?: boolean,
     isContact?: boolean,
     currentUserRole?: 'business' | 'contact'
-}> = ({ field, isSelected, onSelect, onUpdatePos, isReadOnly, isSigningMode, onSigningClick, currentUserRole }) => {
-    const [isDragging, setIsDragging] = useState(false);
+}> = ({ field, isSelected, onSelect, onUpdatePos, onUpdateSize, isReadOnly, isSigningMode, onSigningClick, currentUserRole }) => {
     const elementRef = useRef<HTMLDivElement>(null);
 
-    // Simple pointer drag logic
-    const handlePointerDown = (e: React.PointerEvent) => {
+    const handlePointerDown = (e: React.PointerEvent, mode: 'move' | 'resize') => {
         if (isReadOnly || isSigningMode) return;
         e.stopPropagation();
+        e.preventDefault();
         onSelect();
-        // Drag implementation placeholder (Note: Full drag implementation omitted for brevity as per previous code, focusing on display/selection first)
+
+        const element = elementRef.current;
+        const parent = element?.offsetParent as HTMLElement;
+        if (!element || !parent) return;
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startLeft = field.x;
+        const startTop = field.y;
+        const startWidth = field.width || 200;
+        const startHeight = field.height || 40;
+        const parentRect = parent.getBoundingClientRect();
+
+        const onPointerMove = (moveEvent: PointerEvent) => {
+            const deltaX = moveEvent.clientX - startX;
+            const deltaY = moveEvent.clientY - startY;
+
+            if (mode === 'move') {
+                const deltaXPercent = (deltaX / parentRect.width) * 100;
+                const deltaYPercent = (deltaY / parentRect.height) * 100;
+                onUpdatePos(field.id, startLeft + deltaXPercent, startTop + deltaYPercent);
+            } else if (mode === 'resize' && onUpdateSize) {
+                // Ensure minimum size
+                const newWidth = Math.max(30, startWidth + deltaX);
+                const newHeight = Math.max(20, startHeight + deltaY);
+                onUpdateSize(field.id, newWidth, newHeight);
+            }
+        };
+
+        const onPointerUp = (upEvent: PointerEvent) => {
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            document.body.style.cursor = '';
+        };
+
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+        document.body.style.cursor = mode === 'resize' ? 'nwse-resize' : 'grabbing';
     };
 
     const style: React.CSSProperties = {
@@ -173,7 +210,7 @@ export const DraggableFieldOnCanvas: React.FC<{
         <div
             ref={elementRef}
             style={style}
-            onPointerDown={handlePointerDown}
+            onPointerDown={(e) => handlePointerDown(e, 'move')}
             onClick={(e) => {
                 if (canSign && onSigningClick) {
                     e.stopPropagation();
@@ -202,6 +239,16 @@ export const DraggableFieldOnCanvas: React.FC<{
             {field.type === 'initials' && (
                 <div className="w-full flex items-center justify-center pointer-events-none">
                     {field.value ? <span className="font-serif italic">{field.value}</span> : <span className="text-[10px] opacity-50">Initials</span>}
+                </div>
+            )}
+
+            {/* Resize Handle */}
+            {isSelected && !isReadOnly && !isSigningMode && onUpdateSize && (
+                <div
+                    className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize z-50 flex items-center justify-center"
+                    onPointerDown={(e) => handlePointerDown(e, 'resize')}
+                >
+                    <div className="w-2 h-2 bg-indigo-500 rounded-sm" />
                 </div>
             )}
         </div>

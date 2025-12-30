@@ -33,6 +33,7 @@ export const DocumentSigner: React.FC<{
     );
     const [activeSigningFieldId, setActiveSigningFieldId] = useState<string | null>(null);
     const [isSignaturePadOpen, setIsSignaturePadOpen] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     // Input Modal State
     const [inputModalState, setInputModalState] = useState<{
@@ -88,21 +89,48 @@ export const DocumentSigner: React.FC<{
         }
     };
 
+    // Log 'viewed_by_client' on mount
+    useEffect(() => {
+        if (currentUserRole === 'contact') {
+            auditService.logAction(initialDoc.id, 'viewed_by_client', user?.id);
+        }
+    }, [currentUserRole, initialDoc.id]);
+
+    const handleSaveForLater = async () => {
+        setSaving(true);
+        try {
+            const updates = {
+                metadata: {
+                    fields,
+                    content: pageContent,
+                    type: fileType,
+                    numPages
+                }
+            };
+            const { error } = await supabase.from('documents').update(updates).eq('id', initialDoc.id);
+            if (error) throw error;
+            alert('Progress saved!');
+        } catch (err) {
+            console.error(err);
+            alert('Failed to save progress.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleFinish = async () => {
         if (!isComplete) return;
+        setSaving(true);
 
-        // 1. Save field values to metadata (crucial step!)
         const updates: any = {
             metadata: {
                 fields,
                 content: pageContent,
-                type: fileType, // Preserve type info
+                type: fileType,
                 numPages
             }
-            // updated_at removed as it does not exist in the schema
         };
 
-        // 2. Determine Next Status & Actions based on Role
         let nextStatus = initialDoc.status;
         let auditAction: 'signed_by_business' | 'signed_by_client' | null = null;
 
@@ -117,65 +145,37 @@ export const DocumentSigner: React.FC<{
         if (nextStatus) updates.status = nextStatus;
 
         try {
-            // Update Document
-            const { error: updateError } = await supabase
-                .from('documents')
-                .update(updates)
-                .eq('id', initialDoc.id);
-
+            const { error: updateError } = await supabase.from('documents').update(updates).eq('id', initialDoc.id);
             if (updateError) throw updateError;
 
-            // Log Audit
             if (auditAction) {
                 await auditService.logAction(initialDoc.id, auditAction, user?.id);
             }
 
-            // Post-Signing Actions
             if (currentUserRole === 'business' && nextStatus === 'sent') {
-                // Send Message to Lead
-                // We need to find the lead (thread_id) associated with this document.
-                // The document 'recipient_name' matches lead 'project_title'.
-                // Ideally we stored 'recipient_lead_id' or 'thread_id' on the doc.
-                // For now, we search for the lead by project_title/name.
-
-                // Better approach: When saving in Editor, we set 'recipient_name'.
-                // We should assume we can look up the lead, or we passed it in.
-
-                // Let's try to lookup the lead by project_title to get ID for message thread.
                 if (initialDoc.recipient_name) {
-                    const { data: leadData } = await supabase
-                        .from('leads')
-                        .select('id')
-                        .eq('project_title', initialDoc.recipient_name) // assuming unique project title for simpler lookup
-                        .single();
-
+                    const { data: leadData } = await supabase.from('leads').select('id').eq('project_title', initialDoc.recipient_name).single();
                     if (leadData) {
-                        // Send "Signature Request" Message
                         await supabase.from('messages').insert({
                             thread_id: leadData.id,
                             sender_id: user?.id,
                             type: 'signature_request',
                             text: `Please sign the document: ${initialDoc.title}`,
-                            metadata: {
-                                documentId: initialDoc.id,
-                                documentTitle: initialDoc.title,
-                                status: 'pending'
-                            }
+                            metadata: { documentId: initialDoc.id, documentTitle: initialDoc.title, status: 'pending' }
                         });
-
                         await auditService.logAction(initialDoc.id, 'sent', user?.id, { recipient_lead_id: leadData.id });
                     }
                 }
             } else if (currentUserRole === 'contact' && nextStatus === 'completed') {
                 await auditService.logAction(initialDoc.id, 'completed', user?.id);
-                // Trigger Certificate Generation (Pseudo-code)
             }
 
             onSigningComplete(initialDoc.id);
-
         } catch (err) {
             console.error(err);
             alert('Failed to sign and save document.');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -206,12 +206,14 @@ export const DocumentSigner: React.FC<{
             {/* Header */}
             <div className="h-16 bg-white dark:bg-[#0A0A0A] border-b border-zinc-200 dark:border-white/10 flex items-center justify-between px-6 shrink-0 shadow-sm z-30">
                 <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 flex items-center justify-center transition-colors">
+                    <button onClick={onBack} disabled={saving} className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 flex items-center justify-center transition-colors disabled:opacity-50">
                         <ChevronLeft size={18} className="text-zinc-600 dark:text-zinc-400" />
                     </button>
                     <div>
                         <h1 className="text-lg font-bold text-zinc-900 dark:text-white">{initialDoc.title}</h1>
-                        <p className="text-xs text-zinc-500">Please review and sign below.</p>
+                        <p className="text-xs text-zinc-500">
+                            {currentUserRole === 'contact' ? 'Please review and sign below.' : 'Business Owner View'}
+                        </p>
                     </div>
                 </div>
 
@@ -223,16 +225,32 @@ export const DocumentSigner: React.FC<{
                         </div>
                     </div>
 
+                    {currentUserRole === 'contact' && (
+                        <button
+                            onClick={handleSaveForLater}
+                            disabled={saving}
+                            className="px-4 py-2 rounded-lg text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
+                        >
+                            Save for Later
+                        </button>
+                    )}
+
                     <button
                         onClick={handleFinish}
-                        disabled={!isComplete}
+                        disabled={!isComplete || saving}
                         className={`px-6 py-2 rounded-lg text-sm font-bold shadow-lg transition-all flex items-center gap-2 ${isComplete
                             ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20 animate-pulse'
                             : 'bg-zinc-200 dark:bg-white/5 text-zinc-400 cursor-not-allowed'
                             }`}
                     >
-                        <CheckCircle2 size={18} />
-                        {currentUserRole === 'business' ? 'Sign & Send to Client' : 'Sign & Complete'}
+                        {saving ? (
+                            <span>Saving...</span>
+                        ) : (
+                            <>
+                                <CheckCircle2 size={18} />
+                                {currentUserRole === 'business' ? 'Sign & Send to Client' : 'Sign & Complete'}
+                            </>
+                        )}
                     </button>
                 </div>
             </div>

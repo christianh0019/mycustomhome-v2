@@ -98,8 +98,8 @@ export const DocumentSigner: React.FC<{
                 content: pageContent,
                 type: fileType, // Preserve type info
                 numPages
-            },
-            updated_at: new Date().toISOString()
+            }
+            // updated_at removed as it does not exist in the schema
         };
 
         // 2. Determine Next Status & Actions based on Role

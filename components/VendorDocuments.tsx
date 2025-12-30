@@ -551,8 +551,8 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
     const confirmPublish = () => {
         setShowPublishWarning(false);
         setIsSigningMode(true);
-        // Force save to lock content? optional.
-        handleSave('draft', true);
+        // Force save to lock content. Pass false for shouldExit
+        handleSave('draft', true, undefined, false);
     };
 
     const handleSigningFieldClick = (field: DraggableField) => {
@@ -779,7 +779,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
         initializeTemplate(recipientName);
     };
 
-    const handleSave = async (status: DocumentStatus = 'draft', skipAlert = false, recipientData?: { name: string, id?: string }) => {
+    const handleSave = async (status: DocumentStatus = 'draft', skipAlert = false, recipientData?: { name: string, id?: string }, shouldExit = true) => {
         if (!user || !docTitle) {
             alert('Please login and enter a title.');
             return;
@@ -832,14 +832,7 @@ const DocumentCreator: React.FC<{ onBack: () => void, initialDoc: DocItem | null
             if (error) throw error;
 
             if (!skipAlert) alert('Document Saved Successfully!');
-            if (status === 'sent') {
-                onBack();
-            } else {
-                // If just saving draft, maybe stay? Or go back. Let's go back for now as per original.
-                // onBack(); 
-                // Actually original was onBack() always. Let's keep it unless we want to keep editing.
-                // But the user might want to keep editing a draft.
-                // Let's stick to original behavior: alert then back.
+            if (status === 'sent' || shouldExit) {
                 onBack();
             }
         } catch (error: any) {
@@ -1325,17 +1318,7 @@ const SettingsSidebar: React.FC<{
                                     <span className="text-sm">Checked</span>
                                 </div>
                             )}
-                            {field.type === 'signature' && (
-                                <button
-                                    onClick={() => onUpdateValue(field.id, 'Signed')}
-                                    className={`w-full py-2 px-3 rounded-lg text-sm font-bold border transition-colors flex items-center justify-center gap-2
-                                        ${field.value ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50'}
-                                    `}
-                                >
-                                    <PenTool size={14} />
-                                    {field.value ? 'Signed' : 'Sign Now'}
-                                </button>
-                            )}
+
                         </div>
                     </div>
                 )}

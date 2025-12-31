@@ -24,9 +24,10 @@ export interface DraggableField {
 
 export interface Lead {
     id: string;
-    project_title: string;
-    location_city: string;
-    location_state: string;
+    name: string; // Homeowner Name
+    city: string;
+    state?: string;
+    project_title: string; // Keep for compatibility or use as secondary info
 }
 
 export type DocumentStatus = 'draft' | 'sent' | 'completed';
@@ -328,21 +329,32 @@ export const SendDocumentModal: React.FC<{
 
     const fetchLeads = async () => {
         setLoading(true);
-        // Fetch leads from Supabase
+        // Fetch Matches (Homeowners) instead of Leads
+        // Joining with profiles to get homeowner details
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
         const { data, error } = await supabase
-            .from('leads')
-            .select('id, project_title, location_city, location_state')
-            .order('created_at', { ascending: false });
+            .from('matches')
+            .select('id, homeowner:profiles!homeowner_id(full_name, city)')
+            .eq('vendor_id', user.id);
 
         if (data) {
-            setLeads(data);
+            const mappedLeads: Lead[] = data.map((m: any) => ({
+                id: m.id,
+                name: m.homeowner?.full_name || 'Unknown Homeowner',
+                city: m.homeowner?.city || 'Unknown Location',
+                state: '', // Profile might not have state, just city
+                project_title: 'Home Project' // Placeholder
+            }));
+            setLeads(mappedLeads);
         }
         setLoading(false);
     };
 
     const filteredLeads = leads.filter(l =>
-        (l.project_title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-        (l.location_city?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+        (l.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (l.city?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     );
 
     if (!isOpen) return null;
@@ -375,7 +387,7 @@ export const SendDocumentModal: React.FC<{
 
                     <div className="space-y-2">
                         {loading ? (
-                            <div className="text-center py-8 text-zinc-400">Loading leads...</div>
+                            <div className="text-center py-8 text-zinc-400">Loading homeowners...</div>
                         ) : filteredLeads.length > 0 ? (
                             filteredLeads.map(lead => (
                                 <div
@@ -387,8 +399,8 @@ export const SendDocumentModal: React.FC<{
                                         } `}
                                 >
                                     <div>
-                                        <h4 className="font-bold text-zinc-900 dark:text-white">{lead.project_title}</h4>
-                                        <p className="text-xs text-zinc-500">{lead.location_city}, {lead.location_state}</p>
+                                        <h4 className="font-bold text-zinc-900 dark:text-white">{lead.name}</h4>
+                                        <p className="text-xs text-zinc-500">{lead.city} {lead.state && `, ${lead.state}`}</p>
                                     </div>
                                     {selectedLead?.id === lead.id && (
                                         <div className="w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center text-white">
@@ -398,7 +410,7 @@ export const SendDocumentModal: React.FC<{
                                 </div>
                             ))
                         ) : (
-                            <div className="text-center py-8 text-zinc-400">No leads found.</div>
+                            <div className="text-center py-8 text-zinc-400">No homeowners found.</div>
                         )}
                     </div>
                 </div>

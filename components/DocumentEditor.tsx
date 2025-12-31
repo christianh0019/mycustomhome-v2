@@ -301,7 +301,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialDoc, onBa
             };
 
             if (lead) {
-                updates.recipient_name = lead.project_title;
+                updates.recipient_name = lead.name;
                 // updates.recipient_email = lead.email; // If we had email
             }
 

@@ -91,77 +91,80 @@ export const HomeownerProfile: React.FC<HomeownerProfileProps> = ({ profileId, m
         : 'Not Started';
 
     return (
-        <div className="bg-white dark:bg-[#111] h-full flex flex-col">
-            <div className="h-32 bg-gradient-to-r from-blue-500 to-cyan-500 shrink-0"></div>
+        <div className="bg-white dark:bg-[#111] h-full flex flex-col relative">
+            {/* Blueprint Theme Header */}
+            <div className="h-32 bg-[#0052CC] relative overflow-hidden shrink-0">
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                <div className="absolute bottom-4 left-6 text-white/80 text-xs font-mono uppercase tracking-widest">Project Blueprint</div>
+            </div>
+
             <div className="px-6 -mt-10 flex flex-col flex-1 pb-6 overflow-y-auto">
                 <div className="flex items-end justify-between mb-6">
                     <div className="flex items-end gap-4">
                         <img
                             src={profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name)}`}
-                            className="w-20 h-20 rounded-2xl border-4 border-white dark:border-[#111] shadow-lg object-cover bg-white"
+                            className="w-20 h-20 rounded-none border-4 border-white dark:border-[#111] shadow-lg object-cover bg-white"
+                            style={{ borderRadius: '4px' }}
                         />
                         <div className="mb-2">
-                            <h2 className="text-xl font-bold text-zinc-900 dark:text-white leading-tight">{profile.full_name}</h2>
-                            <p className="text-sm text-zinc-500">Homeowner</p>
+                            <h2 className="text-xl font-bold text-zinc-900 dark:text-white leading-tight font-mono">{profile.full_name}</h2>
+                            <p className="text-sm text-zinc-500 font-mono">PROJECT OWNER</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="mb-4 text-xs font-semibold text-zinc-500 hover:text-zinc-900 uppercase tracking-wider">Close</button>
+                    <button onClick={onClose} className="mb-4 text-xs font-bold text-zinc-500 hover:text-zinc-900 uppercase tracking-wider border border-zinc-200 dark:border-white/10 px-3 py-1 rounded hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors">Close</button>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-6 font-mono text-sm">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-100 dark:border-white/5">
-                            <div className="flex items-center gap-2 mb-1 text-zinc-400">
+                        <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30">
+                            <div className="flex items-center gap-2 mb-1 text-blue-600 dark:text-blue-400">
                                 <MapPin size={14} />
-                                <span className="text-[10px] uppercase tracking-widest font-semibold">Location</span>
+                                <span className="text-[10px] uppercase tracking-widest font-bold">Location</span>
                             </div>
-                            <p className="font-medium text-zinc-900 dark:text-white">{profile.city || 'Unknown'}</p>
+                            <p className="font-bold text-zinc-900 dark:text-white">{profile.city || 'Unknown'}</p>
                         </div>
-                        <div className="p-4 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-100 dark:border-white/5">
-                            <div className="flex items-center gap-2 mb-1 text-zinc-400">
+                        <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30">
+                            <div className="flex items-center gap-2 mb-1 text-blue-600 dark:text-blue-400">
                                 <DollarSign size={14} />
-                                <span className="text-[10px] uppercase tracking-widest font-semibold">Budget</span>
+                                <span className="text-[10px] uppercase tracking-widest font-bold">Budget</span>
                             </div>
-                            <p className="font-medium text-zinc-900 dark:text-white">{profile.budget_range || 'Not set'}</p>
+                            <p className="font-bold text-zinc-900 dark:text-white">{profile.budget_range || 'Not set'}</p>
                         </div>
                     </div>
 
-                    <div className="p-4 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-100 dark:border-white/5">
-                        <div className="flex items-center gap-2 mb-2 text-zinc-400">
+                    <div className="p-4 border-2 border-dashed border-zinc-300 dark:border-zinc-700">
+                        <div className="flex items-center gap-2 mb-2 text-zinc-500">
                             <Calendar size={16} />
-                            <span className="text-xs font-semibold uppercase tracking-widest">Roadmap Stage</span>
+                            <span className="text-xs font-bold uppercase tracking-widest">Roadmap Status</span>
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                            <p className="font-medium text-zinc-900 dark:text-white">{roadmapStage}</p>
+                            <div className="w-3 h-3 bg-blue-600"></div>
+                            <p className="font-bold text-zinc-900 dark:text-white">{roadmapStage}</p>
                         </div>
                     </div>
 
                     <div className="pt-4 border-t border-zinc-200 dark:border-white/10">
                         <div className="flex items-center justify-between mb-3">
                             <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-                                <User size={14} /> Private Notes
+                                <User size={14} /> Private Field Notes
                             </h3>
                             {saving && <span className="text-[10px] text-zinc-400 animate-pulse">Saving...</span>}
                         </div>
                         <textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Add private notes about this client..."
-                            className="w-full h-32 p-3 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-700/30 rounded-lg text-sm text-zinc-800 dark:text-yellow-100 placeholder-yellow-800/30 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 resize-None"
+                            placeholder="// Enter private notes..."
+                            className="w-full h-32 p-3 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-800 dark:text-zinc-300 focus:outline-none focus:border-blue-500 font-mono resize-None"
                         />
                         <div className="flex justify-end mt-2">
                             <button
                                 onClick={handleSaveNotes}
                                 disabled={saving}
-                                className="flex items-center gap-2 px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg text-xs font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-xs font-bold uppercase tracking-wider hover:bg-blue-700 disabled:opacity-50"
                             >
                                 <Save size={14} /> Save Note
                             </button>
                         </div>
-                        <p className="text-[10px] text-zinc-400 mt-2 text-center">
-                            Only you can see these notes.
-                        </p>
                     </div>
                 </div>
             </div>

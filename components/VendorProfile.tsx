@@ -51,42 +51,54 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ profileId, onClose
     if (!profile) return null;
 
     return (
-        <div className="bg-white dark:bg-[#111] h-full flex flex-col">
-            <div className="h-32 bg-gradient-to-r from-purple-600 to-indigo-600 shrink-0"></div>
+        <div className="bg-white dark:bg-[#111] h-full flex flex-col relative">
+            {/* Business Card Header */}
+            <div className="h-32 bg-[#0A0A0A] relative overflow-hidden shrink-0">
+                <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/50 to-black/50"></div>
+                <div className="absolute top-0 right-0 p-4">
+                    <div className="w-16 h-1 bg-gradient-to-r from-amber-400 to-yellow-600 rounded-full"></div>
+                </div>
+            </div>
+
             <div className="px-6 -mt-10 flex flex-col flex-1 pb-6 overflow-y-auto">
                 <div className="flex items-end justify-between mb-6">
                     <div className="flex items-end gap-4">
                         <img
                             src={profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name)}`}
-                            className="w-20 h-20 rounded-2xl border-4 border-white dark:border-[#111] shadow-lg object-cover bg-white"
+                            className="w-20 h-20 rounded-full border-4 border-white dark:border-[#111] shadow-2xl object-cover bg-white"
                         />
                         <div className="mb-2">
-                            <h2 className="text-xl font-bold text-zinc-900 dark:text-white leading-tight">{profile.full_name}</h2>
-                            <p className="text-sm text-zinc-500 capitalize">{profile.role}</p>
+                            <h2 className="text-xl font-bold text-zinc-900 dark:text-white leading-tight font-serif tracking-wide">{profile.full_name}</h2>
+                            <p className="text-xs text-amber-600 font-bold uppercase tracking-widest">{profile.role}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="mb-4 text-xs font-semibold text-zinc-500 hover:text-zinc-900 uppercase tracking-wider">Close</button>
+                    <button onClick={onClose} className="mb-4 text-xs font-bold text-zinc-500 hover:text-zinc-900 uppercase tracking-wider hover:underline">Close</button>
                 </div>
 
                 <div className="space-y-6">
                     {profile.company_name && (
-                        <div className="p-4 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-100 dark:border-white/5">
+                        <div className="p-6 bg-zinc-50 dark:bg-white/5 rounded-none border-l-4 border-amber-500 shadow-sm">
                             <div className="flex items-center gap-2 mb-2 text-zinc-400">
                                 <Briefcase size={16} />
-                                <span className="text-xs font-semibold uppercase tracking-widest">Company</span>
+                                <span className="text-xs font-bold uppercase tracking-widest text-zinc-900 dark:text-white">Business Entity</span>
                             </div>
-                            <p className="font-medium text-zinc-900 dark:text-white">{profile.company_name}</p>
+                            <p className="text-lg font-serif italic text-zinc-800 dark:text-zinc-200">{profile.company_name}</p>
                         </div>
                     )}
 
-                    <div className="p-4 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-100 dark:border-white/5">
-                        <div className="flex items-center gap-2 mb-2 text-zinc-400">
+                    <div className="p-0">
+                        <div className="flex items-center gap-2 mb-3 text-zinc-400 border-b border-zinc-100 dark:border-white/5 pb-2">
                             <Info size={16} />
-                            <span className="text-xs font-semibold uppercase tracking-widest">Bio / Info</span>
+                            <span className="text-xs font-bold uppercase tracking-widest">Professional Bio</span>
                         </div>
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                            {profile.bio || "No information provided."}
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed font-serif">
+                            {profile.bio || "No biography provided."}
                         </p>
+                    </div>
+
+                    <div className="flex gap-2 pt-4">
+                        <div className="h-1 flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full"></div>
+                        <div className="h-1 w-10 bg-amber-500 rounded-full"></div>
                     </div>
                 </div>
             </div>

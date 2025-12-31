@@ -262,24 +262,7 @@ export const MessagesTab: React.FC = () => {
       );
    }
 
-   // 2. Profile View Mode
-   if (viewingProfileId && activeThreadId) {
-      // Determine role: If I am 'business', I am viewing a 'homeowner', and vice versa.
-      // Although generally the viewerRole passed to ProfileView helps it decide what to show.
-      // We can pass user.role directly.
-      return (
-         <div className="fixed inset-0 z-50 bg-white dark:bg-black flex flex-col">
-            <ProfileView
-               profileId={viewingProfileId}
-               matchId={activeThreadId}
-               viewerRole={user?.role === 'business' ? 'business' : 'homeowner'}
-               onClose={() => setViewingProfileId(null)}
-            />
-         </div>
-      );
-   }
-
-   // 3. Normal Chat View
+   // 2. Normal Chat View
    return (
       <div className="h-full flex flex-col md:flex-row bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white relative transition-colors duration-300">
          <OnboardingModal
@@ -321,6 +304,19 @@ export const MessagesTab: React.FC = () => {
 
          {/* Chat Area */}
          <div className={`flex-1 flex flex-col bg-zinc-50 dark:bg-[#050505] relative ${!activeThreadId ? 'hidden md:flex' : 'flex'}`}>
+
+            {/* Profile Overlay */}
+            {viewingProfileId && activeThreadId && (
+               <div className="absolute inset-0 z-20 bg-white dark:bg-[#0A0A0A] flex flex-col animate-in slide-in-from-right duration-300">
+                  <ProfileView
+                     profileId={viewingProfileId}
+                     matchId={activeThreadId}
+                     viewerRole={user?.role === 'business' ? 'business' : 'homeowner'}
+                     onClose={() => setViewingProfileId(null)}
+                  />
+               </div>
+            )}
+
             {activeThread ? (
                <>
                   <div className="h-16 px-6 border-b border-zinc-200 dark:border-white/5 flex items-center justify-between shrink-0 bg-white/80 dark:bg-black/40 backdrop-blur-md">

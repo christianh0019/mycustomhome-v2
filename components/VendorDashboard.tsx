@@ -4,14 +4,16 @@ import { MessagesTab } from './MessagesTab';
 import { Settings } from './Settings';
 import { VendorDocuments } from './VendorDocuments';
 import { VendorLeads } from './VendorLeads';
+import { VendorPipeline } from './VendorPipeline'; // Import
 import { useTheme } from '../contexts/ThemeContext';
 import {
     LayoutDashboard, MessageSquare, Briefcase, Users, Search,
-    Sun, Moon, BadgeCheck, FileText
+    Sun, Moon, BadgeCheck, FileText, TrendingUp // Add TrendingUp icon
 } from 'lucide-react';
 
 enum VendorTab {
     Overview = 'Overview',
+    Pipeline = 'Pipeline', // Add Pipeline
     Opportunities = 'Leads',
     Projects = 'Active Jobs',
     Documents = 'Documents',
@@ -28,6 +30,8 @@ export const VendorDashboard: React.FC = () => {
         switch (activeTab) {
             case VendorTab.Overview:
                 return <VendorOverview />;
+            case VendorTab.Pipeline: // Render Pipeline
+                return <VendorPipeline />;
             case VendorTab.Opportunities:
                 return <VendorLeads />;
             case VendorTab.Projects:
@@ -46,6 +50,7 @@ export const VendorDashboard: React.FC = () => {
     const getIcon = (tab: VendorTab) => {
         switch (tab) {
             case VendorTab.Overview: return LayoutDashboard;
+            case VendorTab.Pipeline: return TrendingUp; // Icon for Pipeline
             case VendorTab.Opportunities: return Search;
             case VendorTab.Projects: return Briefcase;
             case VendorTab.Documents: return FileText;

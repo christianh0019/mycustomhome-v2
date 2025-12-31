@@ -119,35 +119,34 @@ export const PDFService = {
         let currentY = height - 140;
 
         // Signers Loop
+        // Signers Loop
         for (const signer of data.signers) {
-            if (signer.role === 'Homeowner') {
-                page.drawText('Signed By', { x: 50, y: currentY, size: 10, font: fontBold });
-                page.drawText('Signature', { x: 300, y: currentY, size: 10, font: fontBold });
-                currentY -= 20;
-                page.drawLine({ start: { x: 50, y: currentY }, end: { x: 545, y: currentY }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
-                currentY -= 40;
+            page.drawText('Signed By', { x: 50, y: currentY, size: 10, font: fontBold });
+            page.drawText('Signature', { x: 300, y: currentY, size: 10, font: fontBold });
+            currentY -= 20;
+            page.drawLine({ start: { x: 50, y: currentY }, end: { x: 545, y: currentY }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
+            currentY -= 40;
 
-                page.drawText(signer.name, { x: 50, y: currentY, size: 12, font: fontBold });
-                page.drawText(signer.email, { x: 50, y: currentY - 15, size: 10, font, color: rgb(0.5, 0.5, 0.5) });
+            page.drawText(signer.name || 'Unknown Signer', { x: 50, y: currentY, size: 12, font: fontBold });
+            if (signer.email) page.drawText(signer.email, { x: 50, y: currentY - 15, size: 10, font, color: rgb(0.5, 0.5, 0.5) });
 
-                // Stats
-                page.drawText(`Viewed: ${new Date(signer.viewedAt).toLocaleString()}`, { x: 50, y: currentY - 40, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
-                page.drawText(`Signed: ${new Date(signer.signedAt).toLocaleString()}`, { x: 50, y: currentY - 55, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+            // Stats
+            page.drawText(`Viewed: ${new Date(signer.viewedAt).toLocaleString()}`, { x: 50, y: currentY - 40, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+            page.drawText(`Signed: ${new Date(signer.signedAt).toLocaleString()}`, { x: 50, y: currentY - 55, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
 
-                page.drawText(`IP Address: ${signer.ip}`, { x: 300, y: currentY - 40, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
-                page.drawText(`Location: ${signer.location}`, { x: 300, y: currentY - 55, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+            page.drawText(`IP Address: ${signer.ip}`, { x: 300, y: currentY - 40, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+            page.drawText(`Location: ${signer.location}`, { x: 300, y: currentY - 55, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
 
-                // Signature Image
-                if (signer.signatureImage && signer.signatureImage.startsWith('data:image')) {
-                    try {
-                        const sigImg = await pdfDoc.embedPng(signer.signatureImage);
-                        page.drawImage(sigImg, { x: 300, y: currentY - 10, width: 120, height: 60 });
-                    } catch (e) {
-                        console.error('Error embedding certificate signature', e);
-                    }
+            // Signature Image
+            if (signer.signatureImage && signer.signatureImage.startsWith('data:image')) {
+                try {
+                    const sigImg = await pdfDoc.embedPng(signer.signatureImage);
+                    page.drawImage(sigImg, { x: 300, y: currentY - 10, width: 120, height: 60 });
+                } catch (e) {
+                    console.error('Error embedding certificate signature', e);
                 }
-                currentY -= 100;
             }
+            currentY -= 100;
         }
 
         // Footer

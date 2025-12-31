@@ -48,6 +48,9 @@ export const VendorDocuments: React.FC = () => {
     const fetchDocuments = async () => {
         if (!user) return;
         setLoading(true);
+        // Ensure we select recipient_id to join with profiles if needed, or stick to 'recipient' field if that's where meaningful text is.
+        // Actually the current code uses doc.recipient. If that's empty, maybe we rely on recipient_name?
+        // Let's modify the query to be robust. 
         const { data, error } = await supabase
             .from('documents')
             .select('*')
@@ -65,6 +68,12 @@ export const VendorDocuments: React.FC = () => {
     };
 
     const handleOpenDoc = (doc: DocItem) => {
+        // Issue 3 Check: Block editing if sent or completed
+        if (doc.status === 'sent' || doc.status === 'completed') {
+            // Optional: Show toast "Cannot edit a signed/sent document"
+            return;
+        }
+
         setSelectedDoc(doc);
         if (doc.status === 'draft') {
             setView('create');
@@ -177,7 +186,10 @@ export const VendorDocuments: React.FC = () => {
                                 <tr
                                     key={doc.id}
                                     onClick={() => handleOpenDoc(doc)}
-                                    className="group hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                                    className={`group transition-colors ${doc.status === 'sent' || doc.status === 'completed'
+                                            ? 'cursor-default opacity-75'
+                                            : 'cursor-pointer hover:bg-zinc-50 dark:hover:bg-white/5'
+                                        }`}
                                 >
                                     <td className="px-8 py-4">
                                         <div className="flex items-center gap-3">
@@ -187,20 +199,22 @@ export const VendorDocuments: React.FC = () => {
                                             <span className="font-medium text-zinc-900 dark:text-white group-hover:underline decoration-zinc-400/50 underline-offset-4">{doc.title}</span>
                                         </div>
                                     </td>
-                                    <td className="px-8 py-4 text-zinc-600 dark:text-zinc-400 text-sm cursor-default">{doc.recipient}</td>
+                                    {/* Issue 1 Fix: Use recipient_name fallback */}
+                                    <td className="px-8 py-4 text-zinc-600 dark:text-zinc-400 text-sm cursor-default">{doc.recipient || doc.recipient_name || '-'}</td>
                                     <td className="px-8 py-4 cursor-default">
                                         <StatusBadge status={doc.status} />
                                     </td>
-                                    <td className="px-8 py-4 text-zinc-500 text-sm cursor-default">{new Date(doc.date).toLocaleDateString()}</td>
+                                    {/* Issue 2 Fix: Use created_at */}
+                                    <td className="px-8 py-4 text-zinc-500 text-sm cursor-default">
+                                        {doc.created_at ? new Date(doc.created_at).toLocaleDateString() : '-'}
+                                    </td>
                                     <td className="px-8 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {doc.status === 'draft' ? (
+                                            {doc.status === 'draft' && (
                                                 <>
                                                     <button onClick={(e) => { e.stopPropagation(); handleOpenDoc(doc); }} className="p-2 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"><Pencil size={16} /></button>
                                                     <button onClick={(e) => handleDeleteDoc(doc.id, e)} className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 size={16} /></button>
                                                 </>
-                                            ) : (
-                                                <button onClick={(e) => { e.stopPropagation(); handleOpenDoc(doc); }} className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"><Eye size={16} /></button>
                                             )}
                                         </div>
                                     </td>

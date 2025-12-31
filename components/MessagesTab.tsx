@@ -358,8 +358,8 @@ export const MessagesTab: React.FC = () => {
                         const isMe = msg.senderId === 'me';
                         if (msg.type === 'signature_request' && msg.metadata) {
                            return (
-                              <div key={msg.id} className="flex justify-start w-full">
-                                 <div className="max-w-[400px] bg-white dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-lg">
+                              <div key={msg.id} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                 <div className={`max-w-[400px] bg-white dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-lg ${isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}>
                                     <div className="p-4 border-b border-zinc-100 dark:border-white/5 flex items-center gap-3">
                                        <div className="size-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500"><FileText size={20} /></div>
                                        <div>
@@ -370,12 +370,18 @@ export const MessagesTab: React.FC = () => {
                                     <div className="p-5">
                                        <p className="text-xs text-zinc-600 mb-4">{msg.text}</p>
                                        {msg.metadata.status === 'pending' ? (
-                                          <button
-                                             onClick={() => handleSignClick(msg.id, msg.metadata?.documentId || '')}
-                                             className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest"
-                                          >
-                                             Review & Sign
-                                          </button>
+                                          isMe ? (
+                                             <div className="w-full py-3 bg-zinc-100 dark:bg-white/5 text-zinc-500 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                                                Waiting for Signature...
+                                             </div>
+                                          ) : (
+                                             <button
+                                                onClick={() => handleSignClick(msg.id, msg.metadata?.documentId || '')}
+                                                className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest"
+                                             >
+                                                Review & Sign
+                                             </button>
+                                          )
                                        ) : (
                                           <div className="w-full py-3 bg-emerald-500/10 text-emerald-500 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2">
                                              <CheckCircle2 size={16} /> Signed

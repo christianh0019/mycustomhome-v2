@@ -265,13 +265,17 @@ export const DocumentSigner: React.FC<{
 
                     // Fetch Vendor Profile for Business Name
                     let vendorName = 'Business Owner';
+                    let vendorEmail = '';
                     if (initialDoc.vendor_id) {
                         const { data: vendorProfile } = await supabase
                             .from('profiles')
-                            .select('full_name') // Email is private, likely need to store it or accept it's not shown for vendor
+                            .select('full_name, email') // Try to fetch email if exposed
                             .eq('id', initialDoc.vendor_id)
                             .single();
+
                         if (vendorProfile?.full_name) vendorName = vendorProfile.full_name;
+                        if (vendorProfile?.email) vendorEmail = vendorProfile.email;
+                        else if (initialDoc.sender_email) vendorEmail = initialDoc.sender_email;
                     }
 
                     // To get Vendor Email, strictly we can't from client unless it's in metadata or public profile
@@ -308,9 +312,9 @@ export const DocumentSigner: React.FC<{
                             },
                             {
                                 name: vendorName,
-                                email: '', // Vendor Email is private properly
+                                email: vendorEmail,
                                 role: 'Business Owner',
-                                ip: businessLog?.details?.ip_address || 'Unavailable (Sent via App)',
+                                ip: businessLog?.details?.ip_address || 'Unavailable (Sent prior to update)',
                                 location: businessLog?.details?.location || 'Unavailable',
                                 viewedAt: businessLog?.created_at || auditLogs?.find(l => l.action === 'sent')?.created_at || new Date().toISOString(),
                                 signedAt: businessLog?.created_at || auditLogs?.find(l => l.action === 'sent')?.created_at || new Date().toISOString(),

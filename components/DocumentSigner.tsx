@@ -186,7 +186,34 @@ export const DocumentSigner: React.FC<{
                     }
                 }
             } else if (currentUserRole === 'contact' && nextStatus === 'completed') {
-                await auditService.logAction(initialDoc.id, 'completed', user?.id);
+                try {
+                    // Generate Flattened PDF
+                    const { PDFService } = await import('../services/PDFService');
+                    const pdfBytes = await PDFService.generateSignedPDF(initialDoc, fields);
+                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                    const fileName = `${initialDoc.title.replace(/\s/g, '_')}_signed.pdf`;
+                    const filePath = `${user?.id}/${Date.now()}_${fileName}`;
+
+                    // Upload to Vault Storage
+                    const { error: uploadError } = await supabase.storage.from('vault').upload(filePath, blob);
+                    if (uploadError) throw uploadError;
+
+                    // Create Vault Item Record
+                    await supabase.from('vault_items').insert({
+                        user_id: user?.id,
+                        file_path: filePath,
+                        original_name: fileName,
+                        smart_name: initialDoc.title,
+                        category: 'Contracts',
+                        status: 'ready', // ready for use
+                        summary: 'Signed Contract via My Home Custom.'
+                    });
+
+                    await auditService.logAction(initialDoc.id, 'completed', user?.id, { vault_path: filePath });
+                } catch (vaultError) {
+                    console.error('Failed to save to Safe Box:', vaultError);
+                    alert('Document signed, but failed to save copy to Safe Box.');
+                }
             }
 
             onSigningComplete(initialDoc.id);

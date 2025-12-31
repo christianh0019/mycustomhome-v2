@@ -12,6 +12,7 @@ import { useUI } from '../contexts/UIContext';
 interface Match {
     id: string; // match_id
     pipeline_stage: string;
+    lost_reason?: string; // Add optional lost_reason
     homeowner: {
         id: string;
         full_name: string;
@@ -36,6 +37,17 @@ export const VendorPipeline: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
     const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+    const [showLost, setShowLost] = useState(false);
+    const [markingLostId, setMarkingLostId] = useState<string | null>(null);
+    const [lostReason, setLostReason] = useState('');
+
+    const LOST_REASONS = [
+        "Not Interested",
+        "Lost the Bid",
+        "Not an Ideal Project",
+        "Budget Mismatch",
+        "Other"
+    ];
 
     // --- Stats State ---
     const [stats, setStats] = useState({
@@ -43,42 +55,6 @@ export const VendorPipeline: React.FC = () => {
         count: 0,
         wonValue: 0
     });
-
-    useEffect(() => {
-        if (user) fetchPipeline();
-    }, [user]);
-
-    const fetchPipeline = async () => {
-        setLoading(true);
-        const { data, error } = await supabase
-            .from('matches')
-            .select(`
-                id,
-                pipeline_stage,
-                created_at,
-                homeowner:homeowner_id (
-                    id,
-                    full_name,
-                    city,
-                    avatar_url,
-                    budget_range
-                )
-            `)
-            .eq('vendor_id', user?.id)
-            .order('created_at', { ascending: false });
-
-        if (data) {
-            const formatted: Match[] = data.map((m: any) => ({
-                id: m.id,
-                pipeline_stage: m.pipeline_stage || 'new request',
-                homeowner: m.homeowner,
-                created_at: m.created_at
-            }));
-            setMatches(formatted);
-            calculateStats(formatted);
-        }
-        setLoading(false);
-    };
 
     // Helper to estimate value from string range
     const parseBudgetValue = (range: string): number => {
@@ -103,18 +79,68 @@ export const VendorPipeline: React.FC = () => {
     };
 
     const calculateStats = (data: Match[]) => {
-        let total = 0;
-        let won = 0;
+        let totalActiveValue = 0;
+        let totalActiveCount = 0;
+        let wonValue = 0;
         data.forEach(m => {
             const val = parseBudgetValue(m.homeowner.budget_range);
             if (m.pipeline_stage === 'won') {
-                won += val;
-            } else {
-                total += val; // Active pipeline
+                wonValue += val;
+            } else if (m.pipeline_stage !== 'lost') { // Only count active deals for pipeline value and count
+                totalActiveValue += val;
+                totalActiveCount += 1;
             }
         });
-        setStats({ totalValue: total, count: data.length, wonValue: won });
+        setStats({ totalValue: totalActiveValue, count: totalActiveCount, wonValue: wonValue });
     };
+
+    // Revised Fetch to Client-Side Filter for correct Stats
+    const fetchAllAndFilter = async () => {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('matches')
+            .select(`
+                id,
+                pipeline_stage,
+                lost_reason,
+                created_at,
+                homeowner:homeowner_id (
+                    id,
+                    full_name,
+                    city,
+                    avatar_url,
+                    budget_range
+                )
+            `)
+            .eq('vendor_id', user?.id)
+            .order('created_at', { ascending: false });
+
+        if (data) {
+            const formatted: Match[] = data.map((m: any) => ({
+                id: m.id,
+                pipeline_stage: m.pipeline_stage || 'new request',
+                lost_reason: m.lost_reason,
+                homeowner: m.homeowner,
+                created_at: m.created_at
+            }));
+
+            // Calculate Global Stats (Active + Won)
+            calculateStats(formatted);
+
+            // Filter for Display
+            if (showLost) {
+                setMatches(formatted.filter(m => m.pipeline_stage === 'lost'));
+            } else {
+                setMatches(formatted.filter(m => m.pipeline_stage !== 'lost'));
+            }
+        }
+        setLoading(false);
+    }
+
+    // Replace initial useEffect to use fetchAllAndFilter
+    useEffect(() => {
+        if (user) fetchAllAndFilter();
+    }, [user, showLost]);
 
     const handleStageChange = async (matchId: string, newStage: string) => {
         // Optimistic update
@@ -122,16 +148,42 @@ export const VendorPipeline: React.FC = () => {
             m.id === matchId ? { ...m, pipeline_stage: newStage } : m
         );
         setMatches(updatedMatches);
-        calculateStats(updatedMatches);
+        // Recalculate stats based on the full data if available, or trigger a refetch
+        // For now, we'll refetch all to ensure stats are accurate.
+        // calculateStats(updatedMatches); // This would only work if `matches` was the full dataset
 
         const { error } = await supabase
             .from('matches')
-            .update({ pipeline_stage: newStage })
+            .update({ pipeline_stage: newStage, lost_reason: null }) // Clear lost reason if re-opening
             .eq('id', matchId);
 
         if (error) {
             showToast('Failed to update stage', 'error');
-            fetchPipeline(); // Revert
+            fetchAllAndFilter(); // Revert and refetch
+        } else {
+            showToast('Pipeline stage updated!', 'success');
+            fetchAllAndFilter(); // Refetch to ensure consistency and correct stats
+        }
+    };
+
+    const confirmLost = async () => {
+        if (!markingLostId || !lostReason) return;
+
+        const { error } = await supabase
+            .from('matches')
+            .update({
+                pipeline_stage: 'lost',
+                lost_reason: lostReason
+            })
+            .eq('id', markingLostId);
+
+        if (error) {
+            showToast('Failed to mark as lost.', 'error');
+        } else {
+            showToast('Deal marked as lost.', 'success');
+            setMarkingLostId(null);
+            setLostReason('');
+            fetchAllAndFilter();
         }
     };
 
@@ -161,6 +213,20 @@ export const VendorPipeline: React.FC = () => {
                         <h1 className="text-3xl font-serif text-zinc-900 dark:text-white mb-2">Sales Pipeline</h1>
                         <p className="text-zinc-500 dark:text-zinc-500">Track and manage your active opportunities.</p>
                     </div>
+                    <div className="flex bg-zinc-200 dark:bg-white/10 p-1 rounded-lg">
+                        <button
+                            onClick={() => setShowLost(false)}
+                            className={`px-4 py-1.5 text-xs font-bold uppercase tracking-widest rounded-md transition-all ${!showLost ? 'bg-white dark:bg-zinc-800 shadow text-zinc-900 dark:text-white' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`}
+                        >
+                            Active
+                        </button>
+                        <button
+                            onClick={() => setShowLost(true)}
+                            className={`px-4 py-1.5 text-xs font-bold uppercase tracking-widest rounded-md transition-all ${showLost ? 'bg-white dark:bg-zinc-800 shadow text-zinc-900 dark:text-white' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`}
+                        >
+                            Lost / Archived
+                        </button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -179,87 +245,181 @@ export const VendorPipeline: React.FC = () => {
                     <div className="p-6 bg-white dark:bg-[#0A0A0A] rounded-xl border border-zinc-200 dark:border-white/10 shadow-sm relative overflow-hidden group">
                         <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
                         <p className="text-xs uppercase tracking-widest text-zinc-500 mb-2 font-medium">Active Deals</p>
-                        <p className="text-3xl font-light text-zinc-900 dark:text-white">{matches.filter(m => m.pipeline_stage !== 'won').length}</p>
+                        <p className="text-3xl font-light text-zinc-900 dark:text-white">{stats.count}</p>
                         <LayoutDashboard className="absolute right-6 bottom-6 text-zinc-100 dark:text-zinc-800 group-hover:scale-110 transition-transform" size={48} />
                     </div>
                 </div>
             </div>
 
-            {/* Kanban Board */}
+            {/* Kanban Board OR Lost List */}
             <div className="flex-1 overflow-x-auto overflow-y-hidden px-8 pb-8">
-                <div className="flex gap-6 h-full min-w-[1000px]">
-                    {STAGES.map(stage => {
-                        const stageMatches = matches.filter(m => (m.pipeline_stage || 'new request') === stage.id);
-                        return (
-                            <div key={stage.id} className="w-1/4 flex flex-col h-full">
-                                {/* Column Header */}
-                                <div className="flex items-center justify-between mb-4 px-2">
-                                    <div className="flex items-center gap-2">
-                                        <div className={`w-2 h-2 rounded-full ${stage.color}`}></div>
-                                        <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500">{stage.label}</h3>
+                {showLost ? (
+                    <div className="bg-white dark:bg-[#0A0A0A] rounded-2xl border border-zinc-200 dark:border-white/10 overflow-hidden h-full">
+                        <div className="p-4 border-b border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5">
+                            <h3 className="text-sm font-bold uppercase tracking-widest">Lost Deals</h3>
+                        </div>
+                        <div className="overflow-y-auto h-full p-0">
+                            {matches.length === 0 ? (
+                                <div className="p-12 text-center text-zinc-400">No lost deals found.</div>
+                            ) : (
+                                <table className="w-full text-left bg-white dark:bg-[#0A0A0A]">
+                                    <thead className="bg-zinc-50 dark:bg-white/5 text-xs text-zinc-500 uppercase tracking-wider sticky top-0 z-10">
+                                        <tr>
+                                            <th className="p-4 font-medium">Homeowner</th>
+                                            <th className="p-4 font-medium">Reason</th>
+                                            <th className="p-4 font-medium">Date Lost</th>
+                                            <th className="p-4 font-medium text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-zinc-100 dark:divide-white/5">
+                                        {matches.map(m => (
+                                            <tr key={m.id} className="hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors">
+                                                <td className="p-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <img src={m.homeowner.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.homeowner.full_name)}`} className="w-8 h-8 rounded-full" />
+                                                        <span className="font-medium text-sm text-zinc-900 dark:text-white">{m.homeowner.full_name}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4">
+                                                    <span className="px-2 py-1 bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 rounded text-xs font-bold uppercase tracking-wide">
+                                                        {m.lost_reason || 'Unknown'}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4 text-xs text-zinc-500">
+                                                    {new Date(m.created_at).toLocaleDateString()}
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    <button onClick={() => handleStageChange(m.id, 'new request')} className="text-xs text-zinc-400 hover:text-zinc-900 dark:hover:text-white underline">
+                                                        Re-open
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex gap-6 h-full min-w-[1000px]">
+                        {STAGES.map(stage => {
+                            const stageMatches = matches.filter(m => (m.pipeline_stage || 'new request') === stage.id);
+                            return (
+                                <div key={stage.id} className="w-1/4 flex flex-col h-full">
+                                    {/* Column Header */}
+                                    <div className="flex items-center justify-between mb-4 px-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full ${stage.color}`}></div>
+                                            <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500">{stage.label}</h3>
+                                        </div>
+                                        <span className="text-xs text-zinc-400 font-medium bg-zinc-100 dark:bg-white/5 px-2 py-0.5 rounded-full">{stageMatches.length}</span>
                                     </div>
-                                    <span className="text-xs text-zinc-400 font-medium bg-zinc-100 dark:bg-white/5 px-2 py-0.5 rounded-full">{stageMatches.length}</span>
-                                </div>
 
-                                {/* Column Content */}
-                                <div className="flex-1 bg-zinc-100/50 dark:bg-white/[0.02] rounded-2xl p-3 space-y-3 overflow-y-auto border border-zinc-200/50 dark:border-white/5">
-                                    {stageMatches.map(match => (
-                                        <div
-                                            key={match.id}
-                                            className="bg-white dark:bg-[#0A0A0A] p-4 rounded-xl border border-zinc-200 dark:border-white/10 shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all group"
-                                            draggable
-                                            onDragStart={(e) => {
-                                                e.dataTransfer.setData('text/plain', match.id);
-                                            }}
-                                        >
-                                            <div onClick={() => { setSelectedProfileId(match.homeowner.id); setSelectedMatchId(match.id); }} className="cursor-pointer">
-                                                <div className="flex items-center justify-between mb-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <img
-                                                            src={match.homeowner.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.homeowner.full_name)}`}
-                                                            className="w-6 h-6 rounded-full object-cover"
-                                                        />
-                                                        <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{match.homeowner.full_name}</span>
+                                    {/* Column Content */}
+                                    <div className="flex-1 bg-zinc-100/50 dark:bg-white/[0.02] rounded-2xl p-3 space-y-3 overflow-y-auto border border-zinc-200/50 dark:border-white/5">
+                                        {stageMatches.map(match => (
+                                            <div
+                                                key={match.id}
+                                                className="bg-white dark:bg-[#0A0A0A] p-4 rounded-xl border border-zinc-200 dark:border-white/10 shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all group relative"
+                                                draggable
+                                                onDragStart={(e) => { e.dataTransfer.setData('text/plain', match.id); }}
+                                            >
+                                                {/* Profile Click */}
+                                                <div onClick={() => { setSelectedProfileId(match.homeowner.id); setSelectedMatchId(match.id); }} className="cursor-pointer">
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <img
+                                                                src={match.homeowner.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(match.homeowner.full_name)}`}
+                                                                className="w-6 h-6 rounded-full object-cover"
+                                                            />
+                                                            <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{match.homeowner.full_name}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="mb-3">
+                                                        <p className="text-[10px] uppercase tracking-wider text-zinc-400 mb-0.5">Estimated Value</p>
+                                                        <p className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center gap-1">
+                                                            <DollarSign size={12} className="text-emerald-500" />
+                                                            {match.homeowner.budget_range || '—'}
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                <div className="mb-3">
-                                                    <p className="text-[10px] uppercase tracking-wider text-zinc-400 mb-0.5">Estimated Value</p>
-                                                    <p className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center gap-1">
-                                                        <DollarSign size={12} className="text-emerald-500" />
-                                                        {match.homeowner.budget_range || '—'}
-                                                    </p>
+
+                                                {/* Card Footer Actions */}
+                                                <div className="pt-2 border-t border-zinc-100 dark:border-white/5 flex justify-between items-center mt-2 opacity-15 min-h-[20px] group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setMarkingLostId(match.id); }}
+                                                        className="text-[10px] uppercase tracking-wider text-red-300 hover:text-red-500 font-bold"
+                                                    >
+                                                        Mark Lost
+                                                    </button>
+
+                                                    <div className="flex gap-1">
+                                                        {STAGES.map(s => (
+                                                            <button
+                                                                key={s.id}
+                                                                onClick={() => handleStageChange(match.id, s.id)}
+                                                                title={`Move to ${s.label}`}
+                                                                className={`w-2 h-2 rounded-full transition-all hover:scale-150 ${s.id === match.pipeline_stage ? 'bg-zinc-900 dark:bg-white scale-125 ring-2 ring-offset-1 ring-zinc-300 dark:ring-zinc-700' : 'bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-400'}`}
+                                                            />
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             </div>
-
-                                            {/* Quick Actions / Move */}
-                                            <div className="pt-2 border-t border-zinc-100 dark:border-white/5 flex justify-end gap-1">
-                                                {STAGES.map(s => (
-                                                    <button
-                                                        key={s.id}
-                                                        onClick={() => handleStageChange(match.id, s.id)}
-                                                        title={`Move to ${s.label}`}
-                                                        className={`w-2 h-2 rounded-full transition-all hover:scale-150 ${s.id === match.pipeline_stage ? 'bg-zinc-900 dark:bg-white scale-125 ring-2 ring-offset-1 ring-zinc-300 dark:ring-zinc-700' : 'bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-400'}`}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
+                                    <div
+                                        className="hidden"
+                                        onDragOver={(e) => e.preventDefault()}
+                                        onDrop={(e) => {
+                                            e.preventDefault();
+                                            const id = e.dataTransfer.getData('text/plain');
+                                            handleStageChange(id, stage.id);
+                                        }}
+                                    ></div>
                                 </div>
-                                {/* Drop Zone Overlay Logic would go here for true dnd, but simple buttons work for MVP */}
-                                <div
-                                    className="hidden" // Placeholder for drop logic if implemented later
-                                    onDragOver={(e) => e.preventDefault()}
-                                    onDrop={(e) => {
-                                        e.preventDefault();
-                                        const id = e.dataTransfer.getData('text/plain');
-                                        handleStageChange(id, stage.id);
-                                    }}
-                                ></div>
-                            </div>
-                        );
-                    })}
-                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
+
+            {/* Mark Lost Modal */}
+            {markingLostId && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-[#0A0A0A] p-8 rounded-2xl shadow-2xl border border-zinc-200 dark:border-white/10 w-full max-w-sm animate-in zoom-in-95 duration-200">
+                        <h3 className="text-xl font-serif mb-2 text-zinc-900 dark:text-white">Mark Deal as Lost</h3>
+                        <p className="text-sm text-zinc-500 mb-6">Why is this deal being closed? This helps improve future insights.</p>
+
+                        <div className="space-y-2 mb-6">
+                            {LOST_REASONS.map(reason => (
+                                <button
+                                    key={reason}
+                                    onClick={() => setLostReason(reason)}
+                                    className={`w-full text-left px-4 py-3 rounded-xl text-sm transition-all border ${lostReason === reason ? 'bg-zinc-900 border-zinc-900 text-white dark:bg-white dark:border-white dark:text-black font-semibold' : 'bg-zinc-50 border-zinc-100 text-zinc-600 hover:bg-zinc-100 dark:bg-white/5 dark:border-white/5 dark:text-zinc-300 dark:hover:bg-white/10'}`}
+                                >
+                                    {reason}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setMarkingLostId(null); setLostReason(''); }}
+                                className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmLost}
+                                disabled={!lostReason}
+                                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Confirm Lost
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

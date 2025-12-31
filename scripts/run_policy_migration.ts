@@ -16,7 +16,8 @@ const DB_URL = 'postgresql://postgres.nsubhodrsiyxbbjrfmhz:JoeShmoe3412$@aws-0-u
 
 const MIGRATION_FILES = [
     // 'supabase/migrations/20251231180000_create_match_notes.sql',
-    'supabase/migrations/20251231190000_seed_match_test.sql'
+    // 'supabase/migrations/20251231190000_seed_match_test.sql',
+    'supabase/migrations/20251231193000_fix_duplicate_match.sql'
 ];
 
 async function runMigrations() {

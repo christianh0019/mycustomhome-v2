@@ -238,7 +238,7 @@ export const DocumentSigner: React.FC<{
                     }
 
                     // 3. Append Signature Certificate
-                    // Fetch audit logs to get "Sent" time and "Viewed" time
+                    // Fetch audit logs
                     const { data: auditLogs } = await supabase
                         .from('document_audit_logs')
                         .select('*')
@@ -246,6 +246,21 @@ export const DocumentSigner: React.FC<{
                         .order('created_at', { ascending: true });
 
                     const signedAt = new Date().toISOString();
+                    const businessLog = auditLogs?.find(l => l.action === 'signed_by_business');
+
+                    // Fetch Vendor Profile for Business Name
+                    let vendorName = 'Business Owner';
+                    if (initialDoc.vendor_id) {
+                        const { data: vendorProfile } = await supabase
+                            .from('profiles')
+                            .select('full_name') // Email is private, likely need to store it or accept it's not shown for vendor
+                            .eq('id', initialDoc.vendor_id)
+                            .single();
+                        if (vendorProfile?.full_name) vendorName = vendorProfile.full_name;
+                    }
+
+                    // To get Vendor Email, strictly we can't from client unless it's in metadata or public profile
+                    // We will leave it empty or checking if we can get it from initialDoc (often no)
 
                     // Certificate Data
                     const certificateData = {
@@ -255,7 +270,7 @@ export const DocumentSigner: React.FC<{
                         signers: [
                             {
                                 name: user?.user_metadata?.full_name || 'Homeowner',
-                                email: user?.email || 'Unknown',
+                                email: user?.email || '',
                                 role: 'Homeowner',
                                 ip: ipData.ip,
                                 location: `${ipData.city}, ${ipData.region}`,
@@ -264,11 +279,14 @@ export const DocumentSigner: React.FC<{
                                 signatureImage: fields.find(f => f.assignee === 'contact' && f.type === 'signature')?.value
                             },
                             {
-                                name: initialDoc.recipient_name || 'Business Owner', // Fallback, ideally fetch vendor profile
+                                name: vendorName,
+                                email: '', // Vendor Email is private properly
                                 role: 'Business Owner',
-                                // Business usually signs *before* sending or is presumed signed by sending. 
-                                // For MVP we focus on the Homeowner's certificate since they are the active signer closing the doc.
-                                // We can list the business as the "Sender".
+                                ip: businessLog?.details?.ip_address || 'Unavailable (Sent via App)',
+                                location: businessLog?.details?.location || 'Unavailable',
+                                viewedAt: businessLog?.created_at || auditLogs?.find(l => l.action === 'sent')?.created_at || new Date().toISOString(),
+                                signedAt: businessLog?.created_at || auditLogs?.find(l => l.action === 'sent')?.created_at || new Date().toISOString(),
+                                signatureImage: fields.find(f => f.assignee === 'business' && f.type === 'signature')?.value
                             }
                         ]
                     };

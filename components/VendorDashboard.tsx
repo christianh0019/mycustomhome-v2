@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { MessagesTab } from './MessagesTab';
 import { Settings } from './Settings';
 import { VendorDocuments } from './VendorDocuments';
+import { VendorLeads } from './VendorLeads';
 import { useTheme } from '../contexts/ThemeContext';
 import {
     LayoutDashboard, MessageSquare, Briefcase, Users, Search,
@@ -28,7 +29,7 @@ export const VendorDashboard: React.FC = () => {
             case VendorTab.Overview:
                 return <VendorOverview />;
             case VendorTab.Opportunities:
-                return <VendorOpportunities />;
+                return <VendorLeads />;
             case VendorTab.Projects:
                 return <VendorProjects />;
             case VendorTab.Documents:
@@ -135,29 +136,6 @@ const VendorOverview: React.FC = () => (
                     <p className="text-[10px] uppercase tracking-widest text-zinc-500 dark:text-white/40 mb-2">{stat.label}</p>
                     <p className="text-4xl font-semibold mb-2 text-zinc-900 dark:text-white">{stat.value}</p>
                     <p className="text-[10px] text-emerald-500 uppercase tracking-wider font-bold">{stat.trend}</p>
-                </div>
-            ))}
-        </div>
-    </div>
-);
-
-const VendorOpportunities: React.FC = () => (
-    <div className="p-12 w-full h-full overflow-y-auto">
-        <h2 className="text-4xl font-serif mb-8 text-zinc-900 dark:text-white">Live Opportunities</h2>
-        <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-                <div key={i} className="p-6 border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#080808] hover:border-zinc-300 dark:hover:border-white/30 rounded-2xl transition-all cursor-pointer flex justify-between items-center group shadow-sm dark:shadow-none">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <span className="px-2 py-1 bg-zinc-100 dark:bg-white/10 text-[9px] uppercase tracking-wide rounded text-zinc-600 dark:text-white/80 font-bold">Custom Build</span>
-                            <span className="text-[10px] text-zinc-400 dark:text-white/40">Posted 2h ago</span>
-                        </div>
-                        <h3 className="text-xl font-medium mb-1 text-zinc-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Modern Farmhouse - Frisco, TX</h3>
-                        <p className="text-sm text-zinc-500 dark:text-white/50">Budget: $1.2M - $1.5M • 4,500 sqft • Ready to break ground</p>
-                    </div>
-                    <button className="px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black text-[10px] uppercase tracking-widest font-bold hover:scale-105 transition-transform rounded-lg shadow-lg">
-                        Submit Bid
-                    </button>
                 </div>
             ))}
         </div>

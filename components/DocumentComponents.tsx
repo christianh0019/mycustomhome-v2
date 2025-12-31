@@ -231,7 +231,7 @@ export const DraggableFieldOnCanvas: React.FC<{
             }}
 
             className={`
-                group absolute flex items-center px-2 border rounded cursor-pointer transition-all select-none overflow-hidden
+                group absolute flex items-center px-2 border rounded cursor-pointer transition-all select-none
                 ${getStatusColor()}
                 ${isSelected && !isSigningMode ? 'ring-2 ring-indigo-500 z-50' : 'z-10 hover:z-50'}
                 ${isSigningMode && !isAssignedToUser ? 'opacity-50 pointer-events-none' : ''}
@@ -393,14 +393,14 @@ export const SendDocumentModal: React.FC<{
                                 <div
                                     key={lead.id}
                                     onClick={() => setSelectedLead(lead)}
-                                    className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${selectedLead?.id === lead.id
-                                        ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-500 ring-1 ring-indigo-500'
-                                        : 'bg-white dark:bg-white/5 border-zinc-200 dark:border-white/10 hover:border-indigo-300'
+                                    className={`p - 4 rounded - xl border cursor - pointer transition - all flex items - center justify - between ${selectedLead?.id === lead.id
+                                            ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-500 ring-1 ring-indigo-500'
+                                            : 'bg-white dark:bg-white/5 border-zinc-200 dark:border-white/10 hover:border-indigo-300'
                                         } `}
                                 >
                                     <div>
                                         <h4 className="font-bold text-zinc-900 dark:text-white">{lead.name}</h4>
-                                        <p className="text-xs text-zinc-500">{lead.city} {lead.state && `, ${lead.state}`}</p>
+                                        <p className="text-xs text-zinc-500">{lead.city} {lead.state && `, ${lead.state} `}</p>
                                     </div>
                                     {selectedLead?.id === lead.id && (
                                         <div className="w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center text-white">
@@ -419,9 +419,9 @@ export const SendDocumentModal: React.FC<{
                     <button
                         onClick={() => selectedLead && onSend(selectedLead)}
                         disabled={!selectedLead}
-                        className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${selectedLead
-                            ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
-                            : 'bg-zinc-200 dark:bg-white/5 text-zinc-400 cursor-not-allowed'
+                        className={`w - full py - 3 rounded - xl font - bold flex items - center justify - center gap - 2 transition - all ${selectedLead
+                                ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                                : 'bg-zinc-200 dark:bg-white/5 text-zinc-400 cursor-not-allowed'
                             } `}
                     >
                         <Send size={18} />

@@ -159,13 +159,19 @@ export const DocumentSigner: React.FC<{
                     // Fetch matches to find the correct homeowner
                     const { data: matches } = await supabase
                         .from('matches')
-                        .select('id, homeowner:profiles!homeowner_id(full_name)')
+                        .select('id, homeowner_id, homeowner:profiles!homeowner_id(full_name)')
                         .eq('vendor_id', user?.id);
 
                     // Find match where homeowner name equals recipient name
                     const targetMatch = matches?.find((m: any) => m.homeowner?.full_name === recipientName);
 
                     if (targetMatch) {
+                        // Update document with recipient_id for RLS access
+                        await supabase
+                            .from('documents')
+                            .update({ recipient_id: targetMatch.homeowner_id })
+                            .eq('id', initialDoc.id);
+
                         await supabase.from('messages').insert({
                             thread_id: targetMatch.id, // Using match_id as thread_id
                             sender_id: user?.id,

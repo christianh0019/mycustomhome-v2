@@ -7,15 +7,15 @@ interface ProfileViewProps {
     profileId: string;
     // matchId is needed for HomeownerProfile (to save notes)
     matchId?: string;
-    viewerRole: 'homeowner' | 'business' | 'contact' | 'admin';
+    profileRole: 'homeowner' | 'business' | 'contact' | 'admin';
     onClose: () => void;
 }
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ profileId, matchId, viewerRole, onClose }) => {
-    // Controller Logic
+export const ProfileView: React.FC<ProfileViewProps> = ({ profileId, matchId, profileRole, onClose }) => {
+    // Controller Logic based on the TARGET PROFILE'S role.
 
-    // If a Business/Vendor is viewing, they are looking at a Homeowner Profile
-    if (viewerRole === 'business' || viewerRole === 'consultant') {
+    // If the profile I am looking at is a Homeowner, render HomeownerProfile
+    if (profileRole === 'homeowner') {
         return (
             <HomeownerProfile
                 profileId={profileId}
@@ -25,8 +25,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ profileId, matchId, vi
         );
     }
 
-    // If a Homeowner is viewing, they are looking at a Vendor Profile
-    // (Or if admin/contact views, default to Vendor view for now as safe fallback, or handle explicitly)
+    // Otherwise, render VendorProfile
     return (
         <VendorProfile
             profileId={profileId}

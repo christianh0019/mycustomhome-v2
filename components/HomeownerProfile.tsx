@@ -91,14 +91,8 @@ export const HomeownerProfile: React.FC<HomeownerProfileProps> = ({ profileId, m
         : 'Not Started';
 
     return (
-        <div className="bg-white dark:bg-[#111] h-full flex flex-col relative">
-            {/* Blueprint Theme Header */}
-            <div className="h-32 bg-[#0052CC] relative overflow-hidden shrink-0">
-                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                <div className="absolute bottom-4 left-6 text-white/80 text-xs font-mono uppercase tracking-widest">Project Blueprint</div>
-            </div>
-
-            <div className="px-6 -mt-10 flex flex-col flex-1 pb-6 overflow-y-auto">
+        <div className="bg-white dark:bg-[#111] h-full flex flex-col relative pt-10">
+            <div className="px-6 flex flex-col flex-1 pb-6 overflow-y-auto">
                 <div className="flex items-end justify-between mb-6">
                     <div className="flex items-end gap-4">
                         <img

@@ -11,12 +11,30 @@ import { DocumentSigner } from './DocumentSigner';
 import { DocItem } from './DocumentComponents';
 
 // --- Types ---
+// --- Types ---
 interface ChatUser {
    id: string;
    name: string;
    avatar: string;
+   role: 'homeowner' | 'business' | 'contact' | 'admin'; // Added role
    status: 'online' | 'offline' | 'typing';
 }
+
+// ... (ChatUser interface update is implicit if I edit the whole file, but I'll try to just edit the usage spots if possible, or do a larger replace if safer)
+
+// Wait, I strictly need to update the interface first or TS might complain, but this tool can only do contiguous blocks.
+// I will check if I can do it in one go. The file is 406 lines. 
+// I will update the interface and the fetching logic in patches.
+
+// 1. Update ChatUser Interface (Line 14)
+interface ChatUser {
+   id: string;
+   name: string;
+   avatar: string;
+   role: 'homeowner' | 'business' | 'contact' | 'admin';
+   status: 'online' | 'offline' | 'typing';
+}
+
 
 interface ChatMessage {
    id: string;
@@ -121,11 +139,13 @@ export const MessagesTab: React.FC = () => {
             // Fallbacks for missing profile data
             const partnerName = partnerProfile?.full_name || (isHomeowner ? 'Vendor' : 'Homeowner');
             const partnerAvatar = partnerProfile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(partnerName)}&background=random`;
+            const partnerRole = partnerProfile?.role || 'homeowner'; // Fallback role
 
-            const leadConf = {
+            const leadConf: ChatUser = {
                id: partnerProfile?.id || 'unknown',
                name: partnerName,
                avatar: partnerAvatar,
+               role: partnerRole,
                status: 'online' as const
             };
 
@@ -306,12 +326,12 @@ export const MessagesTab: React.FC = () => {
          <div className={`flex-1 flex flex-col bg-zinc-50 dark:bg-[#050505] relative ${!activeThreadId ? 'hidden md:flex' : 'flex'}`}>
 
             {/* Profile Overlay */}
-            {viewingProfileId && activeThreadId && (
+            {viewingProfileId && activeThreadId && activeThread && (
                <div className="absolute inset-0 z-20 bg-white dark:bg-[#0A0A0A] flex flex-col animate-in slide-in-from-right duration-300">
                   <ProfileView
                      profileId={viewingProfileId}
                      matchId={activeThreadId}
-                     viewerRole={user?.role === 'business' ? 'business' : 'homeowner'}
+                     profileRole={activeThread.partner.role}
                      onClose={() => setViewingProfileId(null)}
                   />
                </div>

@@ -51,16 +51,8 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ profileId, onClose
     if (!profile) return null;
 
     return (
-        <div className="bg-white dark:bg-[#111] h-full flex flex-col relative">
-            {/* Business Card Header */}
-            <div className="h-32 bg-[#0A0A0A] relative overflow-hidden shrink-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/50 to-black/50"></div>
-                <div className="absolute top-0 right-0 p-4">
-                    <div className="w-16 h-1 bg-gradient-to-r from-amber-400 to-yellow-600 rounded-full"></div>
-                </div>
-            </div>
-
-            <div className="px-6 -mt-10 flex flex-col flex-1 pb-6 overflow-y-auto">
+        <div className="bg-white dark:bg-[#111] h-full flex flex-col relative pt-10">
+            <div className="px-6 flex flex-col flex-1 pb-6 overflow-y-auto">
                 <div className="flex items-end justify-between mb-6">
                     <div className="flex items-end gap-4">
                         <img

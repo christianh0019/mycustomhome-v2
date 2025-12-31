@@ -14,6 +14,7 @@ create table if not exists public.matches (
 -- RLS for Matches
 alter table public.matches enable row level security;
 
+drop policy if exists "Users can view their own matches" on public.matches;
 create policy "Users can view their own matches"
 on public.matches for select
 using (
@@ -23,6 +24,7 @@ using (
 -- Note: We might need an insert policy if the frontend creates matches, 
 -- but usually this happens on the backend or via a specific "Connect" action. 
 -- For now, we'll allow authenticated users to create matches (e.g. Homeowner clicks "Contact Vendor")
+drop policy if exists "Users can create matches" on public.matches;
 create policy "Users can create matches"
 on public.matches for insert
 with check (

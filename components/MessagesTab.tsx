@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { AppTab } from '../types';
 import { OnboardingModal } from './OnboardingModal';
+import { ProfileView } from './ProfileView';
 import { markFeatureAsSeen } from './NewBadge';
 import { FileText, CheckCircle2 } from 'lucide-react';
 import { useUI } from '../contexts/UIContext';
@@ -243,6 +244,8 @@ export const MessagesTab: React.FC = () => {
       showToast("Document signed successfully!", "success");
    };
 
+   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
+
    // --- RENDER ---
 
    // 1. Full Screen Signing Mode
@@ -259,7 +262,24 @@ export const MessagesTab: React.FC = () => {
       );
    }
 
-   // 2. Normal Chat View
+   // 2. Profile View Mode
+   if (viewingProfileId && activeThreadId) {
+      // Determine role: If I am 'business', I am viewing a 'homeowner', and vice versa.
+      // Although generally the viewerRole passed to ProfileView helps it decide what to show.
+      // We can pass user.role directly.
+      return (
+         <div className="fixed inset-0 z-50 bg-white dark:bg-black flex flex-col">
+            <ProfileView
+               profileId={viewingProfileId}
+               matchId={activeThreadId}
+               viewerRole={user?.role === 'business' ? 'business' : 'homeowner'}
+               onClose={() => setViewingProfileId(null)}
+            />
+         </div>
+      );
+   }
+
+   // 3. Normal Chat View
    return (
       <div className="h-full flex flex-col md:flex-row bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white relative transition-colors duration-300">
          <OnboardingModal
@@ -304,11 +324,14 @@ export const MessagesTab: React.FC = () => {
             {activeThread ? (
                <>
                   <div className="h-16 px-6 border-b border-zinc-200 dark:border-white/5 flex items-center justify-between shrink-0 bg-white/80 dark:bg-black/40 backdrop-blur-md">
-                     <div className="flex items-center gap-4">
-                        <button onClick={() => setActiveThreadId(null)} className="md:hidden">←</button>
+                     <div className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setViewingProfileId(activeThread.partner.id)}>
+                        <button onClick={(e) => { e.stopPropagation(); setActiveThreadId(null); }} className="md:hidden">←</button>
                         <img src={activeThread.partner.avatar} className="w-10 h-10 rounded-full" />
                         <div>
-                           <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{activeThread.partner.name}</h3>
+                           <h3 className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+                              {activeThread.partner.name}
+                              <span className="text-[10px] bg-zinc-100 dark:bg-white/10 px-2 py-0.5 rounded-full text-zinc-500">View Profile</span>
+                           </h3>
                            <p className="text-[10px] text-green-500 uppercase tracking-widest font-medium">Online</p>
                         </div>
                      </div>

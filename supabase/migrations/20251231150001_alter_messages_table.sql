@@ -1,5 +1,8 @@
 -- Alter messages table to link to matches instead of leads
 
+-- 0. Wipe existing messages (they point to leads, which violates new FK)
+TRUNCATE TABLE public.messages CASCADE;
+
 -- 1. Drop old constraint if exists (we'll check purely via SQL to be safe or just assume standard naming)
 -- Note: Supabase/Postgres auto-names constraints like 'messages_thread_id_fkey' typically.
 
@@ -20,6 +23,7 @@ ON DELETE CASCADE;
 -- 3. Update RLS Policies for Messages (to use matches)
 
 DROP POLICY IF EXISTS "Users can view messages for their leads" ON public.messages;
+DROP POLICY IF EXISTS "Users can view messages for their matches" ON public.messages;
 CREATE POLICY "Users can view messages for their matches"
 ON public.messages FOR SELECT
 USING (
@@ -31,6 +35,7 @@ USING (
 );
 
 DROP POLICY IF EXISTS "Users can insert messages for their leads" ON public.messages;
+DROP POLICY IF EXISTS "Users can insert messages for their matches" ON public.messages;
 CREATE POLICY "Users can insert messages for their matches"
 ON public.messages FOR INSERT
 WITH CHECK (
@@ -42,6 +47,7 @@ WITH CHECK (
 );
 
 DROP POLICY IF EXISTS "Users can update messages for their leads" ON public.messages;
+DROP POLICY IF EXISTS "Users can update messages for their matches" ON public.messages;
 CREATE POLICY "Users can update messages for their matches"
 ON public.messages FOR UPDATE
 USING (

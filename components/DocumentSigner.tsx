@@ -122,6 +122,23 @@ export const DocumentSigner: React.FC<{
         if (!isComplete) return;
         setSaving(true);
 
+        // 1. Fetch IP & Location (Moved to top level)
+        let ipData = { ip: 'Unknown', city: 'Unknown', region: 'Unknown', country: 'Unknown' };
+        try {
+            const response = await fetch('https://ipapi.co/json/');
+            if (response.ok) {
+                const data = await response.json();
+                ipData = {
+                    ip: data.ip,
+                    city: data.city,
+                    region: data.region,
+                    country: data.country_name
+                };
+            }
+        } catch (ipError) {
+            console.warn('Failed to fetch IP:', ipError);
+        }
+
         const updates: any = {
             metadata: {
                 fields,
@@ -149,7 +166,11 @@ export const DocumentSigner: React.FC<{
             if (updateError) throw updateError;
 
             if (auditAction) {
-                await auditService.logAction(initialDoc.id, auditAction, user?.id);
+                // Modified to include IP data immediately for the generic action log
+                await auditService.logAction(initialDoc.id, auditAction, user?.id, {
+                    ip_address: ipData.ip,
+                    location: `${ipData.city}, ${ipData.region}`
+                });
             }
 
             if (currentUserRole === 'business' && nextStatus === 'sent') {
@@ -179,7 +200,16 @@ export const DocumentSigner: React.FC<{
                             text: `Please sign the document: ${initialDoc.title}`,
                             metadata: { documentId: initialDoc.id, documentTitle: initialDoc.title, status: 'pending' }
                         });
-                        await auditService.logAction(initialDoc.id, 'sent', user?.id, { recipient_match_id: targetMatch.id });
+
+                        // Log with IP
+                        await auditService.logAction(initialDoc.id, 'sent', user?.id, {
+                            recipient_match_id: targetMatch.id,
+                            ip_address: ipData.ip,
+                            location: `${ipData.city}, ${ipData.region}`
+                        });
+
+                        // Also explicitly log 'signed_by_business' with IP if they signed it 
+                        // (Though we logged it above in the generic check, we ensure it has details there too now)
                     } else {
                         console.warn('No matching homeowner found for recipient:', recipientName);
                         // Optional: show toast "Document saved, but could not find chat thread for [Name]"
@@ -187,22 +217,7 @@ export const DocumentSigner: React.FC<{
                 }
             } else if (currentUserRole === 'contact' && nextStatus === 'completed') {
                 try {
-                    // 1. Fetch IP & Location
-                    let ipData = { ip: 'Unknown', city: 'Unknown', region: 'Unknown', country: 'Unknown' };
-                    try {
-                        const response = await fetch('https://ipapi.co/json/');
-                        if (response.ok) {
-                            const data = await response.json();
-                            ipData = {
-                                ip: data.ip,
-                                city: data.city,
-                                region: data.region,
-                                country: data.country_name
-                            };
-                        }
-                    } catch (ipError) {
-                        console.warn('Failed to fetch IP:', ipError);
-                    }
+                    // IP fetch moved to top
 
                     const { PDFService } = await import('../services/PDFService');
                     let pdfBytes: Uint8Array;
@@ -263,13 +278,26 @@ export const DocumentSigner: React.FC<{
                     // We will leave it empty or checking if we can get it from initialDoc (often no)
 
                     // Certificate Data
+
+                    // Fetch Homeowner Profile (for Name)
+                    let homeownerName = user?.user_metadata?.full_name;
+                    if (!homeownerName) {
+                        const { data: userProfile } = await supabase
+                            .from('profiles')
+                            .select('full_name') // Homeowner profile
+                            .eq('id', user?.id)
+                            .single();
+                        if (userProfile?.full_name) homeownerName = userProfile.full_name;
+                        else homeownerName = 'Homeowner';
+                    }
+
                     const certificateData = {
                         referenceNumber: initialDoc.id.toUpperCase(),
                         sentAt: auditLogs?.find(l => l.action === 'sent')?.created_at || new Date().toISOString(),
                         completedAt: signedAt,
                         signers: [
                             {
-                                name: user?.user_metadata?.full_name || 'Homeowner',
+                                name: homeownerName,
                                 email: user?.email || '',
                                 role: 'Homeowner',
                                 ip: ipData.ip,

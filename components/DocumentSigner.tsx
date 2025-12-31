@@ -187,26 +187,49 @@ export const DocumentSigner: React.FC<{
                 }
             } else if (currentUserRole === 'contact' && nextStatus === 'completed') {
                 try {
+                    // 1. Fetch IP & Location
+                    let ipData = { ip: 'Unknown', city: 'Unknown', region: 'Unknown', country: 'Unknown' };
+                    try {
+                        const response = await fetch('https://ipapi.co/json/');
+                        if (response.ok) {
+                            const data = await response.json();
+                            ipData = {
+                                ip: data.ip,
+                                city: data.city,
+                                region: data.region,
+                                country: data.country_name
+                            };
+                        }
+                    } catch (ipError) {
+                        console.warn('Failed to fetch IP:', ipError);
+                    }
+
                     const { PDFService } = await import('../services/PDFService');
                     let pdfBytes: Uint8Array;
+                    let imagePages: any[] = [];
 
+                    // 2. Generate Base PDF
                     if (fileType === 'pdf') {
-                        // Standard Field Overlay for existing PDFs
                         pdfBytes = await PDFService.generateSignedPDF(initialDoc, fields);
                     } else {
-                        // For Rich Text / Templates: Snapshot the entire DOM element (WYSIWYG)
                         const html2canvas = (await import('html2canvas')).default;
-                        const imagePages = [];
 
                         for (let i = 1; i <= numPages; i++) {
-                            const params = { scale: 2, useCORS: true, logging: false };
+                            const params: any = {
+                                scale: 2,
+                                useCORS: true,
+                                logging: false,
+                                scrollY: 0,
+                                windowWidth: 1200,
+                                backgroundColor: '#ffffff'
+                            };
                             const el = document.getElementById(`page-${i}`);
                             if (el) {
                                 const canvas = await html2canvas(el, params);
                                 imagePages.push({
                                     dataUrl: canvas.toDataURL('image/png'),
-                                    width: 595,  // A4 Point Width
-                                    height: 842  // A4 Point Height
+                                    width: 595,
+                                    height: 842
                                 });
                             }
                         }
@@ -214,7 +237,45 @@ export const DocumentSigner: React.FC<{
                         pdfBytes = await PDFService.generateFromImages(imagePages);
                     }
 
-                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                    // 3. Append Signature Certificate
+                    // Fetch audit logs to get "Sent" time and "Viewed" time
+                    const { data: auditLogs } = await supabase
+                        .from('document_audit_logs')
+                        .select('*')
+                        .eq('document_id', initialDoc.id)
+                        .order('created_at', { ascending: true });
+
+                    const signedAt = new Date().toISOString();
+
+                    // Certificate Data
+                    const certificateData = {
+                        referenceNumber: initialDoc.id.toUpperCase(),
+                        sentAt: auditLogs?.find(l => l.action === 'sent')?.created_at || new Date().toISOString(),
+                        completedAt: signedAt,
+                        signers: [
+                            {
+                                name: user?.user_metadata?.full_name || 'Homeowner',
+                                email: user?.email || 'Unknown',
+                                role: 'Homeowner',
+                                ip: ipData.ip,
+                                location: `${ipData.city}, ${ipData.region}`,
+                                viewedAt: auditLogs?.find(l => l.action === 'viewed_by_client')?.created_at || new Date().toISOString(),
+                                signedAt: signedAt,
+                                signatureImage: fields.find(f => f.assignee === 'contact' && f.type === 'signature')?.value
+                            },
+                            {
+                                name: initialDoc.recipient_name || 'Business Owner', // Fallback, ideally fetch vendor profile
+                                role: 'Business Owner',
+                                // Business usually signs *before* sending or is presumed signed by sending. 
+                                // For MVP we focus on the Homeowner's certificate since they are the active signer closing the doc.
+                                // We can list the business as the "Sender".
+                            }
+                        ]
+                    };
+
+                    const finalPdfBytes = await PDFService.appendCertificate(pdfBytes, certificateData);
+
+                    const blob = new Blob([finalPdfBytes], { type: 'application/pdf' });
                     const fileName = `${initialDoc.title.replace(/\s/g, '_')}_signed.pdf`;
                     const filePath = `${user?.id}/${Date.now()}_${fileName}`;
 
@@ -229,11 +290,15 @@ export const DocumentSigner: React.FC<{
                         original_name: fileName,
                         smart_name: initialDoc.title,
                         category: 'Contracts',
-                        status: 'ready', // ready for use
+                        status: 'ready',
                         summary: 'Signed Contract via My Home Custom.'
                     });
 
-                    await auditService.logAction(initialDoc.id, 'completed', user?.id, { vault_path: filePath });
+                    await auditService.logAction(initialDoc.id, 'completed', user?.id, {
+                        vault_path: filePath,
+                        ip_address: ipData.ip,
+                        location: `${ipData.city}, ${ipData.region}`
+                    });
                 } catch (vaultError: any) {
                     console.error('Failed to save to Safe Box:', vaultError);
                     alert(`Document signed, but failed to save copy to Safe Box. Error: ${vaultError?.message || vaultError}`);

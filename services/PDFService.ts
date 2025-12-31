@@ -100,5 +100,59 @@ export const PDFService = {
         }
 
         return await pdfDoc.save();
+    },
+
+    // New: Append Signature Certificate Page
+    async appendCertificate(pdfBytes: Uint8Array, data: any): Promise<Uint8Array> {
+        const pdfDoc = await PDFDocument.load(pdfBytes);
+        const page = pdfDoc.addPage([595, 842]);
+        const { width, height } = page.getSize();
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+        // Header
+        page.drawText('Signature Certificate', { x: 50, y: height - 50, size: 24, font: fontBold });
+
+        page.drawText(`Reference number: ${data.referenceNumber}`, { x: 50, y: height - 80, size: 10, font });
+        page.drawText(`Sent on: ${new Date(data.sentAt).toLocaleString()}`, { x: 350, y: height - 80, size: 10, font });
+
+        let currentY = height - 140;
+
+        // Signers Loop
+        for (const signer of data.signers) {
+            if (signer.role === 'Homeowner') {
+                page.drawText('Signed By', { x: 50, y: currentY, size: 10, font: fontBold });
+                page.drawText('Signature', { x: 300, y: currentY, size: 10, font: fontBold });
+                currentY -= 20;
+                page.drawLine({ start: { x: 50, y: currentY }, end: { x: 545, y: currentY }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
+                currentY -= 40;
+
+                page.drawText(signer.name, { x: 50, y: currentY, size: 12, font: fontBold });
+                page.drawText(signer.email, { x: 50, y: currentY - 15, size: 10, font, color: rgb(0.5, 0.5, 0.5) });
+
+                // Stats
+                page.drawText(`Viewed: ${new Date(signer.viewedAt).toLocaleString()}`, { x: 50, y: currentY - 40, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+                page.drawText(`Signed: ${new Date(signer.signedAt).toLocaleString()}`, { x: 50, y: currentY - 55, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+
+                page.drawText(`IP Address: ${signer.ip}`, { x: 300, y: currentY - 40, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+                page.drawText(`Location: ${signer.location}`, { x: 300, y: currentY - 55, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+
+                // Signature Image
+                if (signer.signatureImage && signer.signatureImage.startsWith('data:image')) {
+                    try {
+                        const sigImg = await pdfDoc.embedPng(signer.signatureImage);
+                        page.drawImage(sigImg, { x: 300, y: currentY - 10, width: 120, height: 60 });
+                    } catch (e) {
+                        console.error('Error embedding certificate signature', e);
+                    }
+                }
+                currentY -= 100;
+            }
+        }
+
+        // Footer
+        page.drawText(`Document completed on ${new Date(data.completedAt).toLocaleString()}`, { x: 50, y: 50, size: 10, font, color: rgb(0.5, 0.5, 0.5) });
+
+        return await pdfDoc.save();
     }
 };

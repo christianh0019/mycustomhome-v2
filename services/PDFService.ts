@@ -78,5 +78,27 @@ export const PDFService = {
         }
 
         return await pdfDoc.save();
+    },
+
+    // New: Generate PDF by taking full-page screenshots (WYSIWYG for RichText)
+    async generateFromImages(imageCtxs: { dataUrl: string, width: number, height: number }[]): Promise<Uint8Array> {
+        const pdfDoc = await PDFDocument.create();
+
+        for (const img of imageCtxs) {
+            const page = pdfDoc.addPage([img.width, img.height]);
+            try {
+                const pngImage = await pdfDoc.embedPng(img.dataUrl);
+                page.drawImage(pngImage, {
+                    x: 0,
+                    y: 0,
+                    width: img.width,
+                    height: img.height,
+                });
+            } catch (e) {
+                console.error('Error embedding page screenshot:', e);
+            }
+        }
+
+        return await pdfDoc.save();
     }
 };

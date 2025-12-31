@@ -234,9 +234,9 @@ export const DocumentSigner: React.FC<{
                     });
 
                     await auditService.logAction(initialDoc.id, 'completed', user?.id, { vault_path: filePath });
-                } catch (vaultError) {
+                } catch (vaultError: any) {
                     console.error('Failed to save to Safe Box:', vaultError);
-                    alert('Document signed, but failed to save copy to Safe Box.');
+                    alert(`Document signed, but failed to save copy to Safe Box. Error: ${vaultError?.message || vaultError}`);
                 }
             }
 

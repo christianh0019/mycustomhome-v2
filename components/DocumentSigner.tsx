@@ -153,17 +153,30 @@ export const DocumentSigner: React.FC<{
             }
 
             if (currentUserRole === 'business' && nextStatus === 'sent') {
-                if (initialDoc.recipient_name) {
-                    const { data: leadData } = await supabase.from('leads').select('id').eq('project_title', initialDoc.recipient_name).single();
-                    if (leadData) {
+                if (initialDoc.recipient_name || initialDoc.recipient) {
+                    const recipientName = initialDoc.recipient_name || initialDoc.recipient;
+
+                    // Fetch matches to find the correct homeowner
+                    const { data: matches } = await supabase
+                        .from('matches')
+                        .select('id, homeowner:profiles!homeowner_id(full_name)')
+                        .eq('vendor_id', user?.id);
+
+                    // Find match where homeowner name equals recipient name
+                    const targetMatch = matches?.find((m: any) => m.homeowner?.full_name === recipientName);
+
+                    if (targetMatch) {
                         await supabase.from('messages').insert({
-                            thread_id: leadData.id,
+                            thread_id: targetMatch.id, // Using match_id as thread_id
                             sender_id: user?.id,
                             type: 'signature_request',
                             text: `Please sign the document: ${initialDoc.title}`,
                             metadata: { documentId: initialDoc.id, documentTitle: initialDoc.title, status: 'pending' }
                         });
-                        await auditService.logAction(initialDoc.id, 'sent', user?.id, { recipient_lead_id: leadData.id });
+                        await auditService.logAction(initialDoc.id, 'sent', user?.id, { recipient_match_id: targetMatch.id });
+                    } else {
+                        console.warn('No matching homeowner found for recipient:', recipientName);
+                        // Optional: show toast "Document saved, but could not find chat thread for [Name]"
                     }
                 }
             } else if (currentUserRole === 'contact' && nextStatus === 'completed') {

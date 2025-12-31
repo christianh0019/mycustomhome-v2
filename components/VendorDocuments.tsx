@@ -5,6 +5,7 @@ import { supabase } from '../services/supabase';
 import { DocItem } from './DocumentComponents';
 import { DocumentEditor } from './DocumentEditor';
 import { DocumentSigner } from './DocumentSigner';
+import { DocumentPreview } from './DocumentPreview';
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
     switch (status) {
@@ -34,7 +35,7 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
 
 export const VendorDocuments: React.FC = () => {
     const { user } = useAuth();
-    const [view, setView] = useState<'list' | 'create' | 'signing'>('list');
+    const [view, setView] = useState<'list' | 'create' | 'signing' | 'preview'>('list');
     const [docs, setDocs] = useState<DocItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedDoc, setSelectedDoc] = useState<DocItem | null>(null);
@@ -68,19 +69,13 @@ export const VendorDocuments: React.FC = () => {
     };
 
     const handleOpenDoc = (doc: DocItem) => {
-        // Issue 3 Check: Block editing if sent or completed
-        if (doc.status === 'sent' || doc.status === 'completed') {
-            // Optional: Show toast "Cannot edit a signed/sent document"
-            return;
-        }
-
         setSelectedDoc(doc);
-        if (doc.status === 'draft') {
+        if (doc.status === 'sent' || doc.status === 'completed') {
+            setView('preview');
+        } else if (doc.status === 'draft') {
             setView('create');
         } else {
-            // If already sent or completed (or partially signed), maybe go to signing view or just preview?
-            // For business owner, if status is 'locking_for_signature' (which we simulate via draft + action), or just 'draft' but we want to sign...
-            // Let's assume hitting "Edit" opens Editor. The Editor has the "Sign & Send" button.
+            // Fallback
             setView('create');
         }
     };
@@ -146,6 +141,18 @@ export const VendorDocuments: React.FC = () => {
         );
     }
 
+    if (view === 'preview' && selectedDoc) {
+        return (
+            <DocumentPreview
+                doc={selectedDoc}
+                onClose={() => {
+                    setView('list');
+                    fetchDocuments();
+                }}
+            />
+        );
+    }
+
     return (
         <div className="p-8 h-full overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
@@ -186,10 +193,8 @@ export const VendorDocuments: React.FC = () => {
                                 <tr
                                     key={doc.id}
                                     onClick={() => handleOpenDoc(doc)}
-                                    className={`group transition-colors ${doc.status === 'sent' || doc.status === 'completed'
-                                            ? 'cursor-default opacity-75'
-                                            : 'cursor-pointer hover:bg-zinc-50 dark:hover:bg-white/5'
-                                        }`}
+                                    // Update styling to indicate clickable again for sent/completed
+                                    className={`group transition-colors cursor-pointer hover:bg-zinc-50 dark:hover:bg-white/5`}
                                 >
                                     <td className="px-8 py-4">
                                         <div className="flex items-center gap-3">
@@ -210,11 +215,13 @@ export const VendorDocuments: React.FC = () => {
                                     </td>
                                     <td className="px-8 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {doc.status === 'draft' && (
+                                            {doc.status === 'draft' ? (
                                                 <>
                                                     <button onClick={(e) => { e.stopPropagation(); handleOpenDoc(doc); }} className="p-2 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"><Pencil size={16} /></button>
                                                     <button onClick={(e) => handleDeleteDoc(doc.id, e)} className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 size={16} /></button>
                                                 </>
+                                            ) : (
+                                                <button onClick={(e) => { e.stopPropagation(); handleOpenDoc(doc); }} className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"><Eye size={16} /></button>
                                             )}
                                         </div>
                                     </td>

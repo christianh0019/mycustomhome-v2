@@ -37,7 +37,7 @@ export const HomeownerProfile: React.FC<HomeownerProfileProps> = ({ profileId, m
             // 1. Fetch Homeowner Profile
             const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
-                .select('id, full_name, avatar_url, city, budget_range, roadmap_stage, role') // Changed current_stage to roadmap_stage
+                .select('id, full_name, avatar_url, city, budget_range, current_stage, role')
                 .eq('id', profileId)
                 .single();
 
@@ -107,8 +107,10 @@ export const HomeownerProfile: React.FC<HomeownerProfileProps> = ({ profileId, m
 
     if (!profile) return null;
 
-    const roadmapStage = profile.roadmap_stage
-        ? profile.roadmap_stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    if (!profile) return null;
+
+    const roadmapStage = typeof profile.current_stage === 'number'
+        ? ROADMAP_CONFIG[profile.current_stage as keyof typeof ROADMAP_CONFIG]?.name
         : 'Not Started';
 
     return (

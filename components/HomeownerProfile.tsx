@@ -91,72 +91,71 @@ export const HomeownerProfile: React.FC<HomeownerProfileProps> = ({ profileId, m
         : 'Not Started';
 
     return (
-        <div className="bg-white dark:bg-[#111] h-full flex flex-col relative pt-10">
-            <div className="px-6 flex flex-col flex-1 pb-6 overflow-y-auto">
-                <div className="flex items-end justify-between mb-6">
-                    <div className="flex items-end gap-4">
+        <div className="bg-white dark:bg-[#0A0A0A] h-full flex flex-col pt-12 relative font-sans">
+            <div className="px-8 flex flex-col flex-1 pb-8 overflow-y-auto">
+                <div className="flex items-start justify-between mb-8">
+                    <div className="flex items-center gap-5">
                         <img
                             src={profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name)}`}
-                            className="w-20 h-20 rounded-none border-4 border-white dark:border-[#111] shadow-lg object-cover bg-white"
-                            style={{ borderRadius: '4px' }}
+                            className="w-16 h-16 rounded-full object-cover bg-zinc-100 dark:bg-zinc-800"
                         />
-                        <div className="mb-2">
-                            <h2 className="text-xl font-bold text-zinc-900 dark:text-white leading-tight font-mono">{profile.full_name}</h2>
-                            <p className="text-sm text-zinc-500 font-mono">PROJECT OWNER</p>
+                        <div>
+                            <h2 className="text-2xl font-light text-zinc-900 dark:text-white tracking-tight">{profile.full_name}</h2>
+                            <p className="text-xs text-zinc-400 uppercase tracking-widest mt-1">Homeowner</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="mb-4 text-xs font-bold text-zinc-500 hover:text-zinc-900 uppercase tracking-wider border border-zinc-200 dark:border-white/10 px-3 py-1 rounded hover:bg-zinc-50 dark:hover:bg-white/5 transition-colors">Close</button>
+                    <button onClick={onClose} className="text-xs font-medium text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest">Close</button>
                 </div>
 
-                <div className="space-y-6 font-mono text-sm">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30">
-                            <div className="flex items-center gap-2 mb-1 text-blue-600 dark:text-blue-400">
-                                <MapPin size={14} />
-                                <span className="text-[10px] uppercase tracking-widest font-bold">Location</span>
+                <div className="space-y-8">
+                    <div className="grid grid-cols-2 gap-8">
+                        <div>
+                            <div className="flex items-center gap-2 mb-2 text-zinc-400">
+                                <MapPin size={14} strokeWidth={1.5} />
+                                <span className="text-[10px] uppercase tracking-widest font-medium">Location</span>
                             </div>
-                            <p className="font-bold text-zinc-900 dark:text-white">{profile.city || 'Unknown'}</p>
+                            <p className="text-lg font-light text-zinc-900 dark:text-white">{profile.city || '—'}</p>
                         </div>
-                        <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30">
-                            <div className="flex items-center gap-2 mb-1 text-blue-600 dark:text-blue-400">
-                                <DollarSign size={14} />
-                                <span className="text-[10px] uppercase tracking-widest font-bold">Budget</span>
+                        <div>
+                            <div className="flex items-center gap-2 mb-2 text-zinc-400">
+                                <DollarSign size={14} strokeWidth={1.5} />
+                                <span className="text-[10px] uppercase tracking-widest font-medium">Budget</span>
                             </div>
-                            <p className="font-bold text-zinc-900 dark:text-white">{profile.budget_range || 'Not set'}</p>
+                            <p className="text-lg font-light text-zinc-900 dark:text-white">{profile.budget_range || '—'}</p>
                         </div>
                     </div>
 
-                    <div className="p-4 border-2 border-dashed border-zinc-300 dark:border-zinc-700">
-                        <div className="flex items-center gap-2 mb-2 text-zinc-500">
-                            <Calendar size={16} />
-                            <span className="text-xs font-bold uppercase tracking-widest">Roadmap Status</span>
+                    <div>
+                        <div className="flex items-center gap-2 mb-3 text-zinc-400">
+                            <Calendar size={14} strokeWidth={1.5} />
+                            <span className="text-[10px] uppercase tracking-widest font-medium">Project Stage</span>
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="w-3 h-3 bg-blue-600"></div>
-                            <p className="font-bold text-zinc-900 dark:text-white">{roadmapStage}</p>
+                            <div className="w-2 h-2 rounded-full bg-zinc-900 dark:bg-white"></div>
+                            <p className="text-lg font-light text-zinc-900 dark:text-white">{roadmapStage}</p>
                         </div>
                     </div>
 
-                    <div className="pt-4 border-t border-zinc-200 dark:border-white/10">
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-                                <User size={14} /> Private Field Notes
+                    <div className="pt-8 border-t border-zinc-100 dark:border-white/5">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-[10px] font-medium uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                                <User size={14} strokeWidth={1.5} /> Private Notes
                             </h3>
-                            {saving && <span className="text-[10px] text-zinc-400 animate-pulse">Saving...</span>}
+                            {saving && <span className="text-[10px] text-zinc-300 animate-pulse">Saving...</span>}
                         </div>
                         <textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            placeholder="// Enter private notes..."
-                            className="w-full h-32 p-3 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-800 dark:text-zinc-300 focus:outline-none focus:border-blue-500 font-mono resize-None"
+                            placeholder="Add private notes..."
+                            className="w-full h-40 p-4 bg-zinc-50 dark:bg-white/5 border-none rounded-xl text-sm text-zinc-600 dark:text-zinc-300 placeholder-zinc-300 focus:ring-0 resize-none leading-relaxed"
                         />
-                        <div className="flex justify-end mt-2">
+                        <div className="flex justify-end mt-4">
                             <button
                                 onClick={handleSaveNotes}
                                 disabled={saving}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-xs font-bold uppercase tracking-wider hover:bg-blue-700 disabled:opacity-50"
+                                className="px-6 py-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-full text-xs font-medium tracking-wide hover:opacity-90 disabled:opacity-50 transition-opacity"
                             >
-                                <Save size={14} /> Save Note
+                                Save Note
                             </button>
                         </div>
                     </div>

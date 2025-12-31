@@ -51,46 +51,46 @@ export const VendorProfile: React.FC<VendorProfileProps> = ({ profileId, onClose
     if (!profile) return null;
 
     return (
-        <div className="bg-white dark:bg-[#111] h-full flex flex-col relative pt-10">
-            <div className="px-6 flex flex-col flex-1 pb-6 overflow-y-auto">
-                <div className="flex items-end justify-between mb-6">
-                    <div className="flex items-end gap-4">
+        <div className="bg-white dark:bg-[#0A0A0A] h-full flex flex-col pt-12 relative font-sans">
+            <div className="px-8 flex flex-col flex-1 pb-8 overflow-y-auto">
+                <div className="flex items-start justify-between mb-8">
+                    <div className="flex items-center gap-5">
                         <img
                             src={profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name)}`}
-                            className="w-20 h-20 rounded-full border-4 border-white dark:border-[#111] shadow-2xl object-cover bg-white"
+                            className="w-16 h-16 rounded-full object-cover bg-zinc-100 dark:bg-zinc-800"
                         />
-                        <div className="mb-2">
-                            <h2 className="text-xl font-bold text-zinc-900 dark:text-white leading-tight font-serif tracking-wide">{profile.full_name}</h2>
-                            <p className="text-xs text-amber-600 font-bold uppercase tracking-widest">{profile.role}</p>
+                        <div>
+                            <h2 className="text-2xl font-light text-zinc-900 dark:text-white tracking-tight">{profile.full_name}</h2>
+                            <p className="text-xs text-amber-600 font-medium uppercase tracking-widest mt-1">{profile.role}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="mb-4 text-xs font-bold text-zinc-500 hover:text-zinc-900 uppercase tracking-wider hover:underline">Close</button>
+                    <button onClick={onClose} className="text-xs font-medium text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest">Close</button>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-8">
                     {profile.company_name && (
-                        <div className="p-6 bg-zinc-50 dark:bg-white/5 rounded-none border-l-4 border-amber-500 shadow-sm">
+                        <div>
                             <div className="flex items-center gap-2 mb-2 text-zinc-400">
-                                <Briefcase size={16} />
-                                <span className="text-xs font-bold uppercase tracking-widest text-zinc-900 dark:text-white">Business Entity</span>
+                                <Briefcase size={14} strokeWidth={1.5} />
+                                <span className="text-[10px] uppercase tracking-widest font-medium">Business Entity</span>
                             </div>
-                            <p className="text-lg font-serif italic text-zinc-800 dark:text-zinc-200">{profile.company_name}</p>
+                            <p className="text-lg font-light text-zinc-900 dark:text-white">{profile.company_name}</p>
                         </div>
                     )}
 
-                    <div className="p-0">
+                    <div>
                         <div className="flex items-center gap-2 mb-3 text-zinc-400 border-b border-zinc-100 dark:border-white/5 pb-2">
-                            <Info size={16} />
-                            <span className="text-xs font-bold uppercase tracking-widest">Professional Bio</span>
+                            <Info size={14} strokeWidth={1.5} />
+                            <span className="text-[10px] uppercase tracking-widest font-medium">Professional Bio</span>
                         </div>
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed font-serif">
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed font-light">
                             {profile.bio || "No biography provided."}
                         </p>
                     </div>
 
                     <div className="flex gap-2 pt-4">
-                        <div className="h-1 flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full"></div>
-                        <div className="h-1 w-10 bg-amber-500 rounded-full"></div>
+                        <div className="h-[1px] flex-1 bg-zinc-100 dark:bg-white/10"></div>
+                        <div className="h-[1px] w-8 bg-amber-500"></div>
                     </div>
                 </div>
             </div>

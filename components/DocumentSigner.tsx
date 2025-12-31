@@ -187,9 +187,33 @@ export const DocumentSigner: React.FC<{
                 }
             } else if (currentUserRole === 'contact' && nextStatus === 'completed') {
                 try {
-                    // Generate Flattened PDF
                     const { PDFService } = await import('../services/PDFService');
-                    const pdfBytes = await PDFService.generateSignedPDF(initialDoc, fields);
+                    let pdfBytes: Uint8Array;
+
+                    if (fileType === 'pdf') {
+                        // Standard Field Overlay for existing PDFs
+                        pdfBytes = await PDFService.generateSignedPDF(initialDoc, fields);
+                    } else {
+                        // For Rich Text / Templates: Snapshot the entire DOM element (WYSIWYG)
+                        const html2canvas = (await import('html2canvas')).default;
+                        const imagePages = [];
+
+                        for (let i = 1; i <= numPages; i++) {
+                            const params = { scale: 2, useCORS: true, logging: false };
+                            const el = document.getElementById(`page-${i}`);
+                            if (el) {
+                                const canvas = await html2canvas(el, params);
+                                imagePages.push({
+                                    dataUrl: canvas.toDataURL('image/png'),
+                                    width: 595,  // A4 Point Width
+                                    height: 842  // A4 Point Height
+                                });
+                            }
+                        }
+
+                        pdfBytes = await PDFService.generateFromImages(imagePages);
+                    }
+
                     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
                     const fileName = `${initialDoc.title.replace(/\s/g, '_')}_signed.pdf`;
                     const filePath = `${user?.id}/${Date.now()}_${fileName}`;
@@ -309,6 +333,7 @@ export const DocumentSigner: React.FC<{
                         return (
                             <div
                                 key={pageNum}
+                                id={`page-${pageNum}`}
                                 className="bg-white dark:bg-white shadow-2xl relative transition-transform duration-300"
                                 style={{ width: '595px', height: '842px', minHeight: '842px' }}
                             >

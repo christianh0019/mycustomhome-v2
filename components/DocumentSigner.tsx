@@ -314,7 +314,7 @@ export const DocumentSigner: React.FC<{
                                 name: vendorName,
                                 email: vendorEmail,
                                 role: 'Business Owner',
-                                ip: businessLog?.details?.ip_address || 'Unavailable (Sent prior to update)',
+                                ip: businessLog?.details?.ip || businessLog?.details?.ip_address || 'Unavailable (Sent prior to update)',
                                 location: businessLog?.details?.location || 'Unavailable',
                                 viewedAt: businessLog?.created_at || auditLogs?.find(l => l.action === 'sent')?.created_at || new Date().toISOString(),
                                 signedAt: businessLog?.created_at || auditLogs?.find(l => l.action === 'sent')?.created_at || new Date().toISOString(),

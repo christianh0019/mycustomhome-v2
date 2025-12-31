@@ -37,13 +37,21 @@ class AuditService {
     }
 
     async logAction(documentId: string, action: AuditAction, userId?: string, extraDetails: any = {}) {
-        const geo = await this.getGeoInfo();
+        let geo: GeoInfo = { ip: 'unknown' };
+
+        // Only fetch if not provided in extraDetails (support both keys)
+        if (!extraDetails.ip && !extraDetails.ip_address) {
+            geo = await this.getGeoInfo();
+        }
+
         const userAgent = navigator.userAgent;
+        const finalIp = extraDetails.ip || extraDetails.ip_address || geo.ip;
+        const finalLocation = extraDetails.location || (geo.city && geo.region ? `${geo.city}, ${geo.region}, ${geo.country}` : 'Unknown Location');
 
         const details = {
             ...extraDetails,
-            ip: geo.ip,
-            location: geo.city && geo.region ? `${geo.city}, ${geo.region}, ${geo.country}` : 'Unknown Location',
+            ip: finalIp,
+            location: finalLocation,
             userAgent,
             timestamp: new Date().toISOString()
         };

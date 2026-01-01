@@ -5,11 +5,13 @@ add column if not exists recipient_id uuid references public.profiles(id);
 
 -- RLS Policies for Recipient
 -- 1. View
+drop policy if exists "Recipients can view their documents" on public.documents;
 create policy "Recipients can view their documents"
   on public.documents for select
   using (auth.uid() = recipient_id);
 
 -- 2. Update (for signing status/values)
+drop policy if exists "Recipients can update their documents" on public.documents;
 create policy "Recipients can update their documents"
   on public.documents for update
   using (auth.uid() = recipient_id);

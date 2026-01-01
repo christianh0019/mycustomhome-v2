@@ -11,6 +11,7 @@ create table if not exists public.match_notes (
 alter table public.match_notes enable row level security;
 
 -- Policies
+drop policy if exists "Users can view notes for their matches" on public.match_notes;
 create policy "Users can view notes for their matches"
 on public.match_notes for select
 using (
@@ -21,6 +22,7 @@ using (
     )
 );
 
+drop policy if exists "Users can insert notes for their matches" on public.match_notes;
 create policy "Users can insert notes for their matches"
 on public.match_notes for insert
 with check (
@@ -33,6 +35,7 @@ with check (
 );
 
 -- Optional: Delete policy (authors can delete their own notes)
+drop policy if exists "Users can delete their own notes" on public.match_notes;
 create policy "Users can delete their own notes"
 on public.match_notes for delete
 using (

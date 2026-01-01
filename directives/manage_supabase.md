@@ -1,22 +1,29 @@
 # Supabase Management SOP
 
 ## Goal
-Create and modify database tables and schema in Supabase.
+Create and modify database tables and schema in Supabase using the provided connection string.
+
+## Prerequisites
+- `.env` file must contain `DATABASE_URL` with the connection string.
+- `package.json` should have `"db:push": "node scripts/push_db.js"`.
+- `scripts/push_db.js` must exist and use `dotenv` to load the `DATABASE_URL`.
 
 ## Workflow
+
 1. **Create Migration File**:
-    - Location: `supabase/migrations/YYYYMMDD_description.sql`
-    - Content: Standard SQL (CREATE TABLE, ALTER TABLE, etc.)
-    - Security: Always include RLS policies.
+    - Location: `supabase/migrations/<YYYYMMDDHHMMSS>_<description>.sql`
+    - Content: Standard SQL (CREATE TABLE, ALTER TABLE, INSERT, etc.)
+    - Security: Always include RLS policies for new tables.
 
 2. **Apply Migration**:
-    - Command: `npx supabase db push`
-    - Logic: This pushes local migration files to the remote linked Supabase instance.
-    - Requirement: User must be authenticated via CLI (`npx supabase login`) or have `SUPABASE_ACCESS_TOKEN` in env (if running in CI, though here we rely on local auth).
+    - Command: `npm run db:push`
+    - Logic: This runs the `scripts/push_db.js` script, which uses `npx supabase db push` with the connection string from `.env`.
 
 3. **Verify**:
-    - Check table existence via verification script or Dashboard.
+    - Check if the command completes successfully.
+    - If needed, verify in the Supabase Dashboard SQL Editor (if access is available) or by checking the application behavior.
 
 ## Troubleshooting
-- If `db push` fails due to auth: Prompt user to run `npx supabase login`.
-- If `db push` fails due to conflict: Run `npx supabase db pull` to sync first.
+- **Connection Errors**: Verify `DATABASE_URL` in `.env`. Ensure the password is correct/escaped if it contains special characters.
+- **Migration Conflicts**: If the database has changes not in your local migrations, `db push` might fail. You may need to inspect the DB state.
+- **Missing Dependencies**: Ensure `supabase` is installed (`npm install supabase --save-dev` or use `npx`).

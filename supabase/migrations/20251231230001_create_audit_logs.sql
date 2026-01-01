@@ -14,6 +14,7 @@ alter table public.document_audit_logs enable row level security;
 -- Policies
 
 -- Vendors can view logs for their own documents
+drop policy if exists "Vendors can view logs for their own documents" on public.document_audit_logs;
 create policy "Vendors can view logs for their own documents"
   on public.document_audit_logs for select
   using (
@@ -26,6 +27,7 @@ create policy "Vendors can view logs for their own documents"
 
 -- Admin/System can insert logs (for now, allow authenticated users to insert logs linked to documents they have access to)
 -- This might need refinement, but for now we'll allow insert if the user can view the document
+drop policy if exists "Users can insert logs for accessible documents" on public.document_audit_logs;
 create policy "Users can insert logs for accessible documents"
   on public.document_audit_logs for insert
   with check (

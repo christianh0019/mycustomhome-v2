@@ -36,6 +36,12 @@ export interface User {
   phone?: string;
   lenderName?: string;
   preApprovalInfo?: string;
+  legalBusinessName?: string;
+  friendlyBusinessName?: string;
+  businessEmail?: string;
+  businessPhone?: string;
+  businessAddress?: string;
+  website?: string;
 
   // Budget Tool Persistence
   target_sqft?: number;

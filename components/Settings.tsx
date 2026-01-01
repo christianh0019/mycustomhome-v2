@@ -17,6 +17,12 @@ export const Settings: React.FC = () => {
         bio: user?.bio || '',
         phone: user?.phone || '',
         city: user?.city || '',
+        legalBusinessName: user?.legalBusinessName || '',
+        friendlyBusinessName: user?.friendlyBusinessName || '',
+        businessEmail: user?.businessEmail || '',
+        businessPhone: user?.businessPhone || '',
+        businessAddress: user?.businessAddress || '',
+        website: user?.website || '',
     });
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +63,12 @@ export const Settings: React.FC = () => {
                 bio: formData.bio,
                 phone: formData.phone,
                 city: formData.city, // Updating city might re-trigger scouting, which is fine.
+                legalBusinessName: formData.legalBusinessName,
+                friendlyBusinessName: formData.friendlyBusinessName,
+                businessEmail: formData.businessEmail,
+                businessPhone: formData.businessPhone,
+                businessAddress: formData.businessAddress,
+                website: formData.website,
             });
             setIsEditing(false);
         } catch (error) {
@@ -101,7 +113,7 @@ export const Settings: React.FC = () => {
                         <div className="flex flex-col items-center gap-4">
                             <div className="relative w-32 h-32 rounded-2xl overflow-hidden border border-white/10 shadow-lg group-hover:border-white/30 transition-all bg-black">
                                 <img
-                                    src={user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`}
+                                    src={user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.friendlyBusinessName || user.name)}&background=random`}
                                     alt="Profile"
                                     className="w-full h-full object-cover"
                                 />
@@ -126,24 +138,47 @@ export const Settings: React.FC = () => {
                             </div>
                             <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                                <span className="text-[9px] uppercase tracking-widest text-emerald-500 font-bold">Clearance Level 1</span>
+                                <span className="text-[9px] uppercase tracking-widest text-emerald-500 font-bold">Verified Partner</span>
                             </div>
                         </div>
 
                         {/* Details Section */}
-                        <div className="flex-1 w-full space-y-6">
+                        <div className="flex-1 w-full space-y-8">
 
+                            {/* Main Identity */}
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h3 className="text-xs uppercase tracking-[0.2em] text-zinc-400 dark:text-white/40 mb-1">Operative Name</h3>
+                                    <h3 className="text-xs uppercase tracking-[0.2em] text-zinc-400 dark:text-white/40 mb-1">
+                                        {user.legalBusinessName || 'Operative Name'}
+                                    </h3>
                                     {isEditing ? (
-                                        <input
-                                            value={formData.name}
-                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                            className="bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded px-3 py-2 text-xl font-serif text-zinc-900 dark:text-white w-full focus:outline-none focus:border-zinc-400 dark:focus:border-white/30"
-                                        />
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-500 mb-1 block">Friendly Business Name</label>
+                                                <input
+                                                    value={formData.friendlyBusinessName}
+                                                    onChange={e => setFormData({ ...formData, friendlyBusinessName: e.target.value })}
+                                                    className="bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded px-3 py-2 text-xl font-serif text-zinc-900 dark:text-white w-full focus:outline-none focus:border-zinc-400 dark:focus:border-white/30"
+                                                    placeholder="e.g. Acme Builders"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] uppercase tracking-widest text-zinc-500 dark:text-zinc-500 mb-1 block">Legal Entity Name</label>
+                                                <input
+                                                    value={formData.legalBusinessName}
+                                                    onChange={e => setFormData({ ...formData, legalBusinessName: e.target.value })}
+                                                    className="bg-transparent border-b border-zinc-300 dark:border-white/10 text-sm text-zinc-900 dark:text-white w-full focus:outline-none focus:border-zinc-500 dark:focus:border-white/50"
+                                                    placeholder="e.g. Acme Builders, LLC"
+                                                />
+                                            </div>
+                                        </div>
                                     ) : (
-                                        <h2 className="text-3xl font-serif text-zinc-900 dark:text-white tracking-wide">{user.name}</h2>
+                                        <>
+                                            <h2 className="text-3xl font-serif text-zinc-900 dark:text-white tracking-wide">{user.friendlyBusinessName || user.name}</h2>
+                                            {user.legalBusinessName && (
+                                                <p className="text-[10px] text-zinc-400 uppercase tracking-wider mt-1">{user.legalBusinessName}</p>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                                 <div className="text-right">
@@ -151,52 +186,107 @@ export const Settings: React.FC = () => {
                                 </div>
                             </div>
 
+                            {/* Business Contact Info */}
                             <div className="space-y-4">
-                                <div className="p-4 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/5 rounded-xl">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-[9px] uppercase tracking-widest text-zinc-400 dark:text-white/40 flex items-center gap-2">
-                                            <Layers size={10} /> Bio / Status
-                                        </span>
-                                    </div>
-                                    {isEditing ? (
-                                        <textarea
-                                            value={formData.bio}
-                                            onChange={e => setFormData({ ...formData, bio: e.target.value })}
-                                            className="w-full bg-transparent border-none focus:ring-0 text-sm text-zinc-900 dark:text-zinc-300 resize-none h-20 placeholder:text-zinc-400 dark:placeholder:text-zinc-700"
-                                            placeholder="Enter your bio..."
-                                        />
-                                    ) : (
-                                        <p className="text-sm text-zinc-600 dark:text-zinc-400 italic leading-relaxed">
-                                            {user.bio || "No status update set."}
-                                        </p>
-                                    )}
-                                </div>
-
+                                <h4 className="text-[10px] uppercase tracking-widest text-zinc-400 border-b border-zinc-200 dark:border-white/5 pb-2">Business Contact</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="p-3 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/5 rounded-lg flex items-center gap-3">
-                                        <Mail size={14} className="text-zinc-400 dark:text-zinc-500" />
-                                        <div className="overflow-hidden">
-                                            <p className="text-[8px] uppercase tracking-widest text-zinc-500 dark:text-zinc-600">Comms</p>
-                                            <p className="text-xs text-zinc-900 dark:text-zinc-300 truncate">{user.email}</p>
+                                    {/* Email */}
+                                    <div className="p-3 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/5 rounded-lg">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Mail size={12} className="text-zinc-400" />
+                                            <span className="text-[8px] uppercase tracking-widest text-zinc-500">Email</span>
                                         </div>
+                                        {isEditing ? (
+                                            <input
+                                                value={formData.businessEmail}
+                                                onChange={e => setFormData({ ...formData, businessEmail: e.target.value })}
+                                                className="bg-transparent w-full text-xs text-zinc-900 dark:text-white focus:outline-none border-b border-zinc-300 dark:border-white/10"
+                                                placeholder="contact@company.com"
+                                            />
+                                        ) : (
+                                            <p className="text-xs text-zinc-900 dark:text-zinc-300 truncate">{user.businessEmail || user.email}</p>
+                                        )}
                                     </div>
-                                    <div className="p-3 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/5 rounded-lg flex items-center gap-3">
-                                        <MapPin size={14} className="text-zinc-400 dark:text-zinc-500" />
-                                        <div>
-                                            <p className="text-[8px] uppercase tracking-widest text-zinc-500 dark:text-zinc-600">Location</p>
-                                            {isEditing ? (
-                                                <input
-                                                    value={formData.city}
-                                                    onChange={e => setFormData({ ...formData, city: e.target.value })}
-                                                    className="bg-transparent border-b border-zinc-300 dark:border-white/10 text-xs text-zinc-900 dark:text-zinc-300 w-full focus:outline-none focus:border-zinc-500 dark:focus:border-white/50"
-                                                />
-                                            ) : (
-                                                <p className="text-xs text-zinc-900 dark:text-zinc-300">{user.city || 'Unknown Sector'}</p>
-                                            )}
+
+                                    {/* Phone */}
+                                    <div className="p-3 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/5 rounded-lg">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Phone size={12} className="text-zinc-400" />
+                                            <span className="text-[8px] uppercase tracking-widest text-zinc-500">Phone</span>
                                         </div>
+                                        {isEditing ? (
+                                            <input
+                                                value={formData.businessPhone}
+                                                onChange={e => setFormData({ ...formData, businessPhone: e.target.value })}
+                                                className="bg-transparent w-full text-xs text-zinc-900 dark:text-white focus:outline-none border-b border-zinc-300 dark:border-white/10"
+                                                placeholder="(555) 123-4567"
+                                            />
+                                        ) : (
+                                            <p className="text-xs text-zinc-900 dark:text-zinc-300">{user.businessPhone || user.phone || '—'}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Address */}
+                                    <div className="p-3 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/5 rounded-lg md:col-span-2">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <MapPin size={12} className="text-zinc-400" />
+                                            <span className="text-[8px] uppercase tracking-widest text-zinc-500">Registered Address</span>
+                                        </div>
+                                        {isEditing ? (
+                                            <input
+                                                value={formData.businessAddress}
+                                                onChange={e => setFormData({ ...formData, businessAddress: e.target.value })}
+                                                className="bg-transparent w-full text-xs text-zinc-900 dark:text-white focus:outline-none border-b border-zinc-300 dark:border-white/10"
+                                                placeholder="123 Builder Lane, Suite 100"
+                                            />
+                                        ) : (
+                                            <p className="text-xs text-zinc-900 dark:text-zinc-300">{user.businessAddress || user.city || '—'}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Website */}
+                                    <div className="p-3 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/5 rounded-lg md:col-span-2">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Layers size={12} className="text-zinc-400" />
+                                            <span className="text-[8px] uppercase tracking-widest text-zinc-500">Website</span>
+                                        </div>
+                                        {isEditing ? (
+                                            <input
+                                                value={formData.website}
+                                                onChange={e => setFormData({ ...formData, website: e.target.value })}
+                                                className="bg-transparent w-full text-xs text-zinc-900 dark:text-white focus:outline-none border-b border-zinc-300 dark:border-white/10"
+                                                placeholder="https://acmebuilders.com"
+                                            />
+                                        ) : (
+                                            <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline truncate block">
+                                                {user.website || '—'}
+                                            </a>
+                                        )}
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Bio */}
+                            <div className="p-4 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/5 rounded-xl">
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-[9px] uppercase tracking-widest text-zinc-400 dark:text-white/40 flex items-center gap-2">
+                                        User Bio
+                                    </span>
+                                </div>
+                                {isEditing ? (
+                                    <textarea
+                                        value={formData.bio}
+                                        onChange={e => setFormData({ ...formData, bio: e.target.value })}
+                                        className="w-full bg-transparent border-none focus:ring-0 text-sm text-zinc-900 dark:text-zinc-300 resize-none h-20 placeholder:text-zinc-400 dark:placeholder:text-zinc-700"
+                                        placeholder="Enter your personal bio..."
+                                    />
+                                ) : (
+                                    <p className="text-sm text-zinc-600 dark:text-zinc-400 italic leading-relaxed">
+                                        {user.bio || "No bio set."}
+                                    </p>
+                                )}
+                            </div>
+
 
                             <div className="pt-6 border-t border-zinc-200 dark:border-white/5 flex gap-4">
                                 {isEditing ? (

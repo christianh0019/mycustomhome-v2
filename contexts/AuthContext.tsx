@@ -44,6 +44,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 phone: profile?.phone,
                 lenderName: profile?.lender_name,
                 preApprovalInfo: profile?.pre_approval_info,
+                legalBusinessName: profile?.legal_business_name,
+                friendlyBusinessName: profile?.friendly_business_name,
+                businessEmail: profile?.business_email,
+                businessPhone: profile?.business_phone,
+                businessAddress: profile?.business_address,
+                website: profile?.website,
                 stage_progress: profile?.stage_progress || {},
             });
         } catch (err) {
@@ -128,7 +134,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updates.lenderName !== undefined) dbUpdates.lender_name = updates.lenderName;
         if (updates.preApprovalInfo !== undefined) dbUpdates.pre_approval_info = updates.preApprovalInfo;
         if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
+        if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
         if (updates.avatarUrl !== undefined) dbUpdates.avatar_url = updates.avatarUrl;
+        if (updates.legalBusinessName !== undefined) dbUpdates.legal_business_name = updates.legalBusinessName;
+        if (updates.friendlyBusinessName !== undefined) dbUpdates.friendly_business_name = updates.friendlyBusinessName;
+        if (updates.businessEmail !== undefined) dbUpdates.business_email = updates.businessEmail;
+        if (updates.businessPhone !== undefined) dbUpdates.business_phone = updates.businessPhone;
+        if (updates.businessAddress !== undefined) dbUpdates.business_address = updates.businessAddress;
+        if (updates.website !== undefined) dbUpdates.website = updates.website;
 
         if (Object.keys(dbUpdates).length > 0) {
             const { error } = await supabase

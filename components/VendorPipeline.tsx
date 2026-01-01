@@ -237,16 +237,16 @@ export const VendorPipeline: React.FC = () => {
                         <TrendingUp className="absolute right-6 bottom-6 text-zinc-100 dark:text-zinc-800 group-hover:scale-110 transition-transform" size={48} />
                     </div>
                     <div className="p-6 bg-white dark:bg-[#0A0A0A] rounded-xl border border-zinc-200 dark:border-white/10 shadow-sm relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                        <p className="text-xs uppercase tracking-widest text-zinc-500 mb-2 font-medium">Opportunities</p>
+                        <p className="text-3xl font-light text-zinc-900 dark:text-white">{stats.count}</p>
+                        <LayoutDashboard className="absolute right-6 bottom-6 text-zinc-100 dark:text-zinc-800 group-hover:scale-110 transition-transform" size={48} />
+                    </div>
+                    <div className="p-6 bg-white dark:bg-[#0A0A0A] rounded-xl border border-zinc-200 dark:border-white/10 shadow-sm relative overflow-hidden group">
                         <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
                         <p className="text-xs uppercase tracking-widest text-zinc-500 mb-2 font-medium">Revenue (Won)</p>
                         <p className="text-3xl font-light text-zinc-900 dark:text-white">{formatCurrency(stats.wonValue)}</p>
                         <CheckCircle2 className="absolute right-6 bottom-6 text-zinc-100 dark:text-zinc-800 group-hover:scale-110 transition-transform" size={48} />
-                    </div>
-                    <div className="p-6 bg-white dark:bg-[#0A0A0A] rounded-xl border border-zinc-200 dark:border-white/10 shadow-sm relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                        <p className="text-xs uppercase tracking-widest text-zinc-500 mb-2 font-medium">Active Deals</p>
-                        <p className="text-3xl font-light text-zinc-900 dark:text-white">{stats.count}</p>
-                        <LayoutDashboard className="absolute right-6 bottom-6 text-zinc-100 dark:text-zinc-800 group-hover:scale-110 transition-transform" size={48} />
                     </div>
                 </div>
             </div>
@@ -305,9 +305,27 @@ export const VendorPipeline: React.FC = () => {
                         {STAGES.map(stage => {
                             const stageMatches = matches.filter(m => (m.pipeline_stage || 'new request') === stage.id);
                             return (
-                                <div key={stage.id} className="w-1/4 flex flex-col h-full">
+                                <div
+                                    key={stage.id}
+                                    className="w-1/4 flex flex-col h-full bg-zinc-50/50 dark:bg-white/[0.01] rounded-2xl"
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        e.currentTarget.classList.add('bg-zinc-100', 'dark:bg-white/5');
+                                    }}
+                                    onDragLeave={(e) => {
+                                        e.currentTarget.classList.remove('bg-zinc-100', 'dark:bg-white/5');
+                                    }}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        e.currentTarget.classList.remove('bg-zinc-100', 'dark:bg-white/5');
+                                        const id = e.dataTransfer.getData('text/plain');
+                                        if (id) {
+                                            handleStageChange(id, stage.id);
+                                        }
+                                    }}
+                                >
                                     {/* Column Header */}
-                                    <div className="flex items-center justify-between mb-4 px-2">
+                                    <div className="flex items-center justify-between mb-4 px-2 pt-2">
                                         <div className="flex items-center gap-2">
                                             <div className={`w-2 h-2 rounded-full ${stage.color}`}></div>
                                             <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500">{stage.label}</h3>
@@ -316,13 +334,16 @@ export const VendorPipeline: React.FC = () => {
                                     </div>
 
                                     {/* Column Content */}
-                                    <div className="flex-1 bg-zinc-100/50 dark:bg-white/[0.02] rounded-2xl p-3 space-y-3 overflow-y-auto border border-zinc-200/50 dark:border-white/5">
+                                    <div className="flex-1 p-3 space-y-3 overflow-y-auto">
                                         {stageMatches.map(match => (
                                             <div
                                                 key={match.id}
                                                 className="bg-white dark:bg-[#0A0A0A] p-4 rounded-xl border border-zinc-200 dark:border-white/10 shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all group relative"
                                                 draggable
-                                                onDragStart={(e) => { e.dataTransfer.setData('text/plain', match.id); }}
+                                                onDragStart={(e) => {
+                                                    e.dataTransfer.setData('text/plain', match.id);
+                                                    e.dataTransfer.effectAllowed = 'move';
+                                                }}
                                             >
                                                 {/* Profile Click */}
                                                 <div onClick={() => { setSelectedProfileId(match.homeowner.id); setSelectedMatchId(match.id); }} className="cursor-pointer">
@@ -345,37 +366,17 @@ export const VendorPipeline: React.FC = () => {
                                                 </div>
 
                                                 {/* Card Footer Actions */}
-                                                <div className="pt-2 border-t border-zinc-100 dark:border-white/5 flex justify-between items-center mt-2 opacity-15 min-h-[20px] group-hover:opacity-100 transition-opacity">
+                                                <div className="pt-2 border-t border-zinc-100 dark:border-white/5 flex justify-between items-center mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); setMarkingLostId(match.id); }}
                                                         className="text-[10px] uppercase tracking-wider text-red-300 hover:text-red-500 font-bold"
                                                     >
                                                         Mark Lost
                                                     </button>
-
-                                                    <div className="flex gap-1">
-                                                        {STAGES.map(s => (
-                                                            <button
-                                                                key={s.id}
-                                                                onClick={() => handleStageChange(match.id, s.id)}
-                                                                title={`Move to ${s.label}`}
-                                                                className={`w-2 h-2 rounded-full transition-all hover:scale-150 ${s.id === match.pipeline_stage ? 'bg-zinc-900 dark:bg-white scale-125 ring-2 ring-offset-1 ring-zinc-300 dark:ring-zinc-700' : 'bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-400'}`}
-                                                            />
-                                                        ))}
-                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
-                                    <div
-                                        className="hidden"
-                                        onDragOver={(e) => e.preventDefault()}
-                                        onDrop={(e) => {
-                                            e.preventDefault();
-                                            const id = e.dataTransfer.getData('text/plain');
-                                            handleStageChange(id, stage.id);
-                                        }}
-                                    ></div>
                                 </div>
                             );
                         })}

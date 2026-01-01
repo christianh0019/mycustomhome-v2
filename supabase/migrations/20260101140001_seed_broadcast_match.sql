@@ -18,13 +18,19 @@ BEGIN
         END IF;
 
         IF v_homeowner_id IS NOT NULL THEN
-            INSERT INTO public.matches (vendor_id, homeowner_id, status, pipeline_stage)
-            VALUES (vendor_rec.id, v_homeowner_id, 'active', 'new request')
-            ON CONFLICT (vendor_id, homeowner_id) 
-            DO UPDATE SET 
-                pipeline_stage = 'new request',
-                status = 'active',
-                lost_reason = NULL;
+            -- Check if a reverse match already exists to avoid duplicates in the UI
+            IF NOT EXISTS (
+                SELECT 1 FROM public.matches 
+                WHERE homeowner_id = vendor_rec.id AND vendor_id = v_homeowner_id
+            ) THEN
+                INSERT INTO public.matches (vendor_id, homeowner_id, status, pipeline_stage)
+                VALUES (vendor_rec.id, v_homeowner_id, 'active', 'new request')
+                ON CONFLICT (vendor_id, homeowner_id) 
+                DO UPDATE SET 
+                    pipeline_stage = 'new request',
+                    status = 'active',
+                    lost_reason = NULL;
+            END IF;
         END IF;
 
     END LOOP;

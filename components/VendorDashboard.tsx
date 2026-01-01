@@ -15,7 +15,6 @@ enum VendorTab {
     Overview = 'Overview',
     Pipeline = 'Pipeline', // Add Pipeline
     Opportunities = 'Leads',
-    Projects = 'Active Jobs',
     Documents = 'Documents',
     Messages = 'Messages',
     Settings = 'Profile'
@@ -34,8 +33,6 @@ export const VendorDashboard: React.FC = () => {
                 return <VendorPipeline />;
             case VendorTab.Opportunities:
                 return <VendorLeads />;
-            case VendorTab.Projects:
-                return <VendorProjects />;
             case VendorTab.Documents:
                 return <VendorDocuments />;
             case VendorTab.Messages:
@@ -52,7 +49,6 @@ export const VendorDashboard: React.FC = () => {
             case VendorTab.Overview: return LayoutDashboard;
             case VendorTab.Pipeline: return TrendingUp; // Icon for Pipeline
             case VendorTab.Opportunities: return Search;
-            case VendorTab.Projects: return Briefcase;
             case VendorTab.Documents: return FileText;
             case VendorTab.Messages: return MessageSquare;
             case VendorTab.Settings: return Users;
@@ -147,32 +143,3 @@ const VendorOverview: React.FC = () => (
     </div>
 );
 
-const VendorProjects: React.FC = () => (
-    <div className="p-12 w-full h-full overflow-y-auto">
-        <h2 className="text-4xl font-serif mb-8 text-zinc-900 dark:text-white">Active Jobs</h2>
-        <div className="space-y-6">
-            <div className="p-8 border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#080808] rounded-2xl flex items-center justify-between shadow-sm dark:shadow-none">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 text-[9px] uppercase tracking-wide rounded border border-emerald-500/20 font-bold">Active</span>
-                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400">Started 2 days ago</span>
-                    </div>
-                    <h3 className="text-2xl font-medium mb-1 text-zinc-900 dark:text-white">Miller Residence - Main House</h3>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">Client: Christian • Stage: Pre-Construction</p>
-                </div>
-
-                <div className="flex gap-4">
-                    <button className="px-6 py-3 border border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5 text-zinc-900 dark:text-white text-[10px] uppercase tracking-widest rounded-lg transition-colors font-bold">
-                        View Files
-                    </button>
-                    <button
-                        onClick={() => alert("Simulated: Contract sent to homeowner's message inbox!")}
-                        className="px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black text-[10px] uppercase tracking-widest font-bold hover:scale-105 transition-transform flex items-center gap-2 rounded-lg shadow-xl"
-                    >
-                        Send Contract
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-);

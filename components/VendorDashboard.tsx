@@ -20,16 +20,27 @@ enum VendorTab {
     Settings = 'Profile'
 }
 
+import { VendorOverview } from './VendorOverview'; // Use new consolidated overview
+
+// ... imports remain ... 
+
 export const VendorDashboard: React.FC = () => {
     const { user } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const [activeTab, setActiveTab] = useState<VendorTab>(VendorTab.Overview);
 
+    // Handler to switch tabs from within Overview
+    const handleNavigate = (tabName: string) => {
+        // Simple mapping or find enum
+        const target = Object.values(VendorTab).find(t => t === tabName) || VendorTab.Pipeline;
+        setActiveTab(target);
+    };
+
     const renderContent = () => {
         switch (activeTab) {
             case VendorTab.Overview:
-                return <VendorOverview />;
-            case VendorTab.Pipeline: // Render Pipeline
+                return <VendorOverview onNavigate={handleNavigate} />;
+            case VendorTab.Pipeline:
                 return <VendorPipeline />;
             case VendorTab.Opportunities:
                 return <VendorLeads />;
@@ -124,22 +135,5 @@ export const VendorDashboard: React.FC = () => {
     );
 };
 
-const VendorOverview: React.FC = () => (
-    <div className="p-12 max-w-7xl mx-auto w-full space-y-12">
-        <h2 className="text-4xl font-serif text-zinc-900 dark:text-white">Dashboard</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-                { label: 'Active Bids', value: '3', trend: '+1 this week' },
-                { label: 'Win Rate', value: '42%', trend: 'Top 10%' },
-                { label: 'Current Jobs', value: '1', trend: 'On Schedule' }
-            ].map((stat, i) => (
-                <div key={i} className="p-8 border border-zinc-200 dark:border-white/10 bg-white dark:bg-[#080808] rounded-2xl shadow-sm dark:shadow-none">
-                    <p className="text-[10px] uppercase tracking-widest text-zinc-500 dark:text-white/40 mb-2">{stat.label}</p>
-                    <p className="text-4xl font-semibold mb-2 text-zinc-900 dark:text-white">{stat.value}</p>
-                    <p className="text-[10px] text-emerald-500 uppercase tracking-wider font-bold">{stat.trend}</p>
-                </div>
-            ))}
-        </div>
-    </div>
-);
+
 

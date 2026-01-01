@@ -13,6 +13,7 @@ interface Match {
     id: string; // match_id
     pipeline_stage: string;
     lost_reason?: string; // Add optional lost_reason
+    revenue?: number; // Add optional revenue
     homeowner: {
         id: string;
         full_name: string;
@@ -38,6 +39,8 @@ export const VendorPipeline: React.FC = () => {
     const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
     const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
     const [showLost, setShowLost] = useState(false);
+    const [markingWonId, setMarkingWonId] = useState<string | null>(null);
+    const [wonRevenue, setWonRevenue] = useState('');
     const [markingLostId, setMarkingLostId] = useState<string | null>(null);
     const [lostReason, setLostReason] = useState('');
 
@@ -83,10 +86,12 @@ export const VendorPipeline: React.FC = () => {
         let totalActiveCount = 0;
         let wonValue = 0;
         data.forEach(m => {
-            const val = parseBudgetValue(m.homeowner.budget_range);
             if (m.pipeline_stage === 'won') {
+                // Use exact revenue if available, else estimate
+                const val = m.revenue || parseBudgetValue(m.homeowner.budget_range);
                 wonValue += val;
             } else if (m.pipeline_stage !== 'lost') { // Only count active deals for pipeline value and count
+                const val = parseBudgetValue(m.homeowner.budget_range);
                 totalActiveValue += val;
                 totalActiveCount += 1;
             }
@@ -102,6 +107,7 @@ export const VendorPipeline: React.FC = () => {
             .select(`
                 id,
                 pipeline_stage,
+                revenue,
                 lost_reason,
                 created_at,
                 homeowner:homeowner_id (
@@ -119,6 +125,7 @@ export const VendorPipeline: React.FC = () => {
             const formatted: Match[] = data.map((m: any) => ({
                 id: m.id,
                 pipeline_stage: m.pipeline_stage || 'new request',
+                revenue: m.revenue,
                 lost_reason: m.lost_reason,
                 homeowner: m.homeowner,
                 created_at: m.created_at
@@ -143,14 +150,17 @@ export const VendorPipeline: React.FC = () => {
     }, [user, showLost]);
 
     const handleStageChange = async (matchId: string, newStage: string) => {
+        // Intercept move to 'won'
+        if (newStage === 'won') {
+            setMarkingWonId(matchId);
+            return;
+        }
+
         // Optimistic update
         const updatedMatches = matches.map(m =>
             m.id === matchId ? { ...m, pipeline_stage: newStage } : m
         );
         setMatches(updatedMatches);
-        // Recalculate stats based on the full data if available, or trigger a refetch
-        // For now, we'll refetch all to ensure stats are accurate.
-        // calculateStats(updatedMatches); // This would only work if `matches` was the full dataset
 
         const { error } = await supabase
             .from('matches')
@@ -163,6 +173,34 @@ export const VendorPipeline: React.FC = () => {
         } else {
             showToast('Pipeline stage updated!', 'success');
             fetchAllAndFilter(); // Refetch to ensure consistency and correct stats
+        }
+    };
+
+    const confirmWon = async () => {
+        if (!markingWonId || !wonRevenue) return;
+
+        const amount = parseFloat(wonRevenue.replace(/,/g, ''));
+        if (isNaN(amount) || amount < 0) {
+            showToast('Please enter a valid revenue amount', 'error');
+            return;
+        }
+
+        const { error } = await supabase
+            .from('matches')
+            .update({
+                pipeline_stage: 'won',
+                revenue: amount,
+                lost_reason: null
+            })
+            .eq('id', markingWonId);
+
+        if (error) {
+            showToast('Failed to mark as won.', 'error');
+        } else {
+            showToast('Deal marked as won!', 'success');
+            setMarkingWonId(null);
+            setWonRevenue('');
+            fetchAllAndFilter();
         }
     };
 
@@ -385,6 +423,7 @@ export const VendorPipeline: React.FC = () => {
             </div>
 
             {/* Mark Lost Modal */}
+            {/* Mark Lost Modal */}
             {markingLostId && (
                 <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
                     <div className="bg-white dark:bg-[#0A0A0A] p-8 rounded-2xl shadow-2xl border border-zinc-200 dark:border-white/10 w-full max-w-sm animate-in zoom-in-95 duration-200">
@@ -416,6 +455,54 @@ export const VendorPipeline: React.FC = () => {
                                 className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Confirm Lost
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Mark Won Modal */}
+            {markingWonId && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-[#0A0A0A] p-8 rounded-2xl shadow-2xl border border-zinc-200 dark:border-white/10 w-full max-w-sm animate-in zoom-in-95 duration-200">
+                        <div className="text-center mb-6">
+                            <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <DollarSign className="text-emerald-600 dark:text-emerald-400" size={24} />
+                            </div>
+                            <h3 className="text-xl font-serif mb-2 text-zinc-900 dark:text-white">Deal Won!</h3>
+                            <p className="text-sm text-zinc-500">Congratulations! Please verify the final revenue amount for this project.</p>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">
+                                Estimated Revenue
+                            </label>
+                            <div className="relative">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
+                                <input
+                                    type="number"
+                                    value={wonRevenue}
+                                    onChange={(e) => setWonRevenue(e.target.value)}
+                                    className="w-full pl-8 pr-4 py-3 bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-zinc-900 dark:text-white font-medium"
+                                    placeholder="0"
+                                    autoFocus
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setMarkingWonId(null); setWonRevenue(''); }}
+                                className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmWon}
+                                disabled={!wonRevenue}
+                                className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Confirm
                             </button>
                         </div>
                     </div>

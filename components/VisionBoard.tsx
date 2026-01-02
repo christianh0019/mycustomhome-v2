@@ -30,19 +30,19 @@ export const VisionBoard: React.FC = () => {
   return (
     <div className="p-12 max-w-5xl mx-auto w-full">
       <h2 className="text-5xl font-serif mb-4">Vision Board</h2>
-      <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-12">Stage 1: Dreaming & AI Feasibility Audit</p>
-      
+      <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-12">Stage 0: Getting Started & Inspiration</p>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         <div className="space-y-8">
           <div className="bg-[#1A1A1A] border border-white/10 p-8 space-y-4">
             <h3 className="text-lg font-serif italic text-white/60">"Describe the soul of your home..."</h3>
-            <textarea 
+            <textarea
               value={visionText}
               onChange={(e) => setVisionText(e.target.value)}
               className="w-full h-48 bg-transparent border-white/10 focus:border-white p-4 text-xs tracking-widest uppercase outline-none transition-all leading-relaxed"
               placeholder="Black marble, floor-to-ceiling glass, industrial concrete, hidden libraries, floating staircases..."
             />
-            <button 
+            <button
               onClick={analyzeVision}
               disabled={loading}
               className="w-full py-4 bg-white text-black text-[11px] tracking-[0.3em] uppercase font-bold hover:bg-white/90 disabled:opacity-50 transition-all"
@@ -52,12 +52,12 @@ export const VisionBoard: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-             <div className="aspect-square bg-white/5 border border-white/5 flex items-center justify-center group hover:border-white transition-all cursor-pointer">
-                <span className="text-[9px] uppercase tracking-[0.2em] opacity-40 group-hover:opacity-100">Upload Inspo 1</span>
-             </div>
-             <div className="aspect-square bg-white/5 border border-white/5 flex items-center justify-center group hover:border-white transition-all cursor-pointer">
-                <span className="text-[9px] uppercase tracking-[0.2em] opacity-40 group-hover:opacity-100">Upload Inspo 2</span>
-             </div>
+            <div className="aspect-square bg-white/5 border border-white/5 flex items-center justify-center group hover:border-white transition-all cursor-pointer">
+              <span className="text-[9px] uppercase tracking-[0.2em] opacity-40 group-hover:opacity-100">Upload Inspo 1</span>
+            </div>
+            <div className="aspect-square bg-white/5 border border-white/5 flex items-center justify-center group hover:border-white transition-all cursor-pointer">
+              <span className="text-[9px] uppercase tracking-[0.2em] opacity-40 group-hover:opacity-100">Upload Inspo 2</span>
+            </div>
           </div>
         </div>
 

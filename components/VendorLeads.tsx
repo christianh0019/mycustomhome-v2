@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabase';
+import { ROADMAP_CONFIG } from '../services/RoadmapService';
 import { HomeownerProfile } from './HomeownerProfile';
 import { Search, MapPin, User, ArrowRight, Loader } from 'lucide-react';
 
@@ -134,7 +135,7 @@ export const VendorLeads: React.FC = () => {
                                     <div className="flex justify-between items-center text-xs">
                                         <span className="text-zinc-400 uppercase tracking-wider font-medium">Stage</span>
                                         <span className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded text-zinc-600 dark:text-zinc-300 font-medium">
-                                            {match.homeowner.current_stage || 0}
+                                            {ROADMAP_CONFIG[match.homeowner.current_stage as keyof typeof ROADMAP_CONFIG]?.name || `Stage ${match.homeowner.current_stage || 0}`}
                                         </span>
                                     </div>
                                 </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { ROADMAP_CONFIG } from '../services/RoadmapService';
 import { useProjectContext } from '../contexts/ProjectContext';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
@@ -32,7 +33,7 @@ export const Dashboard: React.FC = () => {
         {
             title: "Roadmap Status",
             value: `Stage ${roadmap.currentStage}`,
-            subtitle: "Financial Foundation",
+            subtitle: ROADMAP_CONFIG[roadmap.currentStage as keyof typeof ROADMAP_CONFIG]?.name || 'Unknown Stage',
             icon: Map,
             color: "bg-blue-500/10 text-blue-400",
             action: () => navigateTo(AppTab.Roadmap),

@@ -131,7 +131,7 @@ export const BudgetCreator: React.FC = () => {
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             className="bg-[#111] border border-white/10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl relative z-60 shadow-2xl flex flex-col"
                         >
-                            <div className={`h - 32 bg - gradient - to - r ${viewingArticle.gradient} shrink - 0 relative flex items - center px - 8`}>
+                            <div className={`h-32 bg-gradient-to-r ${viewingArticle.gradient} shrink-0 relative flex items-center px-8`}>
                                 <button
                                     onClick={() => setViewingArticle(null)}
                                     className="absolute top-4 right-4 p-2 bg-black/20 rounded-full hover:bg-black/40 text-white transition-colors"

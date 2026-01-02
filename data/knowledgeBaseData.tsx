@@ -62,7 +62,7 @@ export const ARTICLES: Article[] = [
         stageIds: [0, 1], // Getting Started, Budget
         content: (
 
-            <div className="space-y-6 text-zinc-300 leading-relaxed font-light">
+            <div className="space-y-6 text-zinc-600 dark:text-zinc-300 leading-relaxed font-light">
                 <p>
                     Let's talk about the uncomfortable truth of buying a home. When you buy a house from a production builder (like the big national names you see on billboards), you aren't just paying for the lumber, the bricks, and the labor.
                 </p >
@@ -70,7 +70,7 @@ export const ARTICLES: Article[] = [
                     You are paying for their marketing department. You are paying for their model homes. You are paying for their corporate overhead. And most importantly, you are paying for their <strong>profit margin</strong>.
                 </p>
 
-                <h3 className="text-2xl text-white font-serif mt-8 mb-4">The "Retail" Price Tag</h3>
+                <h3 className="text-2xl text-zinc-900 dark:text-white font-serif mt-8 mb-4">The "Retail" Price Tag</h3>
                 <p>
                     Think of a production home like buying a suit off the rack at a department store.
                 </p>
@@ -83,20 +83,20 @@ export const ARTICLES: Article[] = [
                     That gap—the $350 difference—is the "Retail Markup." In real estate, this markup is typically <strong>20% to 30%</strong>. If you buy a $1,000,000 tract home, it likely only cost the builder $700,000 to actually build. You just paid $300,000 for the convenience of buying it "finished."
                 </p>
 
-                <h3 className="text-2xl text-white font-serif mt-8 mb-4">Custom Homes: Buying "Wholesale"</h3>
+                <h3 className="text-2xl text-zinc-900 dark:text-white font-serif mt-8 mb-4">Custom Homes: Buying "Wholesale"</h3>
                 <p>
                     When you decide to build a custom home, you are effectively firing the middleman. <strong>YOU become the developer.</strong>
                 </p>
                 <div className="bg-emerald-500/10 p-6 rounded-2xl border border-emerald-500/20 my-8">
-                    <p className="text-emerald-300 font-medium text-lg mb-2">
+                    <p className="text-emerald-600 dark:text-emerald-300 font-medium text-lg mb-2">
                         This is called "Sweat Equity."
                     </p>
-                    <p className="text-sm text-zinc-300">
+                    <p className="text-sm text-zinc-600 dark:text-zinc-300">
                         By taking on the work of hiring an architect, finding land, and managing the process (with a builder), you get to keep that 20-30% margin for yourself.
                     </p>
                 </div>
 
-                <h3 className="text-2xl text-white font-serif mt-8 mb-4">Instant Equity vs. Underwater</h3>
+                <h3 className="text-2xl text-zinc-900 dark:text-white font-serif mt-8 mb-4">Instant Equity vs. Underwater</h3>
                 <p>
                     This is why custom homes are a completely different <strong>Asset Class</strong>.
                 </p>
@@ -107,18 +107,18 @@ export const ARTICLES: Article[] = [
                     <strong>Scenario B (Custom Home):</strong> You spend $1M <em>total</em> (land + build). But because you built it yourself, it appraises for $1.3M (the retail value) the day you move in. The market dips 5%. Your house is worth $1.23M. <strong>You are still up $230,000.</strong>
                 </p>
 
-                <h3 className="text-2xl text-white font-serif mt-8 mb-4">It's Not Just About Money</h3>
+                <h3 className="text-2xl text-zinc-900 dark:text-white font-serif mt-8 mb-4">It's Not Just About Money</h3>
                 <p>
                     Beyond the finances, there is the Quality Factor. Production builders are optimized for <em>speed</em> and <em>shareholder value</em>. They use the cheapest materials that meet code.
                 </p>
                 <p>
                     When you build custom, you are optimized for <em>living</em>. You focus on insulation quality, window efficiency, and layout flow.
                 </p>
-                <p className="border-l-2 border-white/20 pl-4 italic text-zinc-400 my-6">
+                <p className="border-l-2 border-zinc-300 dark:border-white/20 pl-4 italic text-zinc-500 dark:text-zinc-400 my-6">
                     "A tract home is designed to be SOLD on a Sunday afternoon. A custom home is designed to be LIVED IN for 20 years."
                 </p>
 
-                <h3 className="text-2xl text-white font-serif mt-8 mb-4">The Catch? It's Hard Work.</h3>
+                <h3 className="text-2xl text-zinc-900 dark:text-white font-serif mt-8 mb-4">The Catch? It's Hard Work.</h3>
                 <p>
                     We won't lie to you. Capturing that $300k of equity takes work. It takes patience. It takes dealing with the city, the weather, and the dust.
                 </p>

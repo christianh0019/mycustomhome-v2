@@ -83,7 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
               setActiveTab(id);
             }}
             disabled={isLocked}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative
+            className={`w-full flex items-center gap-3 px-10 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative
                   ${activeTab === id
                 ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white shadow-sm'
                 : isLocked

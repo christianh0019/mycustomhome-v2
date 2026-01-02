@@ -20,7 +20,7 @@ const ICONS: Record<number, any> = {
   1: Landmark,
   2: CompassIcon,
   3: Ruler,
-  4: FileText,
+  4: ShieldCheck,
   5: Construction,
   6: Key
 };

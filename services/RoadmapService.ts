@@ -18,7 +18,7 @@ export interface VerificationActionConfig {
 export const ROADMAP_CONFIG = {
     0: {
         id: 0,
-        name: "Orientation",
+        name: "Getting Started",
         required_tasks: [
             {
                 id: 'profile_setup',
@@ -34,7 +34,7 @@ export const ROADMAP_CONFIG = {
     },
     1: {
         id: 1,
-        name: "Financial Foundation",
+        name: "Setting A Budget",
         required_tasks: [
             {
                 id: 'lender_path',
@@ -56,7 +56,7 @@ export const ROADMAP_CONFIG = {
     },
     2: {
         id: 2,
-        name: "Land Acquisition",
+        name: "Finding Land",
         required_tasks: [
             {
                 id: 'land_contract',
@@ -77,7 +77,7 @@ export const ROADMAP_CONFIG = {
     },
     3: {
         id: 3,
-        name: "Design & Engineering",
+        name: "Designing Your Home",
         required_tasks: [
             {
                 id: 'design_contract',
@@ -88,28 +88,32 @@ export const ROADMAP_CONFIG = {
                 id: 'floor_plans',
                 label: "Finalize Floor Plans",
                 action: { type: 'UPLOAD_FILE', label: 'Upload Plans', config: { targetFolder: 'Plans', aiAnalysisType: 'floor-plan' } }
-            },
-            {
-                id: 'builder_select',
-                label: "Select Builder",
-                action: { type: 'TALK_TO_PILOT', label: 'Vet Builders', config: { intent: 'vet-builders' } }
             }
         ],
         unlocks_tab: 'TheTeam'
     },
     4: {
         id: 4,
-        name: "Preconstruction",
+        name: "Choosing A Builder",
         required_tasks: [
-            { id: 'construction_contract', label: "Sign Construction Contract", action: { type: 'UPLOAD_FILE', label: 'Upload Contract', config: { targetFolder: 'Contracts' } } },
-            { id: 'permit_receipt', label: "Verify Permit Submission", action: { type: 'UPLOAD_FILE', label: 'Upload Receipt', config: { targetFolder: 'Permits' } } },
-            { id: 'bank_closing', label: "Bank Closing Complete", action: { type: 'FORM_INPUT', label: 'Confirm Closing', config: { formId: 'confirm-closing' } } }
+            {
+                id: 'builder_select',
+                label: "Select Builder",
+                action: { type: 'TALK_TO_PILOT', label: 'Vet Builders', config: { intent: 'vet-builders' } }
+            },
+            {
+                id: 'construction_contract',
+                label: "Sign Construction Contract",
+                action: { type: 'UPLOAD_FILE', label: 'Upload Contract', config: { targetFolder: 'Contracts' } }
+            }
         ]
     },
     5: {
         id: 5,
-        name: "Construction",
+        name: "Project In Progress",
         required_tasks: [
+            { id: 'bank_closing', label: "Bank Closing Complete", action: { type: 'FORM_INPUT', label: 'Confirm Closing', config: { formId: 'confirm-closing' } } },
+            { id: 'permit_receipt', label: "Verify Permit Submission", action: { type: 'UPLOAD_FILE', label: 'Upload Receipt', config: { targetFolder: 'Permits' } } },
             { id: 'schedule_uploaded', label: "Upload Construction Schedule", action: { type: 'UPLOAD_FILE', label: 'Upload Schedule', config: { targetFolder: 'Schedules' } } },
             { id: 'first_draw', label: "First Draw Processed", action: { type: 'FORM_INPUT', label: 'Verify Draw', config: { formId: 'verify-draw' } } }
         ],
@@ -117,7 +121,7 @@ export const ROADMAP_CONFIG = {
     },
     6: {
         id: 6,
-        name: "The Summit",
+        name: "Move-in Time",
         required_tasks: [
             { id: 'punch_list', label: "Final Walkthrough List", action: { type: 'FORM_INPUT', label: 'Start Punch List', config: { formId: 'punch-list' } } },
             { id: 'occupancy_permit', label: "Upload Occupancy Permit", action: { type: 'UPLOAD_FILE', label: 'Upload CO', config: { targetFolder: 'Permits' } } }

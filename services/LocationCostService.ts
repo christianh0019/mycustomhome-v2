@@ -15,15 +15,26 @@ const STATE_MULTIPLIERS: Record<string, number> = {
     'TX': 0.95, 'FL': 1.05, 'AZ': 1.0, 'NV': 1.1, 'TN': 0.95,
     'NC': 0.9, 'SC': 0.9, 'GA': 0.9, 'IL': 1.1, 'OH': 0.9,
     'MI': 0.95, 'PA': 1.05, 'VA': 0.95, 'MD': 1.05,
-    'MN': 1.05, 'WI': 1.0, 'IN': 0.9, 'MO': 0.9, 'CT': 1.25
+    'MN': 1.05, 'WI': 1.0, 'IN': 0.9, 'MO': 0.9, 'CT': 1.25,
+    'AL': 0.85, 'AR': 0.85, 'DE': 1.1, 'ID': 1.05, 'IA': 0.95,
+    'KS': 0.9, 'KY': 0.9, 'LA': 0.9, 'ME': 1.1, 'MS': 0.85,
+    'MT': 1.05, 'NE': 0.9, 'NH': 1.15, 'NM': 0.95, 'ND': 1.05,
+    'OK': 0.85, 'RI': 1.25, 'SD': 0.95, 'UT': 1.1, 'VT': 1.15,
+    'WV': 0.9, 'WY': 1.0
 };
 
 const STATE_NAMES: Record<string, string> = {
-    'Texas': 'TX', 'California': 'CA', 'New York': 'NY', 'Colorado': 'CO',
-    'Florida': 'FL', 'Arizona': 'AZ', 'Washington': 'WA', 'Oregon': 'OR',
-    'Massachusetts': 'MA', 'Nevada': 'NV', 'Tennessee': 'TN', 'North Carolina': 'NC',
-    'Georgia': 'GA', 'Illinois': 'IL', 'Ohio': 'OH', 'Michigan': 'MI',
-    'Pennsylvania': 'PA', 'Virginia': 'VA', 'Maryland': 'MD'
+    'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+    'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+    'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+    'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+    'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+    'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+    'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+    'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+    'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+    'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY',
+    'District of Columbia': 'DC'
 };
 
 // "Tier 1" Luxury/Resort Markets (City Name Match)
@@ -98,7 +109,14 @@ export const LocationCostService = {
                     if (match) place = match;
                 }
 
-                const stateCode = place.admin1_code || ''; // e.g. "CO", "TX"
+                let stateCode = place.admin1_code || ''; // e.g. "CO", "TX"
+                const stateName = place.admin1 || '';
+
+                // FALLBACK: If API doesn't return code, try to find it from the full name
+                if (!stateCode && stateName && STATE_NAMES[stateName]) {
+                    stateCode = STATE_NAMES[stateName];
+                }
+
                 const country = place.country_code;
                 const isUS = country === 'US';
 
@@ -128,7 +146,7 @@ export const LocationCostService = {
                     : `Based on regional construction multipliers for ${place.admin1 || country}.`;
 
                 return {
-                    city: `${place.name}, ${place.admin1_code || place.country_code}`,
+                    city: `${place.name}, ${stateCode || place.country_code}`,
                     low, high, avg,
                     description: desc
                 };

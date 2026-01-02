@@ -69,7 +69,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
           <img src="/logo-light.png" alt="Custom Home Helper" className="w-full max-w-[180px] mb-6" />
         )}
 
-        <p className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 dark:text-white/50">Your Private Guide</p>
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto">

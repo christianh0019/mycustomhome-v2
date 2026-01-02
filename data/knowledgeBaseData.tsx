@@ -14,6 +14,8 @@ export interface Article {
     icon: React.ElementType;
     content: React.ReactNode;
     featured?: boolean;
+    stageIds: number[]; // Maps to Roadmap Stages 0-6
+    videoUrl?: string; // Optional YouTube Embed URL
 }
 
 export const ARTICLES: Article[] = [
@@ -26,6 +28,8 @@ export const ARTICLES: Article[] = [
         gradient: "from-emerald-900 to-green-950",
         icon: DollarSign,
         featured: true,
+        stageIds: [1, 2, 3], // Setting Budget, Finding Land, Designing
+        videoUrl: "https://www.youtube.com/embed/S92fTz_Iggc", // Example: Construction Loan Basics
         content: (
             <div className="space-y-6 text-zinc-300 leading-relaxed font-light">
                 <p>
@@ -55,6 +59,7 @@ export const ARTICLES: Article[] = [
         category: "Strategy",
         gradient: "from-blue-900 to-slate-900",
         icon: Compass,
+        stageIds: [0, 1], // Getting Started, Budget
         content: (
             <div className="space-y-6 text-zinc-300 leading-relaxed font-light">
                 <p>
@@ -69,12 +74,14 @@ export const ARTICLES: Article[] = [
     },
     {
         id: 3,
-        title: "The 9 Stages of a Build",
+        title: "The 7 Stages of a Build",
         subtitle: "A roadmap to the chaos. What happens when.",
         readTime: "8 min read",
         category: "Construction",
         gradient: "from-orange-900 to-red-950",
         icon: Layout,
+        stageIds: [0, 5], // Getting Started, In Progress
+        videoUrl: "https://www.youtube.com/embed/XPw_7Kj8Xl0", // Example: Home Building Process
         content: (
             <div className="space-y-6 text-zinc-300 leading-relaxed font-light">
                 <ul className="list-disc pl-6 space-y-4">
@@ -95,6 +102,7 @@ export const ARTICLES: Article[] = [
         category: "Design",
         gradient: "from-purple-900 to-indigo-950",
         icon: PenTool,
+        stageIds: [3], // Designing
         content: <p>Full guide on creating timeless design features that appraise well...</p>
     },
     {
@@ -105,6 +113,7 @@ export const ARTICLES: Article[] = [
         category: "Legal",
         gradient: "from-zinc-800 to-zinc-950",
         icon: Gavel,
+        stageIds: [4, 5], // Choosing Builder, In Progress
         content: (
             <div className="space-y-6 text-zinc-300">
                 <p>
@@ -122,6 +131,8 @@ export const ARTICLES: Article[] = [
         category: "Finance",
         gradient: "from-emerald-900 to-teal-950",
         icon: DollarSign,
+        stageIds: [4], // Choosing Builder
+        videoUrl: "https://www.youtube.com/embed/3D0tA5aQ0rY", // Example: Cost Plus vs Fixed Price
         content: <p>Fixed Price contracts incentivize the builder to cut corners. Cost Plus incentivizes them to spend. Which is better?</p>
     },
     {
@@ -132,6 +143,7 @@ export const ARTICLES: Article[] = [
         category: "Strategy",
         gradient: "from-red-900 to-rose-950",
         icon: AlertTriangle,
+        stageIds: [2], // Finding Land
         content: <p>If the land is cheap, there is a reason. Usually it involves $50k in retaining walls or a $30k septic system.</p>
     },
     {
@@ -142,6 +154,7 @@ export const ARTICLES: Article[] = [
         category: "Design",
         gradient: "from-indigo-900 to-violet-950",
         icon: PenTool,
+        stageIds: [3], // Designing
         content: <p>For a basic layout, a designer saves you money. For complex engineering, you need an architect. Know the difference.</p>
     },
     // NEW EDUCATIONAL CONTENT FOR BUDGET CREATOR
@@ -153,6 +166,7 @@ export const ARTICLES: Article[] = [
         category: "Budgeting",
         gradient: "from-orange-800 to-amber-950",
         icon: HelpCircle,
+        stageIds: [1], // Setting Budget
         content: (
             <div className="space-y-6 text-zinc-300 leading-relaxed font-light">
                 <p>
@@ -207,6 +221,7 @@ export const ARTICLES: Article[] = [
         category: "Budgeting",
         gradient: "from-green-800 to-emerald-950",
         icon: Compass,
+        stageIds: [2], // Finding Land
         content: (
             <div className="space-y-6 text-zinc-300 leading-relaxed font-light">
                 <p>
@@ -264,6 +279,7 @@ export const ARTICLES: Article[] = [
         category: "Budgeting",
         gradient: "from-blue-900 to-indigo-950",
         icon: DollarSign,
+        stageIds: [1, 4], // Budget, Choosing Builder
         content: (
             <div className="space-y-6 text-zinc-300 leading-relaxed font-light">
                 <p>
@@ -321,6 +337,7 @@ export const ARTICLES: Article[] = [
         category: "Design",
         gradient: "from-purple-900 to-fuchsia-950",
         icon: Layout,
+        stageIds: [3], // Designing
         content: (
             <div className="space-y-6 text-zinc-300 leading-relaxed font-light">
                 <p>

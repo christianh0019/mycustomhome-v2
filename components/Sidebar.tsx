@@ -63,10 +63,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
   return (
     <div className="w-[280px] h-full bg-white dark:bg-[#050505] border-r border-zinc-200 dark:border-white/10 flex flex-col shrink-0 z-30 shadow-2xl transition-colors duration-300">
       <div className="p-10">
-        <h1 className="text-3xl font-serif tracking-tighter leading-none mb-2 text-zinc-900 dark:text-white">
-          MCH
-        </h1>
-        <div className="h-[1px] w-8 bg-zinc-300 dark:bg-white/40 mb-8"></div>
+        {theme === 'dark' ? (
+          <h1 className="text-3xl font-serif tracking-tighter leading-none mb-2 text-white">
+            CHH
+          </h1>
+        ) : (
+          <img src="/logo-light.png" alt="Custom Home Helper" className="w-full max-w-[180px] mb-6" />
+        )}
+
+        {theme === 'dark' && <div className="h-[1px] w-8 bg-white/40 mb-8"></div>}
         <p className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 dark:text-white/50">Your Private Guide</p>
       </div>
 
